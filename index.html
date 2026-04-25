@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autopilotlens — See what actually applies</title>
+  <meta name="description" content="Visualize and simulate Microsoft Intune Autopilot flows. See exactly what policies, apps, and profiles apply to your devices.">
+  <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+    :root {
+      --bg:      #0f1012;
+      --bg2:     #141618;
+      --bg3:     #1a1d20;
+      --bg4:     #0c0d0f;
+      --text:    #e8eaed;
+      --text2:   #a8b0bb;
+      --text3:   #636b76;
+      --border:  rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --hairline:rgba(255,255,255,0.04);
+      --accent:  #4ea78a;
+      --green:   #52a883;
+      --amber:   #c49a52;
+      --red:     #bb6060;
+      --purple:  #9488b4;
+      --blue:    #6da2d0;
+      --radius:  8px;
+      --radius-sm: 5px;
+      --shadow:  0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    body { font-feature-settings: "ss01","cv11","cv02"; }
+    body::before { display: none; }
+    ::selection { background: rgba(78,167,138,0.25); color: var(--text); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    .hdr {
+      height: 52px; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .hdr-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 600; letter-spacing: -0.02em; color: var(--text);
+    }
+    .hdr-logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, rgba(78,167,138,.18) 0%, rgba(78,167,138,.04) 100%);
+      border: 1px solid rgba(78,167,138,.28);
+      border-radius: 7px;
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .hdr-logo-divider { width: 1px; height: 16px; background: var(--border2); margin: 0 2px; }
+    .hdr-logo small { color: var(--text3); font-size: 11.5px; font-weight: 400; }
+
+    .auth-area { display: flex; align-items: center; gap: 8px; }
+    #hdr-syncing, #hdr-live {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px !important; color: var(--text3) !important; padding: 0 8px;
+    }
+    #hdr-live { color: var(--green) !important; }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex; gap: 0; padding: 0 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      position: sticky; top: 52px; z-index: 45;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-t {
+      padding: 13px 14px 11px;
+      font-size: 12.5px; font-weight: 500;
+      cursor: pointer; color: var(--text3);
+      border-bottom: 2px solid transparent;
+      transition: color 150ms ease, border-color 150ms ease;
+      white-space: nowrap; margin-right: 4px;
+    }
+    .nav-t:hover { color: var(--text2); }
+    .nav-t.on { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* ── Content ── */
+    .content { flex: 1; padding: 22px 24px; overflow-y: auto; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .card-sm {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px;
+    }
+
+    /* ── Typography ── */
+    .eyebrow {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text3);
+    }
+    .title-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; margin-bottom: 10px;
+    }
+    .title-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .title { font-size: 14px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); min-width: 0; line-height: 1.3; }
+    .desc { font-size: 12.5px; line-height: 1.6; color: var(--text2); }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .stack-8 { display: flex; flex-direction: column; gap: 8px; }
+    .stack-12 { display: flex; flex-direction: column; gap: 12px; }
+    .empty-note { font-size: 12px; color: var(--text3); font-style: italic; }
+    .cell-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; letter-spacing: -0.01em; }
+    .cell-sub { font-size: 11.5px; color: var(--text3); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .panel-title { display: flex; flex-direction: column; gap: 5px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; padding: 6px 13px; min-height: 32px;
+      border-radius: 6px; font-size: 12px; font-weight: 500; line-height: 1;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all 130ms ease; white-space: nowrap; font-family: inherit;
+    }
+    .btn-accent { background: var(--text); color: var(--bg4); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .btn-accent:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+    .btn-ghost { background: transparent; color: var(--text2); border-color: var(--border2); }
+    .btn-ghost:hover { color: var(--text); background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.22); }
+    .btn-red { background: transparent; color: #cc7878; border-color: rgba(187,96,96,.25); }
+    .btn-red:hover { background: rgba(187,96,96,.08); border-color: rgba(187,96,96,.4); }
+
+    /* ── Tags ── */
+    .tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 500; line-height: 1.5;
+      border: 1px solid var(--border2); color: var(--text2);
+      background: rgba(255,255,255,.03); white-space: nowrap; letter-spacing: 0.01em;
+    }
+    .tag::before {
+      content: ""; width: 5px; height: 5px; border-radius: 999px;
+      background: var(--text3); flex: 0 0 auto;
+    }
+    .tag-plain::before { display: none; }
+    .tag-windows::before { background: var(--blue); }
+    .tag-ios::before { background: var(--green); }
+    .tag-android::before { background: var(--amber); }
+    .tag-macos::before { background: var(--purple); }
+    .tag-broad { color: var(--amber); border-color: rgba(196,154,82,.3); background: rgba(196,154,82,.06); }
+    .tag-broad::before { background: var(--amber); }
+    .tag-targeted { color: var(--green); border-color: rgba(82,168,131,.3); background: rgba(82,168,131,.06); }
+    .tag-targeted::before { background: var(--green); }
+    .tag-unassigned { color: var(--red); border-color: rgba(187,96,96,.3); background: rgba(187,96,96,.06); }
+    .tag-unassigned::before { background: var(--red); }
+    .tag-purple { color: var(--purple); border-color: rgba(148,136,180,.28); background: rgba(148,136,180,.05); }
+    .tag-purple::before { background: var(--purple); }
+    .tag-blue { color: var(--blue); border-color: rgba(109,162,208,.28); background: rgba(109,162,208,.05); }
+    .tag-blue::before { background: var(--blue); }
+    .tag-gray { color: var(--text2); border-color: var(--border); background: transparent; }
+    .tag-gray::before { background: var(--text3); }
+
+    /* ── Stat cards ── */
+    .stat {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .stat::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(78,167,138,.03) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .stat-n {
+      font-size: 28px; font-weight: 600;
+      font-family: "JetBrains Mono", monospace;
+      color: var(--text); letter-spacing: -0.04em;
+      font-feature-settings: "tnum","lnum"; line-height: 1;
+    }
+    .stat-l {
+      font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text3); margin-top: 6px; font-weight: 500;
+    }
+
+    /* ── Tables ── */
+    .tbl-wrap {
+      overflow-x: auto; border: 1px solid var(--border);
+      border-radius: var(--radius); margin-top: 16px;
+    }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .tbl th {
+      background: var(--bg4); border-bottom: 1px solid var(--border);
+      padding: 9px 16px; text-align: left; color: var(--text3);
+      font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+    }
+    .tbl td {
+      border-bottom: 1px solid var(--hairline);
+      padding: 12px 16px; vertical-align: top; color: var(--text2);
+    }
+    .tbl tr:last-child td { border-bottom: 0; }
+    .tbl tbody tr { transition: background 100ms ease; }
+    .tbl tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* ── Filter chips ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 5px;
+      font-size: 11.5px; font-weight: 500; line-height: 1.4;
+      border: 1px solid var(--border2); color: var(--text2);
+      background: rgba(255,255,255,.03); margin: 1px; white-space: nowrap;
+      cursor: pointer; transition: all 130ms ease;
+    }
+    .chip:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+    .chip::before {
+      content: ""; width: 5px; height: 5px; border-radius: 999px;
+      background: var(--text3); flex: 0 0 auto;
+    }
+
+    /* ── Inputs ── */
+    .inp {
+      width: 100%; background: var(--bg4);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 11px; font-size: 13px; color: var(--text);
+      outline: none; font-family: inherit; transition: border-color 130ms ease, box-shadow 130ms ease;
+    }
+    .inp:focus { border-color: rgba(78,167,138,.6); box-shadow: 0 0 0 3px rgba(78,167,138,.12); }
+    .inp::placeholder { color: var(--text3); }
+    .lbl { font-size: 11px; font-weight: 500; color: var(--text3); margin-bottom: 6px; display: block; }
+    select.inp {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23636b76' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; cursor: pointer;
+    }
+
+    .flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .arrow { color: var(--text3); font-size: 14px; }
+
+    /* ── Banners ── */
+    .demo-banner, .banner {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(196,154,82,.07); border: 1px solid rgba(196,154,82,.2);
+      border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px;
+      font-size: 12px; color: #d9b870; font-weight: 500;
+    }
+
+    /* ── Spinner / pulse ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .fade { animation: fadeUp .2s ease both; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+    .pdot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s ease infinite; display: inline-block;
+    }
+
+    /* ── Modal ── */
+    .modal-bg {
+      position: fixed; inset: 0; z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(4,5,7,.82); backdrop-filter: blur(4px); padding: 20px;
+    }
+    .modal-box {
+      width: min(560px, 100%); max-height: 74vh;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 10px; overflow: hidden;
+      box-shadow: var(--shadow-md); display: flex; flex-direction: column;
+    }
+    .modal-head {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .modal-list { overflow-y: auto; flex: 1; }
+    .list-row {
+      padding: 12px 18px; display: flex; align-items: center; gap: 12px;
+      cursor: pointer; border-bottom: 1px solid rgba(255,255,255,.04);
+      transition: background 120ms ease;
+    }
+    .list-row:hover { background: rgba(255,255,255,.03); }
+    .list-row:last-child { border-bottom: none; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 7px;
+      display: grid; place-items: center;
+      background: var(--bg3); border: 1px solid var(--border); flex-shrink: 0; font-size: 15px;
+    }
+
+    /* ── Toasts ── */
+    .aav-toast {
+      position: fixed; bottom: 20px; right: 20px; z-index: 999;
+      padding: 10px 16px; border-radius: 8px;
+      font-size: 12px; font-weight: 500;
+      background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+      opacity: 0; transform: translateY(6px); transition: all .2s ease;
+      pointer-events: none; max-width: 300px; box-shadow: var(--shadow-md);
+    }
+    .aav-toast-visible { opacity: 1; transform: translateY(0); }
+    .aav-toast-info { border-color: rgba(78,167,138,.28); }
+    .aav-toast-success { border-color: rgba(82,168,131,.28); }
+    .aav-toast-error { border-color: rgba(187,96,96,.28); }
+
+    .mono, code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 11.5px; color: #c2cad4;
+    }
+    .empty { color: var(--text3); }
+
+    @media (max-width: 900px) {
+      .hdr { height: auto; padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+      .nav { padding: 0 16px; }
+      .content { padding: 16px; }
+    }
+    @media (max-width: 760px) {
+      .layout-2, .sim-grid { grid-template-columns: 1fr !important; }
+      .title-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+        <div class="hdr-logo">
+      <div class="hdr-logo-icon">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".45"/>
+          <rect x="11" y="1" width="6" height="6" rx="1.5" fill="var(--accent)"/>
+          <rect x="1" y="11" width="6" height="6" rx="1.5" fill="var(--accent)"/>
+          <rect x="11" y="11" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".45"/>
+        </svg>
+      </div>
+      Autopilotlens
+      <div class="hdr-logo-divider"></div>
+      <small id="hdr-sub">See what actually applies.</small>
+    </div>
+    <div class="auth-area">
+      <div id="hdr-syncing" style="display:none;"><div class="spin"></div> Loading</div>
+      <div id="hdr-live" style="display:none;"><div class="pdot"></div> Live</div>
+      <button class="btn btn-ghost" id="hdr-refresh" style="display:none;" onclick="refreshData()">Refresh</button>
+      <button class="btn btn-red" id="hdr-signout" style="display:none;" onclick="signOut()">Sign out</button>
+      <button class="btn btn-accent" id="hdr-connect" onclick="startLogin()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
+          <rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/>
+          <rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/>
+          <rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
+        </svg>
+        Sign in with Microsoft
+      </button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-t on" id="tab-overview" onclick="switchTab('overview')">Environment</div>
+    <div class="nav-t" id="tab-matrix" onclick="switchTab('matrix')">Assignments</div>
+    <div class="nav-t" id="tab-simulate" onclick="switchTab('simulate')">What applies?</div>
+  </div>
+
+  <div class="content" id="content-area"></div>
+  <div id="modal-err" style="display:none;"></div>
+</div>
+
+<script>
+const EMPTY = {
+  autopilotProfiles: [],
+  enrollmentStatusPages: [],
+  groups: [],
+  deviceConfigs: [],
+  settingsCatalog: [],
+  compliancePolicies: [],
+  apps: [],
+  endpointSecurity: [],
+  appProtection: [],
+  groupTags: [],
+  managedDevices: [],
+  loading: false, loaded: false, errors: [],
+};
+
+
+const DEMO_DATA = {
+  autopilotProfiles: [
+    {
+      id:'ap-sales', displayName:'Windows Autopilot - Sales', description:'User-driven profile for Sales laptops', deploymentMode:'userDriven', preprovisioningAllowed:true,
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
+    },
+    {
+      id:'ap-kiosk', displayName:'Windows Autopilot - Kiosk', description:'Self-deploying profile for shared devices', deploymentMode:'selfDeploying', preprovisioningAllowed:false,
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-kiosk-devices' } }]
+    }
+  ],
+  enrollmentStatusPages: [
+    {
+      id:'esp-standard', displayName:'ESP - Standard', description:'Blocks device use until required apps and policies are installed',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+    }
+  ],
+  groups: [
+    {
+      id:'grp-sales-devices', displayName:'AP - Sales devices', description:'Devices with Sales group tag', groupTypes:['DynamicMembership'],
+      membershipRule:'(device.devicePhysicalIds -any (_ -contains "[OrderID]:SALES"))'
+    },
+    {
+      id:'grp-kiosk-devices', displayName:'AP - Kiosk devices', description:'Devices with KIOSK group tag', groupTypes:['DynamicMembership'],
+      membershipRule:'(device.devicePhysicalIds -any (_ -contains "[OrderID]:KIOSK"))'
+    },
+    {
+      id:'grp-all-windows', displayName:'All Windows devices', description:'Example static assignment group', groupTypes:[], membershipRule:''
+    },
+    {
+      id:'grp-exclusions', displayName:'Pilot exclusions', description:'Devices excluded from strict compliance', groupTypes:[], membershipRule:''
+    }
+  ],
+  deviceConfigs: [
+    {
+      id:'dc-baseline', displayName:'Windows baseline configuration', '@odata.type':'#microsoft.graph.windows10GeneralConfiguration',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
+    },
+    {
+      id:'dc-kiosk', displayName:'Kiosk lock-down profile', '@odata.type':'#microsoft.graph.windows10CustomConfiguration',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-kiosk-devices' } }]
+    }
+  ],
+  settingsCatalog: [
+    {
+      id:'sc-edge', name:'Edge security settings', platforms:'windows10',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+    }
+  ],
+  compliancePolicies: [
+    {
+      id:'co-win', displayName:'Windows compliance - BitLocker + Defender', '@odata.type':'#microsoft.graph.windows10CompliancePolicy',
+      assignments:[
+        { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } },
+        { target:{ '@odata.type':'#microsoft.graph.exclusionGroupAssignmentTarget', groupId:'grp-exclusions' } }
+      ]
+    }
+  ],
+  apps: [
+    {
+      id:'app-m365', displayName:'Microsoft 365 Apps', '@odata.type':'#microsoft.graph.win32LobApp',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
+    },
+    {
+      id:'app-company', displayName:'Company Portal', '@odata.type':'#microsoft.graph.winGetApp',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+    }
+  ],
+  endpointSecurity: [
+    {
+      id:'es-defender', displayName:'Defender AV baseline', '@odata.type':'#microsoft.graph.deviceManagementIntent',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
+    }
+  ],
+  appProtection: [],
+  groupTags: ['KIOSK','SALES'],
+  managedDevices: [
+    { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', _source:'demo' },
+    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', osVersion:'10.0.26100', _source:'demo' }
+  ],
+  loading:false, loaded:true, errors:[]
+};
+let demoMode = false;
+
+let DATA = JSON.parse(JSON.stringify(EMPTY));
+let msalInstance = null;
+let currentAccount = null;
+let isAuthed = false;
+let currentTab = 'overview';
+let SIM = { groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
+let MATRIX = {
+  policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
+  groups:   { search:'', groupType:'' /* 'dynamic'|'static'|'' */ },
+  apps:     { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
+};
+
+const AAV_CLIENT_ID = '990cc930-4457-4946-a9da-da0a281eb7b5';
+const AAV_AUTHORITY = 'https://login.microsoftonline.com/common';
+const SCOPES = [
+  'https://graph.microsoft.com/DeviceManagementConfiguration.Read.All',
+  'https://graph.microsoft.com/DeviceManagementManagedDevices.Read.All',
+  'https://graph.microsoft.com/DeviceManagementServiceConfig.Read.All',
+  'https://graph.microsoft.com/DeviceManagementApps.Read.All',
+  'https://graph.microsoft.com/Group.Read.All',
+  'https://graph.microsoft.com/GroupMember.Read.All',
+  'https://graph.microsoft.com/User.Read.All',
+  'https://graph.microsoft.com/Device.Read.All',
+];
+
+const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const byId = id => DATA.groups.find(g => g.id === id);
+const isDyn = g => (g.groupTypes || []).includes('DynamicMembership') || !!g.membershipRule;
+const el = id => document.getElementById(id);
+
+// ── URL state: serialize/restore Simulate params ──
+const SIM_URL_FIELDS = ['groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
+
+function simToUrl() {
+  const params = new URLSearchParams();
+  params.set('tab', currentTab);
+  if (currentTab === 'simulate') {
+    SIM_URL_FIELDS.forEach(k => { if (SIM[k]) params.set(k, SIM[k]); });
+  }
+  const query = params.toString();
+  const url = window.location.pathname + (query ? '?' + query : '');
+  history.replaceState(null, '', url);
+}
+
+function restoreFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  if (tab && ['overview','matrix','simulate'].includes(tab)) currentTab = tab;
+  SIM_URL_FIELDS.forEach(k => { if (params.has(k)) SIM[k] = params.get(k); });
+  // Reflect nav state
+  ['overview','matrix','simulate'].forEach(id => {
+    const t = el(`tab-${id}`);
+    if (t) t.classList.toggle('on', id === currentTab);
+  });
+}
+
+function copySimLink() {
+  simToUrl();
+  const url = window.location.href;
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('Link copied to clipboard', 'success'))
+    .catch(() => showToast('Could not copy link', 'error'));
+}
+
+function initMsal() {
+  if (typeof msal === 'undefined') return;
+  msalInstance = new msal.PublicClientApplication({
+    auth: { clientId: AAV_CLIENT_ID, authority: AAV_AUTHORITY, redirectUri: window.location.origin },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+    system: { loggerOptions: { logLevel: msal.LogLevel.Warning, loggerCallback: (level, msg) => { if (level === msal.LogLevel.Error) console.error('[MSAL]', msg); } } },
+  });
+  msalInstance.handleRedirectPromise()
+    .then(resp => {
+      if (resp) { currentAccount = resp.account; onAuth(currentAccount); return; }
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) { currentAccount = accounts[0]; onAuth(currentAccount); }
+    })
+    .catch(err => console.error('[AAV] Redirect error:', err));
+}
+
+async function startLogin() {
+  const btn = el('hdr-connect');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+  try {
+    await msalInstance.loginRedirect({ scopes: SCOPES, prompt: 'consent' });
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/><rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/></svg> Sign in with Microsoft`;
+    }
+    if (err.errorCode !== 'user_cancelled') showToast('Sign-in failed: ' + (err.errorMessage || err.message), 'error');
+  }
+}
+
+async function getAccessToken() {
+  if (!currentAccount) throw new Error('Not signed in');
+  try {
+    const resp = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account: currentAccount });
+    return resp.accessToken;
+  } catch {
+    // Silent failed — surface error to user instead of silent redirect that kills state
+    showToast('Session expired — please sign in again.', 'error');
+    throw new Error('Session expired');
+  }
+}
+
+async function onAuth(account) {
+  isAuthed = true;
+  currentAccount = account;
+  el('hdr-connect').style.display = 'none';
+  el('hdr-signout').style.display = 'inline-flex';
+  el('hdr-refresh').style.display = 'inline-flex';
+
+  // Initial label from account (before we can fetch tenant name)
+  el('hdr-sub').textContent = account.username || account.name || 'Connected';
+
+  // Fetch tenant display name in background
+  try {
+    const org = await graphGet('https://graph.microsoft.com/v1.0/organization?$select=displayName');
+    const tenantName = org?.[0]?.displayName;
+    if (tenantName) {
+      el('hdr-sub').innerHTML = `<span style="color:var(--text2);font-weight:500;">${esc(tenantName)}</span> · ${esc(account.username || '')}`;
+    }
+  } catch (e) {
+    // Non-critical — keep account label
+    console.warn('[AAV] Could not fetch tenant info:', e.message);
+  }
+
+  showToast(`Connected as ${account.username}`, 'info');
+  refreshData();
+}
+
+
+function startDemo() {
+  demoMode = true;
+  isAuthed = true;
+  currentAccount = null;
+  DATA = JSON.parse(JSON.stringify(DEMO_DATA));
+  currentTab = 'overview';
+  SIM = { groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
+  ['overview','matrix','simulate'].forEach(id => {
+    const t = el(`tab-${id}`);
+    if (t) t.classList.toggle('on', id === currentTab);
+  });
+  el('hdr-connect').style.display = 'inline-flex';
+  el('hdr-connect').innerHTML = 'Sign in with Microsoft';
+  el('hdr-signout').style.display = 'inline-flex';
+  el('hdr-signout').textContent = 'Exit demo';
+  el('hdr-refresh').style.display = 'none';
+  el('hdr-live').style.display = 'inline-flex';
+  el('hdr-sub').innerHTML = '<span style="color:var(--text2);font-weight:500;">Demo tenant</span> · sample data';
+  showToast('Demo loaded with sample Intune data', 'success');
+  renderCurrentTab();
+}
+
+function signOut() {
+  if (demoMode) {
+    demoMode = false;
+    isAuthed = false;
+    currentAccount = null;
+    DATA = JSON.parse(JSON.stringify(EMPTY));
+    el('hdr-signout').textContent = 'Sign out';
+    el('hdr-connect').style.display = 'inline-flex';
+    el('hdr-connect').innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/><rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/></svg> Sign in with Microsoft`;
+    el('hdr-signout').style.display = 'none';
+    el('hdr-refresh').style.display = 'none';
+    el('hdr-live').style.display = 'none';
+    el('hdr-sub').textContent = 'See what actually applies.';
+    renderCurrentTab();
+    return;
+  }
+  const accounts = msalInstance ? msalInstance.getAllAccounts() : [];
+  if (accounts.length) {
+    // Use logoutRedirect — popup triggers COOP errors on Live Server
+    msalInstance.logoutRedirect({ account: accounts[0] }).catch(() => {});
+    return;
+  }
+  // Fallback: no accounts, just reset UI
+  isAuthed = false;
+  currentAccount = null;
+  DATA = JSON.parse(JSON.stringify(EMPTY));
+  const btn = el('hdr-connect');
+  btn.style.display = 'inline-flex';
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/><rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/></svg> Sign in with Microsoft`;
+  el('hdr-signout').style.display = 'none';
+  el('hdr-refresh').style.display = 'none';
+  el('hdr-live').style.display = 'none';
+  el('hdr-syncing').style.display = 'none';
+  el('hdr-sub').textContent = 'See what actually applies.';
+  renderCurrentTab();
+}
+
+function showToast(message, type='info') {
+  const existing = document.querySelector('.aav-toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = `aav-toast aav-toast-${type}`;
+  t.textContent = message;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('aav-toast-visible'));
+  setTimeout(() => { t.classList.remove('aav-toast-visible'); setTimeout(() => t.remove(), 260); }, 3200);
+}
+
+async function graphGet(url) {
+  const token = await getAccessToken();
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  let rows = [];
+  let next = url;
+  let pageCount = 0;
+
+  // Retry helper for first page — 500s often resolve on retry
+  async function fetchWithRetry(fetchUrl, maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let res;
+      try {
+        res = await fetch(fetchUrl, { headers });
+      } catch (e) {
+        if (attempt === maxAttempts) throw e;
+        await new Promise(r => setTimeout(r, 500 * attempt));
+        continue;
+      }
+      if (res.status >= 500 && attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, 800 * attempt)); // 800ms, 1600ms
+        continue;
+      }
+      return res;
+    }
+  }
+
+  while (next) {
+    pageCount++;
+    const res = await fetchWithRetry(next);
+
+    if (res.status === 401) {
+      currentAccount = null;
+      isAuthed = false;
+      el('hdr-connect').style.display = 'inline-flex';
+      el('hdr-signout').style.display = 'none';
+      el('hdr-live').style.display = 'none';
+      el('hdr-sub').textContent = 'See what actually applies.';
+      showToast('Session expired — please sign in again.', 'error');
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (res.status === 403) throw new Error('Permission denied (403). Admin consent may be required for one or more scopes.');
+
+    // Still 500 after retries, mid-pagination — return partial
+    if (res.status >= 500 && rows.length > 0) {
+      console.warn(`[AAV] ${res.status} on page ${pageCount}, returning ${rows.length} rows collected so far`);
+      return rows;
+    }
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(`${res.status} ${e?.error?.message || res.statusText}`);
+    }
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
+    if (data.value) rows = rows.concat(data.value);
+    else return data;
+    next = data['@odata.nextLink'] || null;
+  }
+  return rows;
+}
+
+async function refreshData() {
+  if (!currentAccount) return;
+  DATA.loading = true;
+  DATA.errors = [];
+  el('hdr-syncing').style.display = 'inline-flex';
+  el('hdr-live').style.display = 'none';
+  renderCurrentTab();
+  const safe = async (label, fn) => { try { return await fn(); } catch (e) { DATA.errors.push(`${label}: ${e.message}`); return null; } };
+  const B = 'https://graph.microsoft.com/beta';
+  const [pr, esp, gr, dc, sc, co, ap, es, app, dv, apDev] = await Promise.all([
+    safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
+    safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
+    safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule`)),
+    safe('DeviceConfig', () => graphGet(`${B}/deviceManagement/deviceConfigurations?$expand=assignments`)),
+    safe('SettingsCat', () => graphGet(`${B}/deviceManagement/configurationPolicies?$expand=assignments`)),
+    safe('Compliance', () => graphGet(`${B}/deviceManagement/deviceCompliancePolicies?$expand=assignments`)),
+    safe('AppProtect', () => graphGet(`${B}/deviceAppManagement/managedAppPolicies`)),
+    safe('EPSecurity', () => graphGet(`${B}/deviceManagement/intents?$expand=assignments`)),
+    safe('Apps', () => graphGet(`${B}/deviceAppManagement/mobileApps?$expand=assignments&$filter=isof('microsoft.graph.managedApp') eq false`)),
+    safe('Devices', () => graphGet(`${B}/deviceManagement/managedDevices?$select=id,deviceName,serialNumber,osVersion,model,manufacturer,azureADDeviceId,userPrincipalName&$top=999`)),
+    safe('APDevices', () => graphGet(`https://graph.microsoft.com/v1.0/deviceManagement/windowsAutopilotDeviceIdentities`)),
+  ]);
+
+  if (pr) DATA.autopilotProfiles = pr;
+  if (esp) DATA.enrollmentStatusPages = esp;
+  if (gr) DATA.groups = gr;
+  if (dc) DATA.deviceConfigs = dc;
+  if (sc) DATA.settingsCatalog = sc;
+  if (co) DATA.compliancePolicies = co;
+  if (app) DATA.apps = app;
+  if (es) DATA.endpointSecurity = es;
+  if (ap) DATA.appProtection = ap;
+  // Merge enrolled devices + Autopilot-only devices into one list
+  const enrolled = dv || [];
+  const autopilotOnly = apDev || [];
+
+  // Build a serial-keyed map so enrolled + Autopilot info is combined per device
+  const deviceMap = {};
+
+  enrolled.forEach(d => {
+    const key = (d.serialNumber || d.id || '').toLowerCase();
+    if (!key) return;
+    deviceMap[key] = { ...d, _source: 'enrolled' };
+  });
+
+  autopilotOnly.forEach(a => {
+    const key = (a.serialNumber || a.id || '').toLowerCase();
+    if (!key) return;
+    if (deviceMap[key]) {
+      // Already enrolled — just merge the groupTag
+      deviceMap[key].groupTag = a.groupTag || deviceMap[key].groupTag || '';
+      deviceMap[key]._source = 'enrolled+autopilot';
+    } else {
+      // Autopilot-only (not yet enrolled)
+      deviceMap[key] = {
+        id: a.id,
+        deviceName: a.displayName || a.azureAdDeviceId || a.serialNumber || 'Autopilot device',
+        serialNumber: a.serialNumber || '',
+        groupTag: a.groupTag || '',
+        model: a.model || '',
+        manufacturer: a.manufacturer || '',
+        osVersion: '',
+        _source: 'autopilot-only',
+      };
+    }
+  });
+
+  DATA.managedDevices = Object.values(deviceMap);
+
+  // Build group tag list from multiple sources (fallback for when APDevices endpoint fails)
+  const tagSet = new Set();
+  // 1. From enrolled devices (via Autopilot identities merged on serial)
+  DATA.managedDevices.forEach(d => { if (d.groupTag) tagSet.add(d.groupTag); });
+  // 2. From Autopilot device identities directly
+  autopilotOnly.forEach(a => { if (a.groupTag) tagSet.add(a.groupTag); });
+  // 3. From dynamic group rules — parse [OrderID]:TagName patterns
+  DATA.groups.forEach(g => {
+    const rule = g.membershipRule || '';
+    const matches = rule.match(/\[OrderID\]:([^"'\s)]+)/g) || [];
+    matches.forEach(m => {
+      const tag = m.replace('[OrderID]:', '').replace(/["']/g, '').trim();
+      if (tag) tagSet.add(tag);
+    });
+  });
+  DATA.groupTags = [...tagSet].sort();
+
+  DATA.loading = false;
+  DATA.loaded = true;
+  el('hdr-syncing').style.display = 'none';
+  el('hdr-live').style.display = 'inline-flex';
+  renderCurrentTab();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['overview','matrix','simulate'].forEach(id => el(`tab-${id}`).classList.toggle('on', id === tab));
+  simToUrl();
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  const mount = el('content-area');
+  if (!isAuthed && !DATA.loading) { renderEmptyState(mount); return; }
+  if (DATA.loading) {
+    mount.innerHTML = `<div class="card fade" style="display:flex;align-items:center;justify-content:center;min-height:280px;gap:12px;color:var(--text3);"><div class="spin"></div><span>Loading your Intune configuration…</span></div>`;
+    return;
+  }
+  if (currentTab === 'overview') renderOverview(mount);
+  else if (currentTab === 'matrix') renderMatrix(mount);
+  else if (currentTab === 'simulate') renderSimulate(mount);
+}
+
+function renderEmptyState(mount) {
+  mount.innerHTML = `
+    <div class="fade" style="display:flex;align-items:center;justify-content:center;min-height:60vh;">
+      <div class="card" style="max-width:480px;text-align:center;padding:32px;">
+        <div style="width:56px;height:56px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);display:grid;place-items:center;margin:0 auto 16px;">
+          <svg width="24" height="24" viewBox="0 0 18 18" fill="none" style="color:var(--accent);">
+            <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".35"/>
+            <rect x="11" y="1" width="6" height="6" rx="1.5" fill="currentColor"/>
+            <rect x="1" y="11" width="6" height="6" rx="1.5" fill="currentColor"/>
+            <rect x="11" y="11" width="6" height="6" rx="1.5" fill="currentColor" opacity=".35"/>
+          </svg>
+        </div>
+        <div class="demo-banner" style="justify-content:center;margin-bottom:16px;">Try a demo — no Microsoft login required</div>
+        <div class="title" style="font-size:16px;margin-bottom:6px;">See what actually applies</div>
+        <div class="desc" style="margin-bottom:20px;">Understand exactly what policies, apps, and profiles apply to your devices.</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-accent" onclick="startLogin()">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/><rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+            Sign in with Microsoft
+          </button>
+          <button class="btn btn-ghost" onclick="startDemo()">Press here for a demo</button>
+        </div>
+        <div class="cell-sub" style="margin-top:12px;font-size:11px;">No data is stored. Everything runs locally in your browser.</div>
+        <div class="cell-sub" style="margin-top:8px;font-size:11px;">Requires read permissions on Intune configuration, groups, users, and devices. Demo uses local sample data only.</div>
+      </div>
+    </div>`;
+}
+
+function resolveAssignments(policy) {
+  return (policy.assignments || []).map(a => {
+    const t = a.target || a;
+    const type = t['@odata.type'] || '';
+    if (type.includes('allDevices')) return { label:'All Devices', kind:'allDevices', group:null };
+    if (type.includes('allLicensedUsers')) return { label:'All Users', kind:'allUsers', group:null };
+    if (type.includes('exclusionGroup')) {
+      const g = byId(t.groupId);
+      return { label: g ? g.displayName : t.groupId, kind:'exclude', group: g || null };
+    }
+    if (t.groupId) {
+      const g = byId(t.groupId);
+      return { label: g ? g.displayName : t.groupId, kind:'include', group: g || null };
+    }
+    return null;
+  }).filter(Boolean);
+}
+
+function allPolicies() {
+  return [
+    ...DATA.deviceConfigs.map(p => ({ ...p, _t:'Device Config', name:p.displayName })),
+    ...DATA.settingsCatalog.map(p => ({ ...p, _t:'Settings Cat', name:p.name || p.displayName })),
+    ...DATA.compliancePolicies.map(p => ({ ...p, _t:'Compliance', name:p.displayName })),
+    ...DATA.endpointSecurity.map(p => ({ ...p, _t:'EP Security', name:p.displayName })),
+    ...DATA.appProtection.map(p => ({ ...p, _t:'App Protection', name:p.displayName })),
+  ];
+}
+
+function platformTag(p) {
+  const pl = ((p.platforms || p.platform || '')).toLowerCase();
+  const ot = ((p['@odata.type'] || '')).toLowerCase();
+  if (pl.includes('windows') || ot.includes('windows') || ot.includes('win32')) return `<span class="tag tag-windows">Windows</span>`;
+  if (pl.includes('ios') || ot.includes('ios')) return `<span class="tag tag-ios">iOS</span>`;
+  if (pl.includes('android') || ot.includes('android')) return `<span class="tag tag-android">Android</span>`;
+  if (pl.includes('macos') || ot.includes('macos')) return `<span class="tag tag-macos">macOS</span>`;
+  return `<span class="tag tag-gray">Cross-platform</span>`;
+}
+
+function asnTags(policy) {
+  const a = resolveAssignments(policy);
+  if (!a.length) return `<span class="tag tag-unassigned tag-plain">Unassigned</span>`;
+  return a.slice(0, 3).map(x => {
+    if (x.kind === 'allDevices') return `<span class="tag tag-broad">All devices</span>`;
+    if (x.kind === 'allUsers') return `<span class="tag tag-broad">All users</span>`;
+    if (x.kind === 'exclude') return `<span class="tag tag-unassigned">Excluded: ${esc(x.label)}</span>`;
+    const dynamic = isDyn(x.group || {});
+    return `<span class="tag ${dynamic ? 'tag-purple' : 'tag-targeted'}">${esc(x.label)}</span>`;
+  }).join('') + (a.length > 3 ? ` <span class="tag tag-gray tag-plain">+${a.length - 3}</span>` : '');
+}
+
+function demoBanner() {
+  if (DATA.errors.length) return `<div class="demo-banner" style="border-color:rgba(194,106,106,.22);background:rgba(194,106,106,.08);color:#d88383;">⚠ Partial data — ${esc(DATA.errors[0])}</div>`;
+  return '';
+}
+
+
+function renderOverview(mount) {
+  const dynG = DATA.groups.filter(isDyn);
+  const tagRows = DATA.groupTags.map(tag => {
+    const devs = DATA.managedDevices.filter(d => d.groupTag === tag).length;
+    const mG = DATA.groups.filter(g => (g.membershipRule || '').includes(tag));
+    const mP = DATA.autopilotProfiles.filter(p => resolveAssignments(p).some(x => mG.some(g => x.group && x.group.id === g.id)));
+    return { tag, devs, mG, mP };
+  });
+
+  mount.innerHTML = `
+    <div class="fade">
+      ${demoBanner()}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
+        <div class="stat"><div class="stat-n">${DATA.autopilotProfiles.length}</div><div class="stat-l">Autopilot Profiles</div></div>
+        <div class="stat"><div class="stat-n">${dynG.length}</div><div class="stat-l">Dynamic Groups</div></div>
+        <div class="stat"><div class="stat-n">${DATA.groupTags.length}</div><div class="stat-l">Group Tags</div></div>
+        <div class="stat"><div class="stat-n">${allPolicies().length}</div><div class="stat-l">Policies</div></div>
+        <div class="stat"><div class="stat-n">${DATA.apps.length}</div><div class="stat-l">Apps</div></div>
+        <div class="stat"><div class="stat-n">${DATA.managedDevices.length}</div><div class="stat-l">Devices</div></div>
+      </div>
+
+      <div class="layout-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <section class="card">
+          <div class="panel-head"><div class="panel-title"><div class="eyebrow">Profiles</div><div class="title">Autopilot Profiles</div></div></div>
+          <div class="stack-12">
+            ${DATA.autopilotProfiles.map(p => {
+              const a = resolveAssignments(p);
+              return `
+                <div class="card-sm">
+                  <div class="title-row">
+                    <div class="title-block">
+                      <div class="title">${esc(p.displayName)}</div>
+                      <div class="desc">${esc(p.description || 'No description')}</div>
+                    </div>
+                    <span class="tag ${a.length ? 'tag-targeted' : 'tag-unassigned'} tag-plain">${a.length} assignments</span>
+                  </div>
+                  <div class="meta-row">
+                    <span class="tag tag-blue">${esc(p.deploymentMode || 'userDriven')}</span>
+                    ${p.preprovisioningAllowed ? '<span class="tag tag-purple">Pre-provisioning</span>' : ''}
+                  </div>
+                  <div class="meta-row">${asnTags(p)}</div>
+                </div>`;
+            }).join('') || `<div class="empty-note">No profiles found.</div>`}
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="panel-head"><div class="panel-title"><div class="eyebrow">Mapping</div><div class="title">Group Tag → Group → Profile</div></div></div>
+          <div class="stack-12">
+            ${tagRows.map(r => `
+              <div class="card-sm">
+                <div class="title-row">
+                  <div class="title-block">
+                    <div class="title">${esc(r.tag)}</div>
+                    <div class="desc">${r.devs} device${r.devs !== 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+                <div class="stack-8">
+                  <div class="eyebrow">Groups</div>
+                  <div class="meta-row">${r.mG.map(g => `<span class="tag tag-purple">${esc(g.displayName)}</span>`).join('') || '<span class="empty-note">No matching groups</span>'}</div>
+                </div>
+                <div class="stack-8">
+                  <div class="eyebrow">Profiles</div>
+                  <div class="meta-row">${r.mP.map(p => `<span class="tag tag-blue">${esc(p.displayName)}</span>`).join('') || '<span class="empty-note">No matching profiles</span>'}</div>
+                </div>
+              </div>`).join('') || `<div class="empty-note">No group tags found on devices.</div>`}
+          </div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-bottom:16px;">
+        <div class="panel-head"><div class="panel-title"><div class="eyebrow">Enrollment</div><div class="title">Enrollment Status Pages</div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+          ${DATA.enrollmentStatusPages.map(e => `
+            <div class="card-sm">
+              <div class="title-row">
+                <div class="title-block">
+                  <div class="title">${esc(e.displayName)}</div>
+                  <div class="desc">${esc(e.description || 'No description')}</div>
+                </div>
+              </div>
+              <div class="meta-row">${asnTags(e)}</div>
+            </div>`).join('') || `<div class="empty-note">No ESP configurations.</div>`}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="panel-head"><div class="panel-title"><div class="eyebrow">Rules</div><div class="title">Dynamic Groups (${dynG.length})</div></div></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Name</th><th>Membership Rule</th><th>Description</th></tr></thead>
+            <tbody>
+              ${dynG.map(g => `
+                <tr>
+                  <td><div class="cell-title">${esc(g.displayName)}</div></td>
+                  <td><div class="mono">${esc(g.membershipRule || '')}</div></td>
+                  <td><div class="cell-sub">${esc(g.description || '')}</div></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>`;
+}
+
+// ── Matrix filter helpers ──
+function detectPlatform(item) {
+  const pl = ((item.platforms || item.platform || '')).toLowerCase();
+  const ot = ((item['@odata.type'] || '')).toLowerCase();
+  if (pl.includes('windows') || ot.includes('windows') || ot.includes('win32')) return 'Windows';
+  if (pl.includes('ios') || ot.includes('ios')) return 'iOS';
+  if (pl.includes('android') || ot.includes('android')) return 'Android';
+  if (pl.includes('macos') || ot.includes('macos')) return 'macOS';
+  return 'Cross';
+}
+
+function scopeOf(item) {
+  const a = resolveAssignments(item);
+  if (!a.length) return 'Unassigned';
+  const inc = a.filter(x => x.kind !== 'exclude');
+  if (!inc.length) return 'Unassigned';
+  return inc.some(x => x.kind === 'allDevices' || x.kind === 'allUsers') ? 'Broad' : 'Targeted';
+}
+
+function itemHasGroup(item, groupId) {
+  if (!groupId) return true;
+  if (groupId === '__allDevices__') return resolveAssignments(item).some(x => x.kind === 'allDevices');
+  if (groupId === '__allUsers__') return resolveAssignments(item).some(x => x.kind === 'allUsers');
+  return resolveAssignments(item).some(x => x.group && x.group.id === groupId);
+}
+
+function itemMatchesSearch(item, query, extraFields = []) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const name = (item.name || item.displayName || '').toLowerCase();
+  const asn = resolveAssignments(item).map(x => x.label.toLowerCase()).join(' ');
+  if (name.includes(q) || asn.includes(q)) return true;
+  for (const f of extraFields) {
+    const v = (f || '').toLowerCase();
+    if (v.includes(q)) return true;
+  }
+  return false;
+}
+
+// Generic toggler for any MATRIX.<table>.<setField>
+function toggleMatrixSet(table, field, value) {
+  const set = MATRIX[table][field];
+  if (set.has(value)) set.delete(value);
+  else set.add(value);
+  renderMatrix(el('content-area'));
+}
+
+// Setter for text/dropdown fields that preserves focus on the edited input
+function setMatrixField(table, field, value, focusId) {
+  MATRIX[table][field] = value || '';
+  const scrollPos = el('content-area').scrollTop;
+  renderMatrix(el('content-area'));
+  if (focusId) {
+    const input = el(focusId);
+    if (input) {
+      input.focus();
+      if (input.setSelectionRange && typeof value === 'string') input.setSelectionRange(value.length, value.length);
+    }
+  }
+  el('content-area').scrollTop = scrollPos;
+}
+
+function clearMatrixFilter(table) {
+  if (table === 'policies') MATRIX.policies = { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' };
+  else if (table === 'groups') MATRIX.groups = { search:'', groupType:'' };
+  else if (table === 'apps') MATRIX.apps = { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' };
+  renderMatrix(el('content-area'));
+}
+
+function matrixFilterCount(table) {
+  const f = MATRIX[table];
+  let n = 0;
+  if (f.search) n++;
+  if (f.types?.size) n++;
+  if (f.platforms?.size) n++;
+  if (f.scopes?.size) n++;
+  if (f.appTypes?.size) n++;
+  if (f.groupId) n++;
+  if (f.groupType) n++;
+  return n;
+}
+
+function filterChip(onclickAttr, label, active) {
+  return `<button class="chip" style="cursor:pointer;${active ? 'background:var(--text);color:var(--bg4);border-color:var(--text);' : ''}" ${onclickAttr}>${esc(label)}</button>`;
+}
+
+function groupSelectOptions(selectedId) {
+  return `
+    <option value="" ${!selectedId ? 'selected' : ''}>— Any group —</option>
+    <option value="__allDevices__" ${selectedId === '__allDevices__' ? 'selected' : ''}>All Devices (broad)</option>
+    <option value="__allUsers__" ${selectedId === '__allUsers__' ? 'selected' : ''}>All Users (broad)</option>
+    ${DATA.groups.map(g => `<option value="${esc(g.id)}" ${selectedId === g.id ? 'selected' : ''}>${esc(g.displayName)}${isDyn(g) ? ' (dynamic)' : ''}</option>`).join('')}
+  `;
+}
+
+function renderMatrix(mount) {
+  const allPol = allPolicies();
+  const allApps = DATA.apps.map(a => ({ ...a, _t: 'App' }));
+
+  const typeCounts = {};
+  allPol.forEach(p => { typeCounts[p._t] = (typeCounts[p._t] || 0) + 1; });
+  typeCounts['App'] = allApps.length;
+  const unassignedCount = [...allPol, ...allApps].filter(p => !(p.assignments || []).length).length;
+
+  // ── Filter: policies table ──
+  const pf = MATRIX.policies;
+  const filteredPol = allPol.filter(p => {
+    if (!itemMatchesSearch(p, pf.search, [p._t])) return false;
+    if (pf.types.size && !pf.types.has(p._t)) return false;
+    if (pf.platforms.size && !pf.platforms.has(detectPlatform(p))) return false;
+    if (pf.scopes.size && !pf.scopes.has(scopeOf(p))) return false;
+    if (pf.groupId && !itemHasGroup(p, pf.groupId)) return false;
+    return true;
+  });
+
+  // ── Filter: apps table ──
+  const af = MATRIX.apps;
+  const filteredApps = allApps.filter(a => {
+    const appType = (a['@odata.type'] || '').replace('#microsoft.graph.', '');
+    if (!itemMatchesSearch(a, af.search, [appType])) return false;
+    if (af.appTypes.size && !af.appTypes.has(appType)) return false;
+    if (af.platforms.size && !af.platforms.has(detectPlatform(a))) return false;
+    if (af.scopes.size && !af.scopes.has(scopeOf(a))) return false;
+    if (af.groupId && !itemHasGroup(a, af.groupId)) return false;
+    return true;
+  });
+
+  // ── Filter: groups table ──
+  const gf = MATRIX.groups;
+  // Build Group → Policies map from ALL items (not filtered, so group view is independent)
+  const gMap = {};
+  DATA.groups.forEach(g => { gMap[g.id] = []; });
+  [...allPol, ...allApps].forEach(p => {
+    resolveAssignments(p).forEach(x => {
+      if (x.group && gMap[x.group.id] !== undefined) gMap[x.group.id].push({ name: p.name || p.displayName, type: p._t, excl: x.kind === 'exclude' });
+    });
+  });
+  const assignedGroupsAll = DATA.groups.filter(g => gMap[g.id] && gMap[g.id].length > 0);
+  const filteredGroups = assignedGroupsAll.filter(g => {
+    if (gf.search) {
+      const q = gf.search.toLowerCase();
+      const name = (g.displayName || '').toLowerCase();
+      const pols = (gMap[g.id] || []).map(p => p.name.toLowerCase()).join(' ');
+      if (!name.includes(q) && !pols.includes(q)) return false;
+    }
+    if (gf.groupType === 'dynamic' && !isDyn(g)) return false;
+    if (gf.groupType === 'static' && isDyn(g)) return false;
+    return true;
+  });
+
+  const allPolicyTypes = ['Device Config', 'Settings Cat', 'Compliance', 'EP Security', 'App Protection'];
+  const allAppTypes = [...new Set(allApps.map(a => (a['@odata.type'] || '').replace('#microsoft.graph.', '')))].filter(Boolean);
+  const allPlatforms = ['Windows', 'iOS', 'Android', 'macOS', 'Cross'];
+  const allScopes = ['Broad', 'Targeted', 'Unassigned'];
+
+  const polFilterCount = matrixFilterCount('policies');
+  const grpFilterCount = matrixFilterCount('groups');
+  const appFilterCount = matrixFilterCount('apps');
+
+  // ── Policy filter UI ──
+  const policyFilterUI = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:flex-end;">
+      <div style="flex:1;min-width:220px;">
+        <label class="lbl">Search</label>
+        <input class="inp" id="pol-search" placeholder="Name, type, or assignment…" value="${esc(pf.search)}" oninput="setMatrixField('policies','search',this.value,'pol-search')" />
+      </div>
+      <div style="min-width:180px;">
+        <label class="lbl">Assigned group</label>
+        <select class="inp" onchange="setMatrixField('policies','groupId',this.value)">${groupSelectOptions(pf.groupId)}</select>
+      </div>
+      ${polFilterCount > 0 ? `<button class="btn btn-ghost" onclick="clearMatrixFilter('policies')">Clear (${polFilterCount})</button>` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div><div class="lbl" style="margin-bottom:4px;">Type</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPolicyTypes.map(t => filterChip(`onclick="toggleMatrixSet('policies','types','${t}')"`, `${t}${typeCounts[t] ? ` (${typeCounts[t]})` : ''}`, pf.types.has(t))).join('')}</div></div>
+      <div><div class="lbl" style="margin-bottom:4px;">Platform</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPlatforms.map(p => filterChip(`onclick="toggleMatrixSet('policies','platforms','${p}')"`, p, pf.platforms.has(p))).join('')}</div></div>
+      <div><div class="lbl" style="margin-bottom:4px;">Scope</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allScopes.map(s => filterChip(`onclick="toggleMatrixSet('policies','scopes','${s}')"`, s, pf.scopes.has(s))).join('')}</div></div>
+    </div>`;
+
+  // ── Groups filter UI ──
+  const groupFilterUI = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+      <div style="flex:1;min-width:220px;">
+        <label class="lbl">Search</label>
+        <input class="inp" id="grp-search" placeholder="Group or policy name…" value="${esc(gf.search)}" oninput="setMatrixField('groups','search',this.value,'grp-search')" />
+      </div>
+      <div style="min-width:160px;">
+        <label class="lbl">Group type</label>
+        <select class="inp" onchange="setMatrixField('groups','groupType',this.value)">
+          <option value="" ${!gf.groupType ? 'selected' : ''}>— Any —</option>
+          <option value="dynamic" ${gf.groupType === 'dynamic' ? 'selected' : ''}>Dynamic only</option>
+          <option value="static" ${gf.groupType === 'static' ? 'selected' : ''}>Static only</option>
+        </select>
+      </div>
+      ${grpFilterCount > 0 ? `<button class="btn btn-ghost" onclick="clearMatrixFilter('groups')">Clear (${grpFilterCount})</button>` : ''}
+    </div>`;
+
+  // ── Apps filter UI ──
+  const appFilterUI = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:flex-end;">
+      <div style="flex:1;min-width:220px;">
+        <label class="lbl">Search</label>
+        <input class="inp" id="app-search" placeholder="App name or type…" value="${esc(af.search)}" oninput="setMatrixField('apps','search',this.value,'app-search')" />
+      </div>
+      <div style="min-width:180px;">
+        <label class="lbl">Assigned group</label>
+        <select class="inp" onchange="setMatrixField('apps','groupId',this.value)">${groupSelectOptions(af.groupId)}</select>
+      </div>
+      ${appFilterCount > 0 ? `<button class="btn btn-ghost" onclick="clearMatrixFilter('apps')">Clear (${appFilterCount})</button>` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${allAppTypes.length ? `<div><div class="lbl" style="margin-bottom:4px;">App type</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allAppTypes.map(t => filterChip(`onclick="toggleMatrixSet('apps','appTypes','${t}')"`, t, af.appTypes.has(t))).join('')}</div></div>` : ''}
+      <div><div class="lbl" style="margin-bottom:4px;">Platform</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPlatforms.map(p => filterChip(`onclick="toggleMatrixSet('apps','platforms','${p}')"`, p, af.platforms.has(p))).join('')}</div></div>
+      <div><div class="lbl" style="margin-bottom:4px;">Scope</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allScopes.map(s => filterChip(`onclick="toggleMatrixSet('apps','scopes','${s}')"`, s, af.scopes.has(s))).join('')}</div></div>
+    </div>`;
+
+  mount.innerHTML = `
+    <div class="fade">
+      ${demoBanner()}
+
+      <!-- Summary stats (always totals, unfiltered) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
+        ${Object.entries(typeCounts).map(([t,c]) => `<div class="stat"><div class="stat-n">${c}</div><div class="stat-l">${esc(t)}</div></div>`).join('')}
+        <div class="stat"><div class="stat-n">${unassignedCount}</div><div class="stat-l">Unassigned</div></div>
+      </div>
+
+      <!-- Policies -->
+      <section class="card" style="margin-bottom:16px;">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="eyebrow">Policies</div>
+            <div class="title">Policy Assignment Matrix (${filteredPol.length} / ${allPol.length})</div>
+          </div>
+        </div>
+        ${policyFilterUI}
+        <div style="margin-top:14px;">
+          ${filteredPol.length ? `
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr><th>Policy</th><th>Type</th><th>Platform</th><th>Include</th><th>Exclude</th><th>Scope</th></tr></thead>
+                <tbody>
+                  ${filteredPol.map(p => {
+                    const a = resolveAssignments(p);
+                    const inc = a.filter(x => x.kind !== 'exclude');
+                    const exc = a.filter(x => x.kind === 'exclude');
+                    const broad = inc.some(x => x.kind === 'allDevices' || x.kind === 'allUsers');
+                    const scope = broad ? 'Broad' : inc.length ? 'Targeted' : 'Unassigned';
+                    return `
+                      <tr>
+                        <td><div class="cell-title">${esc(p.name || p.displayName || '')}</div></td>
+                        <td><span class="tag tag-gray tag-plain">${esc(p._t)}</span></td>
+                        <td>${platformTag(p)}</td>
+                        <td>${inc.length ? `<div class="meta-row" style="margin-top:0;">${inc.map(x => `<span class="tag ${broad ? 'tag-broad' : 'tag-targeted'}">${esc(x.label)}</span>`).join('')}</div>` : '<span class="empty-note">None</span>'}</td>
+                        <td>${exc.length ? `<div class="meta-row" style="margin-top:0;">${exc.map(x => `<span class="tag tag-unassigned">${esc(x.label)}</span>`).join('')}</div>` : '<span class="empty-note">—</span>'}</td>
+                        <td><span class="tag ${scope==='Broad' ? 'tag-broad' : scope==='Targeted' ? 'tag-targeted' : 'tag-unassigned'} tag-plain">${scope}</span></td>
+                      </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>` : `<div class="empty-note">No policies match the current filter.</div>`}
+        </div>
+      </section>
+
+      <!-- Group → Policies -->
+      <section class="card" style="margin-bottom:16px;">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="eyebrow">Groups</div>
+            <div class="title">Group → Assigned Policies (${filteredGroups.length} / ${assignedGroupsAll.length})</div>
+          </div>
+        </div>
+        ${groupFilterUI}
+        <div style="margin-top:14px;">
+          ${filteredGroups.length ? `
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr><th>Group</th><th>Type</th><th>Policies</th></tr></thead>
+                <tbody>
+                  ${filteredGroups.map(g => `
+                    <tr>
+                      <td><div class="cell-title">${esc(g.displayName)}</div></td>
+                      <td><span class="tag ${isDyn(g) ? 'tag-purple' : 'tag-gray'} tag-plain">${isDyn(g) ? 'Dynamic' : 'Static'}</span></td>
+                      <td><div class="meta-row" style="margin-top:0;">${(gMap[g.id] || []).map(x => `<span class="tag ${x.excl ? 'tag-unassigned' : 'tag-gray'}">${x.excl ? 'Excluded: ' : ''}${esc(x.name)}</span>`).join('')}</div></td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>` : `<div class="empty-note">No groups match the current filter.</div>`}
+        </div>
+      </section>
+
+      <!-- Apps -->
+      <section class="card">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="eyebrow">Applications</div>
+            <div class="title">Apps (${filteredApps.length} / ${DATA.apps.length})</div>
+          </div>
+        </div>
+        ${appFilterUI}
+        <div style="margin-top:14px;">
+          ${filteredApps.length ? `
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr><th>App</th><th>Type</th><th>Platform</th><th>Assignments</th></tr></thead>
+                <tbody>
+                  ${filteredApps.map(a => `
+                    <tr>
+                      <td><div class="cell-title">${esc(a.displayName)}</div></td>
+                      <td><span class="tag tag-gray tag-plain">${esc((a['@odata.type'] || '').replace('#microsoft.graph.',''))}</span></td>
+                      <td>${platformTag(a)}</td>
+                      <td><div class="meta-row" style="margin-top:0;">${asnTags(a)}</div></td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>` : `<div class="empty-note">No apps match the current filter.</div>`}
+        </div>
+      </section>
+    </div>`;
+}
+
+function renderSimulate(mount) {
+  const tagOpts = DATA.groupTags.map(t => `<option value="${esc(t)}" ${SIM.groupTag === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  mount.innerHTML = `
+    <div class="fade sim-grid" style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${demoBanner()}
+        <div class="card">
+          <div class="panel-head">
+            <div class="panel-title"><div class="eyebrow">Simulation</div><div class="title">Device</div></div>
+            ${isAuthed ? `<button class="btn btn-ghost" onclick="openDevicePicker()">Browse</button>` : ''}
+          </div>
+          <div class="stack-12">
+            <div>
+              <label class="lbl">Group Tag</label>
+              <select class="inp" id="sim-tag" onchange="SIM.groupTag=this.value;simToUrl();"><option value="">None</option>${tagOpts}</select>
+              <input class="inp" style="margin-top:6px;" placeholder="Or type a custom tag…" oninput="SIM.groupTag=this.value;document.getElementById('sim-tag').value='';simToUrl();" />
+            </div>
+            <div><label class="lbl">Serial</label><input class="inp" value="${esc(SIM.serial)}" oninput="SIM.serial=this.value;simToUrl();" /></div>
+            <div><label class="lbl">Manufacturer</label><input class="inp" value="${esc(SIM.mfg)}" oninput="SIM.mfg=this.value;simToUrl();" /></div>
+            <div><label class="lbl">Model</label><input class="inp" value="${esc(SIM.model)}" oninput="SIM.model=this.value;simToUrl();" /></div>
+            <div><label class="lbl">OS Version</label><input class="inp" value="${esc(SIM.osVer)}" oninput="SIM.osVer=this.value;simToUrl();" /></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div class="panel-title"><div class="eyebrow">Simulation</div><div class="title">User</div></div>
+            ${isAuthed ? `<button class="btn btn-ghost" onclick="openUserPicker()">Browse</button>` : ''}
+          </div>
+          <div class="stack-12">
+            <div><label class="lbl">UPN</label><input class="inp" value="${esc(SIM.upn)}" oninput="SIM.upn=this.value;simToUrl();" /></div>
+            <div><label class="lbl">Department</label><input class="inp" value="${esc(SIM.dept)}" oninput="SIM.dept=this.value;simToUrl();" /></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-accent" style="flex:1;" onclick="runSim()">See what applies</button>
+          <button class="btn btn-ghost" onclick="copySimLink()" title="Copy shareable link">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M5 11l-1 1a2.1 2.1 0 01-3-3l2-2a2.1 2.1 0 013 0M11 5l1-1a2.1 2.1 0 013 3l-2 2a2.1 2.1 0 01-3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Copy link
+          </button>
+        </div>
+      </div>
+
+      <div id="sim-out">
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:10px;text-align:center;color:var(--text3);">
+          <div style="font-size:32px;opacity:.25;">⊂</div>
+          <div class="title">Run a simulation</div>
+          <div class="desc">Fill in the device properties and click See what applies.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="device-picker" class="modal-bg">
+      <div class="modal-box">
+        <div class="modal-head"><div class="panel-title"><div class="eyebrow">Devices</div><div class="title">Browse Devices</div></div><button class="btn btn-ghost" onclick="closeModal('device-picker')">Close</button></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);"><input class="inp" id="device-search" placeholder="Search by device name or serial…" oninput="filterDevicePicker(this.value)" /></div>
+        <div id="device-list" class="modal-list"></div>
+      </div>
+    </div>
+
+    <div id="user-picker" class="modal-bg">
+      <div class="modal-box">
+        <div class="modal-head"><div class="panel-title"><div class="eyebrow">Users</div><div class="title">Browse Users</div></div><button class="btn btn-ghost" onclick="closeModal('user-picker')">Close</button></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px;"><input class="inp" id="user-search" placeholder="Search by name or UPN…" style="flex:1;" /><button class="btn btn-accent" onclick="searchUsers()">Search</button></div>
+        <div id="user-list" class="modal-list"></div>
+      </div>
+    </div>`;
+}
+
+function closeModal(id) { el(id).style.display = 'none'; }
+
+function openDevicePicker() { el('device-picker').style.display = 'flex'; renderDeviceList(DATA.managedDevices); }
+function filterDevicePicker(q) {
+  const query = (q || '').toLowerCase();
+  const filtered = DATA.managedDevices.filter(d => !query || (d.deviceName || '').toLowerCase().includes(query) || (d.serialNumber || '').toLowerCase().includes(query));
+  renderDeviceList(filtered);
+}
+function renderDeviceList(devices) {
+  const mount = el('device-list');
+  if (!mount) return;
+  if (!devices.length) { mount.innerHTML = `<div class="card-sm" style="margin:12px;">No devices found</div>`; return; }
+  mount.innerHTML = devices.slice(0, 100).map(d => `
+    <div class="list-row" onclick='selectDevice(${JSON.stringify(d).replace(/'/g, '&#39;')})'>
+      <div class="avatar">💻</div>
+      <div style="flex:1;min-width:0;">
+        <div class="cell-title" style="margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(d.deviceName || 'Unknown')}</div>
+        <div class="cell-sub">${esc(d.serialNumber || '')}${d.groupTag ? ` · ${esc(d.groupTag)}` : ''}${d._source === 'autopilot-only' ? ` · <span style="color:var(--amber);">Autopilot only</span>` : ''}</div>
+      </div>
+      <div class="cell-sub">${esc(d.model || '')}</div>
+    </div>`).join('');
+}
+function selectDevice(d) {
+  SIM.serial = d.serialNumber || '';
+  SIM.mfg = d.manufacturer || '';
+  SIM.model = d.model || '';
+  SIM.osVer = d.osVersion || '10.0.26100';
+  SIM.groupTag = d.groupTag || '';
+  SIM.deviceId = d.id || '';
+  SIM.azureDeviceId = d.azureADDeviceId || '';
+  // Auto-populate primary user if enrolled device has one
+  if (d.userPrincipalName && !SIM.upn) SIM.upn = d.userPrincipalName;
+  closeModal('device-picker');
+  simToUrl();
+  renderSimulate(el('content-area'));
+}
+
+function openUserPicker() {
+  el('user-picker').style.display = 'flex';
+  el('user-list').innerHTML = `<div class="card-sm" style="margin:12px;">Type a name and click Search</div>`;
+}
+async function searchUsers() {
+  const q = el('user-search').value.trim();
+  const mount = el('user-list');
+  mount.innerHTML = `<div class="card-sm" style="margin:12px;display:flex;align-items:center;gap:8px;"><div class="spin"></div> Searching…</div>`;
+  try {
+    const url = q
+      ? `https://graph.microsoft.com/v1.0/users?$search="displayName:${encodeURIComponent(q)}" OR "userPrincipalName:${encodeURIComponent(q)}"&$select=id,displayName,userPrincipalName,department,jobTitle&$top=25`
+      : `https://graph.microsoft.com/v1.0/users?$select=id,displayName,userPrincipalName,department,jobTitle&$top=25&$orderby=displayName`;
+    const token = await getAccessToken();
+    const res = await fetch(url, { headers: { Authorization:`Bearer ${token}`, 'ConsistencyLevel':'eventual' } });
+    const data = await res.json();
+    const users = data.value || [];
+    if (!users.length) { mount.innerHTML = `<div class="card-sm" style="margin:12px;">No users found</div>`; return; }
+    mount.innerHTML = users.map(u => `
+      <div class="list-row" onclick='selectUser(${JSON.stringify(u).replace(/'/g, '&#39;')})'>
+        <div class="avatar">👤</div>
+        <div style="flex:1;min-width:0;">
+          <div class="cell-title" style="margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(u.displayName || '')}</div>
+          <div class="cell-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(u.userPrincipalName || '')}</div>
+        </div>
+        <div class="cell-sub">${esc(u.department || '')}</div>
+      </div>`).join('');
+  } catch (e) {
+    mount.innerHTML = `<div class="card-sm" style="margin:12px;color:var(--red);">${esc(e.message)}</div>`;
+  }
+}
+function selectUser(u) {
+  SIM.upn = u.userPrincipalName || '';
+  SIM.dept = u.department || '';
+  SIM.displayName = u.displayName || '';
+  SIM.userId = u.id || '';
+  closeModal('user-picker');
+  simToUrl();
+  renderSimulate(el('content-area'));
+}
+
+async function runSim() {
+  const tag = SIM.groupTag;
+
+  // Show loading state while we fetch memberOf
+  el('sim-out').innerHTML = `<div class="card" style="display:flex;align-items:center;justify-content:center;min-height:200px;gap:12px;color:var(--text3);"><div class="spin"></div><span>Resolving group membership…</span></div>`;
+
+  // ── Fetch actual memberOf from Graph ──
+  let deviceGroupIds = new Set();
+  let userGroupIds = new Set();
+  const memberErrors = [];
+
+  if (isAuthed && SIM.azureDeviceId) {
+    try {
+      const res = await graphGet(`https://graph.microsoft.com/v1.0/devices(deviceId='${SIM.azureDeviceId}')/memberOf?$select=id,displayName`);
+      (res || []).forEach(g => { if (g.id) deviceGroupIds.add(g.id); });
+    } catch (e) { memberErrors.push('Device memberOf: ' + e.message); }
+  }
+
+  if (isAuthed && SIM.userId) {
+    try {
+      const res = await graphGet(`https://graph.microsoft.com/v1.0/users/${SIM.userId}/memberOf?$select=id,displayName`);
+      (res || []).forEach(g => { if (g.id) userGroupIds.add(g.id); });
+    } catch (e) { memberErrors.push('User memberOf: ' + e.message); }
+  }
+
+  // Rule-based eval as fallback (for devices not enrolled / no azureDeviceId)
+  const props = {
+    device: { devicePhysicalIds: tag ? ['[ZTDId]', `[OrderID]:${tag}`] : ['[ZTDId]'], serialNumber: SIM.serial, manufacturer: SIM.mfg, model: SIM.model, osVersion: SIM.osVer, operatingSystem: 'Windows', groupTag: tag },
+    user: { userPrincipalName: SIM.upn, department: SIM.dept }
+  };
+
+  // Union: actual membership + rule evaluation
+  const ruleMatched = DATA.groups.filter(g => isDyn(g) && g.membershipRule && evalRule(g.membershipRule, props));
+  const allMatchedIds = new Set([...deviceGroupIds, ...userGroupIds, ...ruleMatched.map(g => g.id)]);
+  const mG = DATA.groups.filter(g => allMatchedIds.has(g.id));
+
+  // Helper: does an assignment target hit any of our matched groups OR All Devices / All Users?
+  // (User groups contribute only to "allUsers" broad match and explicit group matches)
+  const hitsInclude = x => {
+    if (x.kind === 'allDevices') return true;
+    if (x.kind === 'allUsers') return !!SIM.upn || SIM.userId; // All Users hits if user context given
+    if (x.group) return allMatchedIds.has(x.group.id);
+    return false;
+  };
+  const hitsExclude = x => {
+    if (x.kind === 'exclude' && x.group) return allMatchedIds.has(x.group.id);
+    return false;
+  };
+
+  const mP = DATA.autopilotProfiles.filter(p => resolveAssignments(p).some(hitsInclude));
+  const mE = DATA.enrollmentStatusPages.filter(e => resolveAssignments(e).some(hitsInclude));
+  const mPol = allPolicies().filter(p => {
+    const a = resolveAssignments(p);
+    if (!a.some(hitsInclude)) return false;
+    return !a.some(hitsExclude);
+  });
+  const mA = DATA.apps.filter(a => {
+    const asn = resolveAssignments(a);
+    if (!asn.some(hitsInclude)) return false;
+    return !asn.some(hitsExclude);
+  });
+
+  const byType = {};
+  mPol.forEach(p => { if (!byType[p._t]) byType[p._t] = []; byType[p._t].push(p); });
+
+  // Build a deeper map per applied item: what assignment + what filter + scope classification
+  function describeApplied(item) {
+    const a = resolveAssignments(item);
+    const raw = item.assignments || [];
+    let matchedRaw = null;
+    for (let i = 0; i < raw.length; i++) {
+      const resolved = a[i];
+      if (!resolved || resolved.kind === 'exclude') continue;
+      if (hitsInclude(resolved)) { matchedRaw = raw[i]; break; }
+    }
+    const scope = matchedRaw
+      ? (a.some(x => x.kind === 'allDevices' || x.kind === 'allUsers') ? 'Broad' : 'Targeted')
+      : 'None';
+    const filterId = matchedRaw?.target?.deviceAndAppManagementAssignmentFilterId || matchedRaw?.deviceAndAppManagementAssignmentFilterId || null;
+    const filterType = matchedRaw?.target?.deviceAndAppManagementAssignmentFilterType || matchedRaw?.deviceAndAppManagementAssignmentFilterType || null;
+    return { scope, filterId, filterType };
+  }
+
+  // Enrich matched items with their filter + scope info
+  const mPolEnriched = mPol.map(p => ({ ...p, ...describeApplied(p) }));
+  const mAEnriched = mA.map(a => ({ ...a, ...describeApplied(a) }));
+
+  const NW = 170, NH = 42, PX = 70, PY = 10;
+  const col0 = 20;
+  const col1 = col0 + NW + PX;  // AP Profile / ESP
+  const col2 = col1 + NW + PX;  // Groups
+  const col3 = col2 + NW + PX;  // Configs & Apps
+  const col4 = col3 + NW + PX;  // Filters
+  const col5 = col4 + 130 + PX; // Scope
+  const FW = 130, SW = 100;     // filter + scope column widths
+  const svgW = col5 + SW + 20;
+
+  const allOut = [...mPolEnriched, ...mAEnriched];
+  // For each AP Profile / ESP, find which matched group OR broad scope drives its assignment
+  function linkedScopeForItem(item) {
+    const resolved = resolveAssignments(item);
+    for (const r of resolved) {
+      if (r.kind === 'exclude') continue;
+      if (r.kind === 'allDevices') return { type: 'broad', label: 'All Devices' };
+      if (r.kind === 'allUsers')   return { type: 'broad', label: 'All Users' };
+      if (r.group && mG.some(g => g.id === r.group.id)) return { type: 'group', group: r.group };
+    }
+    return null;
+  }
+
+  const midNodes = [
+    ...mP.map(p => {
+      const link = linkedScopeForItem(p);
+      // Sub stays as deploymentMode — broad scope is now shown in its own pseudo-group node
+      return { label:p.displayName, sub: p.deploymentMode || '', stroke:'#74a8d8', fill:'rgba(116,168,216,.06)', kind:'profile', linkedScope: link };
+    }),
+    ...mE.map(e => {
+      const link = linkedScopeForItem(e);
+      return { label:e.displayName, sub: 'ESP', stroke:'#c9a45f', fill:'rgba(201,164,95,.06)', kind:'esp', linkedScope: link };
+    }),
+  ];
+
+  // Detect which broad-scope pseudo-groups are needed (only render if at least one item targets them)
+  const needAllDevices = [...midNodes, ...allOut].some(it => {
+    const link = it.linkedScope ?? linkedScopeForItem(it);
+    return link?.type === 'broad' && link.label === 'All Devices';
+  });
+  const needAllUsers = [...midNodes, ...allOut].some(it => {
+    const link = it.linkedScope ?? linkedScopeForItem(it);
+    return link?.type === 'broad' && link.label === 'All Users';
+  });
+
+  // Build the full ordered list of group-column nodes: broad scopes first (highlighted), then real groups
+  const groupColumnNodes = [
+    ...(needAllDevices ? [{ id: '__allDevices__', displayName: 'All Devices', kind: 'broad', stroke: '#c9a45f', fill: 'rgba(201,164,95,.10)' }] : []),
+    ...(needAllUsers ? [{ id: '__allUsers__', displayName: 'All Users', kind: 'broad', stroke: '#c9a45f', fill: 'rgba(201,164,95,.10)' }] : []),
+    ...mG.map(g => ({ id: g.id, displayName: g.displayName, kind: 'group', stroke: '#9b8db8', fill: 'rgba(155,141,184,.06)', isDynamic: isDyn(g) })),
+  ];
+
+  const rows = Math.max(groupColumnNodes.length, midNodes.length, allOut.length, 1);
+  const svgH = rows * (NH + PY) + 86;
+  const sY = i => 54 + i * (NH + PY);
+
+  function curve(x1, y1, x2, y2, col, dash='', width=1.4, opacity=0.55) {
+    const mx = (x1 + x2) / 2;
+    return `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${col}" stroke-width="${width}" opacity="${opacity}" ${dash}/>`;
+  }
+  function node(x, y, w, label, sub, fill, stroke) {
+    const maxChars = Math.floor(w / 9);
+    const l = String(label || '').length > maxChars ? String(label).slice(0, maxChars - 1) + '…' : String(label || '');
+    const s = sub && String(sub).length > maxChars + 2 ? String(sub).slice(0, maxChars + 1) + '…' : String(sub || '');
+    return `<rect x="${x}" y="${y}" width="${w}" height="${NH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/><text x="${x+12}" y="${y+(s ? 17 : 26)}" font-size="11" font-weight="500" fill="${stroke}" font-family="Inter">${esc(l)}</text>${s ? `<text x="${x+12}" y="${y+31}" font-size="9" fill="${stroke}" opacity=".7" font-family="Inter">${esc(s)}</text>` : ''}`;
+  }
+  // Small text label near the SOURCE end of a curve — shows group name between AP Profile and Group
+  // posPct = where along the curve (0..1), yOffset = vertical pixel offset to break ties
+  function edgeLabel(x1, y1, x2, y2, text, color, posPct = 0.3, yOffset = 0) {
+    const t = String(text || '');
+    const short = t.length > 16 ? t.slice(0, 15) + '…' : t;
+    const w = short.length * 6 + 20;
+    const lx = x1 + (x2 - x1) * posPct;
+    const ly = y1 + (y2 - y1) * posPct + yOffset;
+    return `<g><rect x="${lx - w/2}" y="${ly - 9}" width="${w}" height="18" rx="4" fill="var(--bg)" stroke="${color}" stroke-width="1" opacity=".98"/><text x="${lx}" y="${ly + 4}" font-size="9.5" font-weight="500" fill="${color}" text-anchor="middle" font-family="Inter">via ${esc(short)}</text></g>`;
+  }
+
+  // Color based on item type (per your existing per-subcategory palette)
+  function colorFor(p) {
+    if (p._t === 'Compliance') return '#c9a45f';
+    if (p._t === 'EP Security') return '#c26a6a';
+    if (p._t === 'App Protection') return '#9b8db8';
+    if (p._t) return '#59b08f';          // other policy types
+    return '#74a8d8';                     // apps (have no _t)
+  }
+
+  const deviceY = sY(Math.max(0, (mG.length - 1) / 2));
+  let svgNodes = '', svgEdges = '', svgLabels = '';
+
+  // Column 0: Device
+  svgNodes += node(col0, deviceY, NW, SIM.model || 'Device', tag || 'No group tag', 'rgba(255,255,255,.02)', '#eceef1');
+
+  // Column 1: AP Profile / ESP — remember Y positions for linking to groups
+  const midNodeYs = [];
+  midNodes.forEach((n, i) => {
+    const ny = sY(i);
+    midNodeYs.push({ y: ny, linkedScope: n.linkedScope, stroke: n.stroke });
+    svgEdges += curve(col0 + NW, deviceY + NH / 2, col1, ny + NH / 2, n.stroke);
+    svgNodes += node(col1, ny, NW, n.label, n.sub, n.fill, n.stroke);
+  });
+
+  // Column 2: Groups — render broad pseudo-groups + real groups, remember Y for linking
+  const groupYs = {};
+  groupColumnNodes.forEach((g, i) => {
+    const gy = sY(i);
+    groupYs[g.id] = gy;
+    const sub = g.kind === 'broad' ? 'Broad scope' : (g.isDynamic ? 'Dynamic group' : 'Static group');
+    svgNodes += node(col2, gy, NW, g.displayName, sub, g.fill, g.stroke);
+  });
+
+  // Helper: map a linkedScope object to a Y-position in the Groups column
+  function groupColumnYFor(link) {
+    if (!link) return null;
+    if (link.type === 'broad') {
+      const id = link.label === 'All Devices' ? '__allDevices__' : '__allUsers__';
+      return groupYs[id] !== undefined ? groupYs[id] : null;
+    }
+    if (link.type === 'group') {
+      return groupYs[link.group.id] !== undefined ? groupYs[link.group.id] : null;
+    }
+    return null;
+  }
+
+  // Thick, solid "via" edges from AP Profile → linked Group/scope (visual continuity)
+  midNodeYs.forEach(({ y, linkedScope, stroke }, idx) => {
+    if (!linkedScope) return;
+    const gy = groupColumnYFor(linkedScope);
+    if (gy === null) return;
+    const label = linkedScope.type === 'broad' ? linkedScope.label : linkedScope.group.displayName;
+    // Thick solid edge with the profile's color, linking AP Profile to its driving source
+    svgEdges += curve(col1 + NW, y + NH / 2, col2, gy + NH / 2, stroke, '', 2.2, 0.75);
+    // Stagger labels: alternate horizontal position AND vertical offset so they never overlap
+    const posPct = 0.30 + (idx % 3) * 0.16;       // 0.30, 0.46, 0.62
+    const yOffset = (idx % 2 === 0 ? -1 : 1) * 12; // -12px, +12px alternating
+    svgLabels += edgeLabel(col1 + NW, y + NH / 2, col2, gy + NH / 2, label, stroke, posPct, yOffset);
+  });
+
+  // Column 3-5: Configs/Apps → Filter → Scope (per row)
+  // Each row's edge starts from its actual driving source in the Groups column
+  allOut.forEach((p, i) => {
+    const py = sY(i);
+    const stroke = colorFor(p);
+    const fill = stroke + '14';
+
+    // Find which matched group OR broad scope drives this item's assignment
+    const link = linkedScopeForItem(p);
+    const gy = groupColumnYFor(link);
+
+    let srcX, srcY;
+    if (gy !== null) {
+      // Edge starts from the appropriate node in Groups column (real group or pseudo "All …")
+      srcX = col2 + NW;
+      srcY = gy + NH / 2;
+    } else {
+      // No source resolved — fall back to device
+      srcX = col0 + NW;
+      srcY = deviceY + NH / 2;
+    }
+
+    // Edge from source → Config/App
+    svgEdges += curve(srcX, srcY, col3, py + NH / 2, stroke, 'stroke-dasharray="5 4"');
+
+    svgNodes += node(col3, py, NW, p.name || p.displayName || '', p._t || 'App', fill, stroke);
+
+    // Filter node (if any)
+    const filterStroke = '#c9a45f';
+    const filterFill = 'rgba(201,164,95,.08)';
+    if (p.filterId) {
+      svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, filterStroke);
+      svgNodes += node(col4, py, FW, p.filterId.slice(0, 8) + '…', p.filterType || 'filter', filterFill, filterStroke);
+    } else {
+      // Dim placeholder for "no filter"
+      svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" font-family="Inter" opacity=".5">No filter</text>`;
+      svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, '#ffffff', 'stroke-dasharray="2 4"', 1, 0.2);
+    }
+
+    // Scope node
+    const scopeStroke = p.scope === 'Broad' ? '#c9a45f' : p.scope === 'Targeted' ? '#59b08f' : '#c26a6a';
+    const scopeFill = scopeStroke + '20';
+    svgEdges += curve(col4 + FW, py + NH / 2, col5, py + NH / 2, scopeStroke);
+    svgNodes += node(col5, py, SW, p.scope, '', scopeFill, scopeStroke);
+  });
+
+  const hdr = (x, label, col) => `<text x="${x}" y="34" font-size="10" font-weight="500" fill="${col}" opacity=".8" font-family="Inter" letter-spacing="1">${label}</text>`;
+  // Order: edges first (background), then labels over edges, then nodes on top
+  const svg = `<svg width="${svgW}" height="${svgH}" style="min-width:${svgW}px;">${hdr(col0,'DEVICE','#eceef1')}${hdr(col1,'AP PROFILE / ESP','#74a8d8')}${hdr(col2,'GROUPS','#9b8db8')}${hdr(col3,'CONFIGS & APPS','#59b08f')}${hdr(col4,'FILTERS','#c9a45f')}${hdr(col5,'SCOPE','#eceef1')}${svgEdges}${svgLabels}${svgNodes}</svg>`;
+
+  // Info banner showing where group membership came from
+  const actualCount = deviceGroupIds.size + userGroupIds.size;
+  const infoBanner = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      ${SIM.azureDeviceId ? `<span class="tag tag-targeted tag-plain">Device memberships: ${deviceGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">Device: no Entra ID (using rules)</span>`}
+      ${SIM.userId ? `<span class="tag tag-targeted tag-plain">User memberships: ${userGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">User: not selected</span>`}
+      ${ruleMatched.length ? `<span class="tag tag-purple tag-plain">Rule-matched: ${ruleMatched.length}</span>` : ''}
+      ${memberErrors.length ? `<span class="tag tag-unassigned tag-plain">${esc(memberErrors[0])}</span>` : ''}
+    </div>`;
+
+  el('sim-out').innerHTML = `
+    <div class="fade" style="display:flex;flex-direction:column;gap:14px;">
+      ${infoBanner}
+      <div class="card" style="overflow-x:auto;">${svg}</div>
+      <div class="card">
+        <div class="panel-head"><div class="panel-title"><div class="eyebrow">Groups</div><div class="title">Matched Groups (${mG.length})</div></div></div>
+        ${mG.length ? mG.map(g => {
+          const source = deviceGroupIds.has(g.id) ? 'Device membership'
+                       : userGroupIds.has(g.id) ? 'User membership'
+                       : 'Rule match';
+          const sourceColor = source === 'Rule match' ? 'var(--purple)' : 'var(--green)';
+          return `<div class="card-sm" style="margin-bottom:10px;"><div class="title-row"><div class="title-block"><div class="title">${esc(g.displayName)}</div><div class="desc" style="color:${sourceColor};">${source}${isDyn(g) ? ' · Dynamic group' : ' · Static group'}</div></div></div>${g.membershipRule ? `<div class="mono">${esc(g.membershipRule)}</div>` : ''}</div>`;
+        }).join('') : `<div class="empty-note">No matching groups found.${SIM.azureDeviceId || SIM.userId ? '' : ' Select a device or user to resolve actual membership.'}</div>`}
+      </div>
+      <div class="card">
+        <div class="panel-head"><div class="panel-title"><div class="eyebrow">Policies</div><div class="title">Applied Policies (${mPol.length})</div></div></div>
+        ${Object.entries(byType).length ? Object.entries(byType).map(([t, pols]) => `<div style="margin-bottom:12px;"><div class="eyebrow">${esc(t)} (${pols.length})</div><div class="meta-row" style="margin-top:8px;">${pols.map(p => `<span class="tag tag-plain">${esc(p.name || p.displayName || '')}</span>`).join('')}</div></div>`).join('') : `<div class="empty-note">No policies apply.</div>`}
+      </div>
+      <div class="card">
+        <div class="panel-head"><div class="panel-title"><div class="eyebrow">Apps</div><div class="title">Targeted Apps (${mA.length})</div></div></div>
+        ${mA.length ? `<div class="meta-row" style="margin-top:0;">${mA.map(a => `<span class="tag tag-plain">${esc(a.displayName)}</span>`).join('')}</div>` : `<div class="empty-note">No apps targeted.</div>`}
+      </div>
+    </div>`;
+}
+
+function evalRule(rule, props) { try { return evalExpr(rule.trim(), props); } catch { return false; } }
+function evalExpr(e, p) {
+  e = e.trim();
+  if (e.startsWith('(') && findClose(e, 0) === e.length - 1) e = e.slice(1, -1).trim();
+  const or = splitTop(e, '-or'); if (or.length > 1) return or.some(x => evalExpr(x, p));
+  const and = splitTop(e, '-and'); if (and.length > 1) return and.every(x => evalExpr(x, p));
+  return evalCond(e, p);
+}
+function evalCond(c, p) {
+  c = c.trim();
+  if (c.startsWith('(') && c.endsWith(')')) c = c.slice(1, -1).trim();
+  if (c.toLowerCase().startsWith('-not ')) return !evalExpr(c.slice(5), p);
+
+  // device.devicePhysicalIds -any (_ -op "val")   <- parenthesized
+  let m = c.match(/^([\w.]+)\s+-any\s+\(\s*_\s+(-\w+)\s+"([^"]*)"\s*\)/i);
+  if (m) { const a = getPV(p, m[1]); if (!Array.isArray(a)) return false; return a.some(i => applyOp(String(i), m[2], m[3])); }
+
+  // device.devicePhysicalIds -any _ -op "val"     <- unparenthesized
+  m = c.match(/^([\w.]+)\s+-any\s+_\s+(-\w+)\s+"([^"]*)"/i);
+  if (m) { const a = getPV(p, m[1]); if (!Array.isArray(a)) return false; return a.some(i => applyOp(String(i), m[2], m[3])); }
+
+  m = c.match(/^([\w.]+)\s+(-\w+)\s+"([^"]*)"/i); if (m) return applyOp(String(getPV(p, m[1]) || ''), m[2], m[3]);
+  m = c.match(/^([\w.]+)\s+(-\w+)\s+(\S+)/i); if (m) return applyOp(String(getPV(p, m[1]) || ''), m[2], m[3]);
+  return false;
+}
+function applyOp(v, op, t) {
+  const vl = v.toLowerCase(), tl = t.toLowerCase();
+  switch (op.toLowerCase()) {
+    case '-eq': return vl === tl;
+    case '-ne': return vl !== tl;
+    case '-startswith': return vl.startsWith(tl);
+    case '-endswith': return vl.endsWith(tl);
+    case '-contains': return vl.includes(tl);
+    case '-notcontains': return !vl.includes(tl);
+    case '-match': try { return new RegExp(t, 'i').test(v); } catch { return false; }
+    default: return false;
+  }
+}
+function getPV(props, path) { let c = props; for (const k of path.split('.')) { c = c?.[k]; if (c === undefined) return ''; } return c; }
+function findClose(s, i) { let d = 0; for (; i < s.length; i++) { if (s[i] === '(') d++; else if (s[i] === ')') if (--d === 0) return i; } return -1; }
+function splitTop(e, sep) {
+  const parts = []; const sl = sep.toLowerCase(); let d = 0; let last = 0;
+  for (let i = 0; i < e.length; i++) {
+    if (e[i] === '(') d++;
+    else if (e[i] === ')') d--;
+    else if (d === 0 && e.slice(i, i + sl.length).toLowerCase() === sl) { const block = e.slice(last, i).trim(); if (block) parts.push(block); i += sl.length - 1; last = i + 1; }
+  }
+  const tail = e.slice(last).trim(); if (tail) parts.push(tail); return parts;
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { restoreFromUrl(); initMsal(); renderCurrentTab(); });
+else { restoreFromUrl(); initMsal(); renderCurrentTab(); }
+</script>
+
+<script>
+// ── Tweaks ──
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "#6da2d0",
+  "density": "default",
+  "fontScale": 1
+}/*EDITMODE-END*/;
+let tweaks = { ...TWEAK_DEFAULTS };
+
+function applyTweaks() {
+  const root = document.documentElement;
+  root.style.setProperty('--accent', tweaks.accent);
+  const dense = tweaks.density === 'compact';
+  root.style.setProperty('--radius', dense ? '5px' : '8px');
+  root.style.setProperty('--radius-sm', dense ? '3px' : '5px');
+  document.body.style.fontSize = tweaks.fontScale === 1 ? '' : (tweaks.fontScale * 100) + '%';
+}
+applyTweaks();
+
+(function() {
+  const panel = document.createElement('div');
+  panel.id = 'tweaks-panel';
+  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:800;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;flex-direction:column;gap:14px;font-family:Inter,sans-serif;';
+  panel.innerHTML = `
+    <div style="font-size:12px;font-weight:600;color:var(--text);letter-spacing:-0.01em;">Tweaks</div>
+    <div>
+      <div class="lbl">Accent color</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${[['#4ea78a','Teal'],['#6da2d0','Blue'],['#9488b4','Purple'],['#c49a52','Amber'],['#bb6060','Rose']].map(([c,n]) =>
+          `<div onclick="setTweak('accent','${c}')" title="${n}" data-swatch="${c}" style="width:22px;height:22px;border-radius:5px;background:${c};cursor:pointer;border:2px solid transparent;transition:border-color .15s;"></div>`
+        ).join('')}
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Density</div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost" id="tw-dd" style="flex:1;font-size:11px;" onclick="setTweak('density','default')">Default</button>
+        <button class="btn btn-ghost" id="tw-dc" style="flex:1;font-size:11px;" onclick="setTweak('density','compact')">Compact</button>
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Text scale <span id="tw-sv">${Math.round(tweaks.fontScale*100)}%</span></div>
+      <input type="range" min="0.85" max="1.15" step="0.05" value="${tweaks.fontScale}"
+        oninput="setTweak('fontScale',parseFloat(this.value));document.getElementById('tw-sv').textContent=Math.round(parseFloat(this.value)*100)+'%'"
+        style="width:100%;accent-color:var(--accent);" />
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  function updateSwatches() {
+    panel.querySelectorAll('[data-swatch]').forEach(s => {
+      s.style.borderColor = s.dataset.swatch === tweaks.accent ? 'rgba(255,255,255,.7)' : 'transparent';
+    });
+    const c = tweaks.density === 'compact';
+    const dd = document.getElementById('tw-dd'); const dc = document.getElementById('tw-dc');
+    if(dd){dd.style.background=!c?'var(--text)':'';dd.style.color=!c?'var(--bg4)':'';}
+    if(dc){dc.style.background=c?'var(--text)':'';dc.style.color=c?'var(--bg4)':'';}
+  }
+
+  window.setTweak = function(k,v) {
+    tweaks[k]=v; applyTweaks(); updateSwatches();
+    window.parent.postMessage({type:'__edit_mode_set_keys',edits:tweaks},'*');
+  };
+
+  window.addEventListener('message', e => {
+    if(e.data?.type==='__activate_edit_mode'){panel.style.display='flex';updateSwatches();}
+    if(e.data?.type==='__deactivate_edit_mode')panel.style.display='none';
+  });
+  window.parent.postMessage({type:'__edit_mode_available'},'*');
+})();
+</script>
+</body>
+</html>

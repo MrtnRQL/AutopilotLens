@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+</head>
+<body>
+  <script>
+    // This page handles the MSAL popup redirect response
+    if (typeof msal !== 'undefined') {
+      new msal.PublicClientApplication({
+        auth: { clientId: '990cc930-4457-4946-a9da-da0a281eb7b5' },
+        cache: { cacheLocation: 'sessionStorage' }
+      }).handleRedirectPromise().catch(() => {});
+    }
+  </script>
+</body>
+</html>
