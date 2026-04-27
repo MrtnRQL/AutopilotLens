@@ -7,6 +7,9 @@
   <meta name="description" content="Visualize and simulate Microsoft Intune Autopilot flows. See exactly what policies, apps, and profiles apply to your devices.">
   <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GoatCounter analytics -->
+  <script data-goatcounter="https://autopilotlens.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
     :root {
@@ -539,11 +542,21 @@ function restoreFromUrl() {
 }
 
 function copySimLink() {
+  track('copy-link', 'Simulation link copied');
   simToUrl();
   const url = window.location.href;
   navigator.clipboard.writeText(url)
     .then(() => showToast('Link copied to clipboard', 'success'))
     .catch(() => showToast('Could not copy link', 'error'));
+}
+
+// GoatCounter event helper — safe no-op if blocked/not loaded
+function track(path, title) {
+  try {
+    if (window.goatcounter && typeof window.goatcounter.count === 'function') {
+      window.goatcounter.count({ path, title, event: true });
+    }
+  } catch (e) { /* never break app on analytics failure */ }
 }
 
 function initMsal() {
@@ -563,6 +576,7 @@ function initMsal() {
 }
 
 async function startLogin() {
+  track('login-click', 'User clicked sign in');
   const btn = el('hdr-connect');
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
   try {
@@ -749,6 +763,7 @@ async function graphGet(url) {
 
 async function refreshData() {
   if (!currentAccount) return;
+  track('refresh', 'Data refresh triggered');
   DATA.loading = true;
   DATA.errors = [];
   el('hdr-syncing').style.display = 'inline-flex';
@@ -842,6 +857,7 @@ async function refreshData() {
 
 function switchTab(tab) {
   currentTab = tab;
+  track(`tab-${tab}`, `Viewed ${tab} tab`);
   ['overview','matrix','simulate'].forEach(id => el(`tab-${id}`).classList.toggle('on', id === tab));
   simToUrl();
   renderCurrentTab();
@@ -1515,6 +1531,7 @@ function selectUser(u) {
 }
 
 async function runSim() {
+  track('simulate-run', 'Simulation executed');
   const tag = SIM.groupTag;
 
   // Show loading state while we fetch memberOf
