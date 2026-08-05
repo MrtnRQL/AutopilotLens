@@ -707,8 +707,8 @@ async function graphGet(url) {
   let next = url;
   let pageCount = 0;
 
-  // Retry helper for first page — 500s often resolve on retry
-  async function fetchWithRetry(fetchUrl, maxAttempts = 3) {
+  // Retry helper for first page — 500s and 429s often resolve on retry
+  async function fetchWithRetry(fetchUrl, maxAttempts = 4) {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       let res;
       try {
@@ -718,8 +718,18 @@ async function graphGet(url) {
         await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
+      // 429 Too Many Requests — respect Retry-After header if present
+      if (res.status === 429 && attempt < maxAttempts) {
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '', 10);
+        const delayMs = (!isNaN(retryAfter) && retryAfter > 0)
+          ? Math.min(retryAfter * 1000, 20000)  // cap at 20s
+          : Math.min(1500 * Math.pow(2, attempt - 1), 10000); // exponential fallback
+        console.warn(`[AAV] 429 rate limit, waiting ${delayMs}ms (attempt ${attempt}/${maxAttempts})`);
+        await new Promise(r => setTimeout(r, delayMs));
+        continue;
+      }
       if (res.status >= 500 && attempt < maxAttempts) {
-        await new Promise(r => setTimeout(r, 800 * attempt)); // 800ms, 1600ms
+        await new Promise(r => setTimeout(r, 800 * attempt)); // 800ms, 1600ms, 2400ms
         continue;
       }
       return res;
@@ -742,8 +752,8 @@ async function graphGet(url) {
     }
     if (res.status === 403) throw new Error('Permission denied (403). Admin consent may be required for one or more scopes.');
 
-    // Still 500 after retries, mid-pagination — return partial
-    if (res.status >= 500 && rows.length > 0) {
+    // Still 429/500 after retries, mid-pagination — return partial
+    if ((res.status === 429 || res.status >= 500) && rows.length > 0) {
       console.warn(`[AAV] ${res.status} on page ${pageCount}, returning ${rows.length} rows collected so far`);
       return rows;
     }
