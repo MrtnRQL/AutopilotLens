@@ -13,26 +13,35 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
     :root {
-      --bg:      #0f1012;
-      --bg2:     #141618;
-      --bg3:     #1a1d20;
-      --bg4:     #0c0d0f;
-      --text:    #e8eaed;
-      --text2:   #a8b0bb;
-      --text3:   #636b76;
-      --border:  rgba(255,255,255,0.07);
-      --border2: rgba(255,255,255,0.12);
-      --hairline:rgba(255,255,255,0.04);
-      --accent:  #4ea78a;
-      --green:   #52a883;
-      --amber:   #c49a52;
-      --red:     #bb6060;
-      --purple:  #9488b4;
-      --blue:    #6da2d0;
+      color-scheme: light;
+      --bg:      #f1f0ed;   /* page */
+      --bg2:     #fbfbf9;   /* card */
+      --bg3:     #f5f4f1;   /* card inside card, table head */
+      --bg4:     #ffffff;   /* inputs */
+      --text:    #23221f;
+      --text2:   #45433e;
+      --text3:   #66635c;   /* 5.8:1 on --bg2 */
+      --border:  #d9d6cf;
+      --border2: #c9c5bc;
+      --border3: #b3aea4;   /* hover */
+      --hairline:#e9e7e2;
+      --wash:    rgba(35,34,31,.035);
+      --wash2:   rgba(35,34,31,.07);
+      --accent:  #0f766e;
+      --accent-hover: #0b5f58;
+      --accent-wash:  #e2eeec;
+      --accent-on-dark: #5eb8ab;
+      --ink:     #23221f;   /* header, later sidebar */
+      --ink-text:#a9a69f;
+      --green:   #2e7550;
+      --amber:   #8a5f0c;
+      --red:     #a33a32;
+      --purple:  #5e4a8a;
+      --blue:    #2a5d8a;
       --radius:  8px;
       --radius-sm: 5px;
-      --shadow:  0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
-      --shadow-md: 0 4px 16px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+      --shadow:  0 1px 2px rgba(35,34,31,.06);
+      --shadow-md: 0 8px 24px rgba(35,34,31,.12), 0 0 0 1px rgba(35,34,31,.06);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -339,6 +348,56 @@
       .layout-2, .sim-grid { grid-template-columns: 1fr !important; }
       .title-row { flex-direction: column; }
     }
+    /* ── Theme: Paper / Deep teal — overrides earlier dark-theme rules ── */
+    ::selection { background: var(--accent-wash); }
+    ::-webkit-scrollbar-thumb { background: var(--wash2); border-color: var(--bg); }
+
+    .hdr { background: var(--ink); border-bottom-color: var(--ink); }
+    .hdr-logo { color: #fbfbf9; }
+    .hdr-logo small { color: var(--ink-text); }
+    #hdr-sub span { color: #fbfbf9 !important; }
+    .hdr-logo-divider { background: rgba(255,255,255,.16); }
+    .hdr-logo-icon { background: rgba(94,184,171,.14); border-color: rgba(94,184,171,.35); }
+    .hdr-logo-icon rect { fill: var(--accent-on-dark); }
+    #hdr-syncing { color: var(--ink-text) !important; }
+    #hdr-live { color: var(--accent-on-dark) !important; }
+    .hdr .pdot { background: var(--accent-on-dark); }
+    .hdr .spin { border-color: rgba(255,255,255,.16); border-top-color: var(--accent-on-dark); }
+    .hdr .btn-ghost { color: var(--ink-text); border-color: rgba(255,255,255,.18); }
+    .hdr .btn-ghost:hover { color: #fbfbf9; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.3); }
+    .hdr .btn-red { color: #e39a92; border-color: rgba(227,154,146,.3); }
+    .hdr .btn-red:hover { background: rgba(227,154,146,.1); border-color: rgba(227,154,146,.5); }
+
+    .nav-t.on { background: var(--wash); }
+    .stat::after { display: none; }
+    .panel-head .title { font-size: 15px; }
+
+    .btn-accent { background: var(--accent); color: #fff; box-shadow: none; }
+    .btn-accent:hover { background: var(--accent-hover); box-shadow: none; }
+    .btn-ghost:hover { background: var(--wash); border-color: var(--border3); }
+    .btn-red { color: var(--red); border-color: rgba(163,58,50,.3); }
+    .btn-red:hover { background: rgba(163,58,50,.06); border-color: rgba(163,58,50,.5); }
+
+    .tag, .chip { background: var(--wash); }
+    .chip:hover { border-color: var(--border3); }
+    .tag-broad      { border-color: rgba(138,95,12,.3); background: rgba(138,95,12,.07); }
+    .tag-targeted   { border-color: rgba(46,117,80,.3); background: rgba(46,117,80,.07); }
+    .tag-unassigned { border-color: rgba(163,58,50,.3); background: rgba(163,58,50,.07); }
+    .tag-purple     { border-color: rgba(94,74,138,.3); background: rgba(94,74,138,.07); }
+    .tag-blue       { border-color: rgba(42,93,138,.3); background: rgba(42,93,138,.07); }
+    .tag-gray       { background: transparent; }
+
+    .tbl th { background: var(--bg3); color: var(--text2); }
+    .tbl tbody tr:nth-child(even) td { background: var(--wash); }
+    .tbl tr:hover td { background: var(--wash2); }
+
+    .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+    .demo-banner, .banner { background: #f3ebdc; border-color: rgba(138,95,12,.25); color: var(--amber); }
+    .modal-bg { background: rgba(35,34,31,.45); }
+    .list-row { border-bottom-color: var(--hairline); }
+    .list-row:hover { background: var(--wash); }
+    .aav-toast { background: var(--ink); color: #fbfbf9; border-color: var(--ink); }
+    .mono, code { color: var(--text2); }
   </style>
 </head>
 <body>
@@ -964,7 +1023,7 @@ function asnTags(policy) {
 }
 
 function demoBanner() {
-  if (DATA.errors.length) return `<div class="demo-banner" style="border-color:rgba(194,106,106,.22);background:rgba(194,106,106,.08);color:#d88383;">⚠ Partial data — ${esc(DATA.errors[0])}</div>`;
+  if (DATA.errors.length) return `<div class="demo-banner" style="border-color:rgba(163,58,50,.25);background:#f4e3e1;color:var(--red);">⚠ Partial data — ${esc(DATA.errors[0])}</div>`;
   return '';
 }
 
@@ -1157,7 +1216,7 @@ function matrixFilterCount(table) {
 }
 
 function filterChip(onclickAttr, label, active) {
-  return `<button class="chip" style="cursor:pointer;${active ? 'background:var(--text);color:var(--bg4);border-color:var(--text);' : ''}" ${onclickAttr}>${esc(label)}</button>`;
+  return `<button class="chip" style="cursor:pointer;${active ? 'background:var(--accent);color:#fff;border-color:var(--accent);' : ''}" ${onclickAttr}>${esc(label)}</button>`;
 }
 
 function groupSelectOptions(selectedId) {
@@ -1655,11 +1714,11 @@ async function runSim() {
     ...mP.map(p => {
       const link = linkedScopeForItem(p);
       // Sub stays as deploymentMode — broad scope is now shown in its own pseudo-group node
-      return { label:p.displayName, sub: p.deploymentMode || '', stroke:'#74a8d8', fill:'rgba(116,168,216,.06)', kind:'profile', linkedScope: link };
+      return { label:p.displayName, sub: p.deploymentMode || '', stroke:'#2a5d8a', fill:'rgba(42,93,138,.07)', kind:'profile', linkedScope: link };
     }),
     ...mE.map(e => {
       const link = linkedScopeForItem(e);
-      return { label:e.displayName, sub: 'ESP', stroke:'#c9a45f', fill:'rgba(201,164,95,.06)', kind:'esp', linkedScope: link };
+      return { label:e.displayName, sub: 'ESP', stroke:'#8a5f0c', fill:'rgba(138,95,12,.07)', kind:'esp', linkedScope: link };
     }),
   ];
 
@@ -1675,9 +1734,9 @@ async function runSim() {
 
   // Build the full ordered list of group-column nodes: broad scopes first (highlighted), then real groups
   const groupColumnNodes = [
-    ...(needAllDevices ? [{ id: '__allDevices__', displayName: 'All Devices', kind: 'broad', stroke: '#c9a45f', fill: 'rgba(201,164,95,.10)' }] : []),
-    ...(needAllUsers ? [{ id: '__allUsers__', displayName: 'All Users', kind: 'broad', stroke: '#c9a45f', fill: 'rgba(201,164,95,.10)' }] : []),
-    ...mG.map(g => ({ id: g.id, displayName: g.displayName, kind: 'group', stroke: '#9b8db8', fill: 'rgba(155,141,184,.06)', isDynamic: isDyn(g) })),
+    ...(needAllDevices ? [{ id: '__allDevices__', displayName: 'All Devices', kind: 'broad', stroke: '#8a5f0c', fill: 'rgba(138,95,12,.10)' }] : []),
+    ...(needAllUsers ? [{ id: '__allUsers__', displayName: 'All Users', kind: 'broad', stroke: '#8a5f0c', fill: 'rgba(138,95,12,.10)' }] : []),
+    ...mG.map(g => ({ id: g.id, displayName: g.displayName, kind: 'group', stroke: '#5e4a8a', fill: 'rgba(94,74,138,.07)', isDynamic: isDyn(g) })),
   ];
 
   const rows = Math.max(groupColumnNodes.length, midNodes.length, allOut.length, 1);
@@ -1702,23 +1761,23 @@ async function runSim() {
     const w = short.length * 6 + 20;
     const lx = x1 + (x2 - x1) * posPct;
     const ly = y1 + (y2 - y1) * posPct + yOffset;
-    return `<g><rect x="${lx - w/2}" y="${ly - 9}" width="${w}" height="18" rx="4" fill="var(--bg)" stroke="${color}" stroke-width="1" opacity=".98"/><text x="${lx}" y="${ly + 4}" font-size="9.5" font-weight="500" fill="${color}" text-anchor="middle" font-family="Inter">via ${esc(short)}</text></g>`;
+    return `<g><rect x="${lx - w/2}" y="${ly - 9}" width="${w}" height="18" rx="4" fill="var(--bg2)" stroke="${color}" stroke-width="1" opacity=".98"/><text x="${lx}" y="${ly + 4}" font-size="9.5" font-weight="500" fill="${color}" text-anchor="middle" font-family="Inter">via ${esc(short)}</text></g>`;
   }
 
   // Color based on item type (per your existing per-subcategory palette)
   function colorFor(p) {
-    if (p._t === 'Compliance') return '#c9a45f';
-    if (p._t === 'EP Security') return '#c26a6a';
-    if (p._t === 'App Protection') return '#9b8db8';
-    if (p._t) return '#59b08f';          // other policy types
-    return '#74a8d8';                     // apps (have no _t)
+    if (p._t === 'Compliance') return '#8a5f0c';
+    if (p._t === 'EP Security') return '#a33a32';
+    if (p._t === 'App Protection') return '#5e4a8a';
+    if (p._t) return '#2e7550';          // other policy types
+    return '#2a5d8a';                     // apps (have no _t)
   }
 
   const deviceY = sY(Math.max(0, (mG.length - 1) / 2));
   let svgNodes = '', svgEdges = '', svgLabels = '';
 
   // Column 0: Device
-  svgNodes += node(col0, deviceY, NW, SIM.model || 'Device', tag || 'No group tag', 'rgba(255,255,255,.02)', '#eceef1');
+  svgNodes += node(col0, deviceY, NW, SIM.model || 'Device', tag || 'No group tag', 'rgba(35,34,31,.03)', '#23221f');
 
   // Column 1: AP Profile / ESP — remember Y positions for linking to groups
   const midNodeYs = [];
@@ -1793,19 +1852,19 @@ async function runSim() {
     svgNodes += node(col3, py, NW, p.name || p.displayName || '', p._t || 'App', fill, stroke);
 
     // Filter node (if any)
-    const filterStroke = '#c9a45f';
-    const filterFill = 'rgba(201,164,95,.08)';
+    const filterStroke = '#8a5f0c';
+    const filterFill = 'rgba(138,95,12,.08)';
     if (p.filterId) {
       svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, filterStroke);
       svgNodes += node(col4, py, FW, p.filterId.slice(0, 8) + '…', p.filterType || 'filter', filterFill, filterStroke);
     } else {
       // Dim placeholder for "no filter"
-      svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" font-family="Inter" opacity=".5">No filter</text>`;
-      svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, '#ffffff', 'stroke-dasharray="2 4"', 1, 0.2);
+      svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(35,34,31,.15)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" font-family="Inter" opacity=".5">No filter</text>`;
+      svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, '#23221f', 'stroke-dasharray="2 4"', 1, 0.2);
     }
 
     // Scope node
-    const scopeStroke = p.scope === 'Broad' ? '#c9a45f' : p.scope === 'Targeted' ? '#59b08f' : '#c26a6a';
+    const scopeStroke = p.scope === 'Broad' ? '#8a5f0c' : p.scope === 'Targeted' ? '#2e7550' : '#a33a32';
     const scopeFill = scopeStroke + '20';
     svgEdges += curve(col4 + FW, py + NH / 2, col5, py + NH / 2, scopeStroke);
     svgNodes += node(col5, py, SW, p.scope, '', scopeFill, scopeStroke);
@@ -1813,7 +1872,7 @@ async function runSim() {
 
   const hdr = (x, label, col) => `<text x="${x}" y="34" font-size="10" font-weight="500" fill="${col}" opacity=".8" font-family="Inter" letter-spacing="1">${label}</text>`;
   // Order: edges first (background), then labels over edges, then nodes on top
-  const svg = `<svg width="${svgW}" height="${svgH}" style="min-width:${svgW}px;">${hdr(col0,'DEVICE','#eceef1')}${hdr(col1,'AP PROFILE / ESP','#74a8d8')}${hdr(col2,'GROUPS','#9b8db8')}${hdr(col3,'CONFIGS & APPS','#59b08f')}${hdr(col4,'FILTERS','#c9a45f')}${hdr(col5,'SCOPE','#eceef1')}${svgEdges}${svgLabels}${svgNodes}</svg>`;
+  const svg = `<svg width="${svgW}" height="${svgH}" style="min-width:${svgW}px;">${hdr(col0,'DEVICE','#23221f')}${hdr(col1,'AP PROFILE / ESP','#2a5d8a')}${hdr(col2,'GROUPS','#5e4a8a')}${hdr(col3,'CONFIGS & APPS','#2e7550')}${hdr(col4,'FILTERS','#8a5f0c')}${hdr(col5,'SCOPE','#23221f')}${svgEdges}${svgLabels}${svgNodes}</svg>`;
 
   // Info banner showing where group membership came from
   const actualCount = deviceGroupIds.size + userGroupIds.size;
@@ -1907,7 +1966,7 @@ else { restoreFromUrl(); initMsal(); renderCurrentTab(); }
 <script>
 // ── Tweaks ──
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accent": "#6da2d0",
+  "accent": "#0f766e",
   "density": "default",
   "fontScale": 1
 }/*EDITMODE-END*/;
@@ -1926,13 +1985,13 @@ applyTweaks();
 (function() {
   const panel = document.createElement('div');
   panel.id = 'tweaks-panel';
-  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:800;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;flex-direction:column;gap:14px;font-family:Inter,sans-serif;';
+  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:800;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;width:220px;box-shadow:var(--shadow-md);display:none;flex-direction:column;gap:14px;font-family:Inter,sans-serif;';
   panel.innerHTML = `
     <div style="font-size:12px;font-weight:600;color:var(--text);letter-spacing:-0.01em;">Tweaks</div>
     <div>
       <div class="lbl">Accent color</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${[['#4ea78a','Teal'],['#6da2d0','Blue'],['#9488b4','Purple'],['#c49a52','Amber'],['#bb6060','Rose']].map(([c,n]) =>
+        ${[['#0f766e','Deep teal'],['#1f6f78','Petrol'],['#1b5e8c','Ocean'],['#2f5bb7','Cobalt'],['#2d4a7a','Ink']].map(([c,n]) =>
           `<div onclick="setTweak('accent','${c}')" title="${n}" data-swatch="${c}" style="width:22px;height:22px;border-radius:5px;background:${c};cursor:pointer;border:2px solid transparent;transition:border-color .15s;"></div>`
         ).join('')}
       </div>
@@ -1955,7 +2014,7 @@ applyTweaks();
 
   function updateSwatches() {
     panel.querySelectorAll('[data-swatch]').forEach(s => {
-      s.style.borderColor = s.dataset.swatch === tweaks.accent ? 'rgba(255,255,255,.7)' : 'transparent';
+      s.style.borderColor = s.dataset.swatch === tweaks.accent ? 'var(--text)' : 'transparent';
     });
     const c = tweaks.density === 'compact';
     const dd = document.getElementById('tw-dd'); const dc = document.getElementById('tw-dc');
