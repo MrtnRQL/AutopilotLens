@@ -416,7 +416,15 @@
     .gp-chiprow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
     .gp-chiprow .gp-lbl { margin: 0 2px 0 10px; }
     .gp-chiprow .gp-lbl:first-child { margin-left: 0; }
-    .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 58px minmax(0, 1.5fr) 112px 64px; cursor: pointer; }
+    .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 58px 72px minmax(0, 1.4fr) 112px 64px; cursor: pointer; }
+    .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .gp-sort { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+    .gp-sort:hover, .gp-sort.on { color: var(--text); }
+    .gp-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .gp-findings { margin-bottom: 14px; }
+    .tr-row.gp-frow { grid-template-columns: 7px minmax(0, 1fr); gap: 10px; }
+    .gp-flink { cursor: pointer; }
+    .gp-flink:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tr-row.gp-mrow { grid-template-columns: minmax(0, 1.4fr) 84px minmax(0, 1fr) 92px 86px; }
     .tr-row.gp-headrow {
       background: var(--bg3); cursor: default; padding-top: 7px; padding-bottom: 7px;
@@ -446,7 +454,10 @@
     @media (max-width: 760px) {
       .tr-row.gp-row, .tr-row.gp-mrow { grid-template-areas: none; grid-template-columns: minmax(0, 1fr) auto auto; }
       .gp-row .tr-main, .gp-mrow .tr-main { grid-area: auto; }
-      .gp-row > :nth-child(2), .gp-row > :nth-child(3), .gp-mrow > :nth-child(2), .gp-mrow > :nth-child(3) { display: none; }
+      .tr-row.gp-row { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+      .gp-row > :nth-child(2), .gp-row > :nth-child(4), .gp-mrow > :nth-child(2), .gp-mrow > :nth-child(3) { display: none; }
+      .tr-row.gp-frow { grid-template-areas: none; grid-template-columns: 7px minmax(0, 1fr); }
+      .gp-frow .tr-main { grid-area: auto; }
     }
 
     /* ── Theme: Paper / Deep teal — overrides earlier dark-theme rules ── */
@@ -593,6 +604,10 @@ const DEMO_DATA = {
       membershipRule:'(device.deviceManufacturer -eq "Lenovo")'
     },
     {
+      id:'grp-lab-devices', displayName:'AP - Lab devices', description:'Lab devices (tag not used yet)', groupTypes:['DynamicMembership'],
+      membershipRule:'(device.devicePhysicalIds -any (_ -contains "[OrderID]:LAB"))'
+    },
+    {
       id:'grp-all-windows', displayName:'All Windows devices', description:'Example static assignment group', groupTypes:[], membershipRule:''
     },
     {
@@ -676,8 +691,13 @@ let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
 const APP_VERSION = '0.2.0';
 // Groups tab: list filters + selection; members are fetched lazily and cached per group
-let GROUPS = { search:'', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false };
+let GROUPS = { search:'', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name', findingsAll:false };
 const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
+const MEMBER_COUNTS = {};   // groupId -> number | { error }
+const COUNTS_PENDING = new Set();   // groupIds with a $count request in flight
+let COUNTS_GEN = 0;         // bumped by refreshData so late results from an old fetch are dropped
+let COUNTS_ABORT = new AbortController();   // aborted by refreshData/signOut: no requests after that
+function resetCountsAbort() { COUNTS_ABORT.abort(); COUNTS_ABORT = new AbortController(); }
 let GROUP_USAGE = {};       // buildGroupUsage() result, rebuilt on each Groups render
 let MATRIX = {
   policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
@@ -851,6 +871,7 @@ function startDemo() {
 
 function signOut() {
   TENANT_NAME = '';
+  resetCountsAbort();
   if (demoMode) {
     demoMode = false;
     isAuthed = false;
@@ -899,22 +920,28 @@ function showToast(message, type='info') {
   setTimeout(() => { t.classList.remove('aav-toast-visible'); setTimeout(() => t.remove(), 260); }, 3200);
 }
 
-async function graphGet(url) {
-  const token = await getAccessToken();
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  let rows = [];
-  let next = url;
-  let pageCount = 0;
+// Sleep that ends early when the signal aborts
+const sleep = (ms, signal) => new Promise(resolve => {
+  if (signal?.aborted) return resolve();
+  const t = setTimeout(resolve, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+});
+const abortError = () => new DOMException('Aborted', 'AbortError');
 
-  // Retry helper for first page — 500s and 429s often resolve on retry
-  async function fetchWithRetry(fetchUrl, maxAttempts = 4) {
+// Retry helper shared by graphGet and graphBatch — 500s and 429s often resolve on retry.
+// With init.signal: an abort is never retried, and waits end early and throw AbortError.
+async function fetchWithRetry(fetchUrl, init, maxAttempts = 4) {
+    const signal = init?.signal;
+    const wait = async ms => { await sleep(ms, signal); if (signal?.aborted) throw abortError(); };
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (signal?.aborted) throw abortError();
       let res;
       try {
-        res = await fetch(fetchUrl, { headers });
+        res = await fetch(fetchUrl, init);
       } catch (e) {
+        if (e.name === 'AbortError' || signal?.aborted) throw e;
         if (attempt === maxAttempts) throw e;
-        await new Promise(r => setTimeout(r, 500 * attempt));
+        await wait(500 * attempt);
         continue;
       }
       // 429 Too Many Requests — respect Retry-After header if present
@@ -924,32 +951,43 @@ async function graphGet(url) {
           ? Math.min(retryAfter * 1000, 20000)  // cap at 20s
           : Math.min(1500 * Math.pow(2, attempt - 1), 10000); // exponential fallback
         console.warn(`[AAV] 429 rate limit, waiting ${delayMs}ms (attempt ${attempt}/${maxAttempts})`);
-        await new Promise(r => setTimeout(r, delayMs));
+        await wait(delayMs);
         continue;
       }
       if (res.status >= 500 && attempt < maxAttempts) {
-        await new Promise(r => setTimeout(r, 800 * attempt)); // 800ms, 1600ms, 2400ms
+        await wait(800 * attempt); // 800ms, 1600ms, 2400ms
         continue;
       }
       return res;
     }
+}
+
+// 401 → reset to signed-out UI; 403 → permission error. Shared by graphGet and graphBatch.
+function throwOnAuthError(res) {
+  if (res.status === 401) {
+    currentAccount = null;
+    isAuthed = false;
+    el('hdr-connect').style.display = 'inline-flex';
+    el('hdr-signout').style.display = 'none';
+    el('hdr-live').style.display = 'none';
+    el('hdr-sub').textContent = 'See what actually applies.';
+    showToast('Session expired — please sign in again.', 'error');
+    throw new Error('Session expired. Please sign in again.');
   }
+  if (res.status === 403) throw new Error('Permission denied (403). Admin consent may be required for one or more scopes.');
+}
+
+async function graphGet(url) {
+  const token = await getAccessToken();
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  let rows = [];
+  let next = url;
+  let pageCount = 0;
 
   while (next) {
     pageCount++;
-    const res = await fetchWithRetry(next);
-
-    if (res.status === 401) {
-      currentAccount = null;
-      isAuthed = false;
-      el('hdr-connect').style.display = 'inline-flex';
-      el('hdr-signout').style.display = 'none';
-      el('hdr-live').style.display = 'none';
-      el('hdr-sub').textContent = 'See what actually applies.';
-      showToast('Session expired — please sign in again.', 'error');
-      throw new Error('Session expired. Please sign in again.');
-    }
-    if (res.status === 403) throw new Error('Permission denied (403). Admin consent may be required for one or more scopes.');
+    const res = await fetchWithRetry(next, { headers });
+    throwOnAuthError(res);
 
     // Still 429/500 after retries, mid-pagination — return partial
     if ((res.status === 429 || res.status >= 500) && rows.length > 0) {
@@ -970,12 +1008,73 @@ async function graphGet(url) {
   return rows;
 }
 
+// POST is used only for $batch. All inner requests are GET (read-only).
+// requests: [{ id, url /* relative, e.g. '/groups/x/members/$count' */, headers }]
+// Returns Map(id → { status, body }); onResult(id, result) fires as each sub-response settles.
+// Throws only for an outer 401/403 (like graphGet) — never for an individual sub-request.
+// signal: when aborted, stops before the next dispatch or retry round and resolves silently.
+async function graphBatch(requests, onResult = () => {}, signal) {
+  const results = new Map();
+  if (!requests.length) return results;
+  const token = await getAccessToken();
+  const settle = (id, r) => { results.set(id, r); onResult(id, r); };
+  const chunks = [];
+  for (let i = 0; i < requests.length; i += 20) chunks.push(requests.slice(i, i + 20));   // Graph limit per batch
+
+  async function runChunk(chunk) {
+    let pending = chunk;
+    for (let round = 0; pending.length; round++) {
+      if (signal?.aborted) return;
+      const res = await fetchWithRetry('https://graph.microsoft.com/v1.0/$batch', {
+        method: 'POST',
+        signal,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: pending.map(r => ({ id: r.id, method: 'GET', url: r.url, headers: r.headers || {} })) }),
+      });
+      throwOnAuthError(res);
+      if (!res.ok) { pending.forEach(r => settle(r.id, { status: res.status, body: null })); return; }   // still failing after retries
+      const data = await res.json().catch(() => ({}));
+      const throttled = new Set();
+      let waitS = 1;
+      (data.responses || []).forEach(sr => {
+        if (sr.status === 429 && round < 3) {
+          throttled.add(String(sr.id));
+          const h = sr.headers || {};
+          const ra = parseInt(h[Object.keys(h).find(k => k.toLowerCase() === 'retry-after')] ?? '', 10);
+          if (!isNaN(ra)) waitS = Math.max(waitS, ra);
+        } else {
+          settle(String(sr.id), { status: sr.status, body: sr.body });
+        }
+      });
+      pending.forEach(r => { if (!throttled.has(r.id) && !results.has(r.id)) settle(r.id, { status: 0, body: null }); });   // missing from response
+      pending = pending.filter(r => throttled.has(r.id));
+      if (pending.length) await sleep(Math.min(waitS * 1000, 20000), signal);   // loop re-checks signal
+    }
+  }
+
+  // At most 2 batches in flight
+  let nextChunk = 0, authError = null;
+  const worker = async () => {
+    while (nextChunk < chunks.length && !authError && !signal?.aborted) {
+      try { await runChunk(chunks[nextChunk++]); }
+      catch (e) { if (e.name !== 'AbortError' && !signal?.aborted) authError = e; }
+    }
+  };
+  await Promise.all([worker(), worker()]);
+  if (authError) throw authError;
+  return results;
+}
+
 async function refreshData() {
   if (!currentAccount) return;
   track('refresh', 'Data refresh triggered');
   DATA.loading = true;
   DATA.errors = [];
   Object.keys(MEMBERS_CACHE).forEach(k => delete MEMBERS_CACHE[k]);
+  Object.keys(MEMBER_COUNTS).forEach(k => delete MEMBER_COUNTS[k]);
+  COUNTS_PENDING.clear();
+  COUNTS_GEN++;
+  resetCountsAbort();
   el('hdr-syncing').style.display = 'inline-flex';
   el('hdr-live').style.display = 'none';
   renderCurrentTab();
@@ -1639,8 +1738,8 @@ function toggleGroupsFilter(field, value) {
   renderGroups(el('content-area'));
 }
 
-function selectGroup(id) {
-  GROUPS.selected = GROUPS.selected === id ? '' : id;
+function selectGroup(id, toggle = true) {
+  GROUPS.selected = toggle && GROUPS.selected === id ? '' : id;
   GROUPS.memberSearch = '';
   GROUPS.showAll = false;
   simToUrl();
@@ -1662,7 +1761,13 @@ function renderGroups(mount) {
     if (GROUPS.usage && (usage.length ? 'Assigned' : 'Unassigned') !== GROUPS.usage) return false;
     if (GROUPS.state && groupState(g) !== GROUPS.state) return false;
     return true;
-  }).sort((a, b) => ciCmp(a.displayName, b.displayName));
+  }).sort((a, b) => {
+    if (GROUPS.sort === 'members') {
+      const n = id => { const c = memberCountOf(id); return typeof c === 'number' ? c : -1; };   // unknown last
+      return n(b.id) - n(a.id) || ciCmp(a.displayName, b.displayName);
+    }
+    return ciCmp(a.displayName, b.displayName);
+  });
 
   const chips = (field, values) => values.map(v => filterChip(`onclick="toggleGroupsFilter('${field}','${v}')"`, v, GROUPS[field] === v)).join('');
   const listRows = rows.map(g => {
@@ -1674,6 +1779,7 @@ function renderGroups(mount) {
         onclick="selectGroup('${jsArg(g.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${jsArg(g.id)}')}">
       <div class="tr-main"><div class="tr-name" title="${htmlAttr(g.displayName)}">${esc(g.displayName)}${partial ? ' <span class="tr-pill tr-pill-amber gp-tag">Partial parse</span>' : ''}</div></div>
       <div class="gp-cell">${groupRuleType(g)}</div>
+      <div class="gp-cell gp-num" data-count-for="${htmlAttr(g.id)}">${countCellHtml(g.id)}</div>
       <div class="gp-cell tr-mono" title="${htmlAttr(g.membershipRule)}">${esc(g.membershipRule)}</div>
       <div class="gp-cell">${usage.length ? `${nIncl} incl · ${nExcl} excl` : '<span class="tr-pill tr-pill-red">Unassigned</span>'}</div>
       <div class="gp-cell"><span class="tr-pill ${paused ? 'tr-pill-amber' : 'tr-pill-gray'}">${paused ? 'Paused' : 'On'}</span></div>
@@ -1684,6 +1790,7 @@ function renderGroups(mount) {
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
+      <div id="gp-findings">${groupFindingsHtml()}</div>
       <div class="gp-layout">
         <section class="card tr-section">
           <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Dynamic groups</span><span class="tr-count">${rows.length} / ${all.length}</span></div>
@@ -1695,7 +1802,12 @@ function renderGroups(mount) {
             </div>
             <div class="gp-chiprow"><span class="gp-lbl">Type</span>${chips('type', ['Device', 'User'])}<span class="gp-lbl">Usage</span>${chips('usage', ['Assigned', 'Unassigned'])}<span class="gp-lbl">State</span>${chips('state', ['On', 'Paused'])}</div>
           </div>
-          <div class="tr-row gp-row gp-headrow"><div>Name</div><div>Type</div><div>Rule</div><div>Assignments</div><div>State</div></div>
+          <div class="tr-row gp-row gp-headrow">
+            <div><button type="button" class="gp-sort${GROUPS.sort === 'name' ? ' on' : ''}" onclick="setGroupsSort('name')" aria-pressed="${GROUPS.sort === 'name'}">Name${GROUPS.sort === 'name' ? ' ▾' : ''}</button></div>
+            <div>Type</div>
+            <div class="gp-num"><button type="button" class="gp-sort${GROUPS.sort === 'members' ? ' on' : ''}" onclick="setGroupsSort('members')" aria-pressed="${GROUPS.sort === 'members'}">Members${GROUPS.sort === 'members' ? ' ▾' : ''}</button></div>
+            <div>Rule</div><div>Assignments</div><div>State</div>
+          </div>
           ${listRows || `<div class="tr-empty empty-note">${all.length ? 'No groups match the filters.' : 'No dynamic groups found.'}</div>`}
         </section>
         <div id="gp-detail">${renderGroupDetailHtml()}</div>
@@ -1704,6 +1816,139 @@ function renderGroups(mount) {
 
   const g = DATA.groups.find(x => x.id === GROUPS.selected);
   if (g) loadGroupMembers(g);
+  ensureMemberCounts();
+}
+
+function setGroupsSort(sort) {
+  GROUPS.sort = sort;
+  renderGroups(el('content-area'));
+}
+
+// Effective member count: the loaded member list wins when it is at least as large as the $count
+function memberCountOf(id) {
+  const c = MEMBER_COUNTS[id];
+  const cache = MEMBERS_CACHE[id];
+  const loaded = cache?.status === 'ok' ? cache.rows.length : null;
+  if (typeof c === 'number') return loaded !== null && loaded >= c ? loaded : c;
+  return loaded !== null ? loaded : c;   // undefined while pending, or { error }
+}
+function countCellHtml(id) {
+  const c = memberCountOf(id);
+  if (typeof c === 'number') return String(c);
+  if (c && c.error) return `<span title="${htmlAttr(c.error)}">—</span>`;
+  return '<span title="Loading member count">…</span>';
+}
+// Update just the count cells + findings (no full re-render: keeps search focus and scroll)
+function updateCountCells(id) {
+  document.querySelectorAll(`[data-count-for="${CSS.escape(id)}"]`).forEach(c => { c.innerHTML = countCellHtml(id); });
+  scheduleFindingsRefresh();
+}
+let findingsFrame = 0;
+function scheduleFindingsRefresh() {
+  if (findingsFrame) return;
+  findingsFrame = requestAnimationFrame(() => {
+    findingsFrame = 0;
+    const host = el('gp-findings');
+    if (host && currentTab === 'groups') host.innerHTML = groupFindingsHtml();
+  });
+}
+
+const parseCount = body => {
+  const n = typeof body === 'number' ? body : parseInt(String(body ?? '').trim(), 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+// Request $count for every dynamic group that has none yet; results fill in cell by cell
+function ensureMemberCounts() {
+  if (!DATA.loaded || DATA.loading) return;
+  const dyn = DATA.groups.filter(isDyn);
+  if (demoMode) {   // demo: counts from the sample members, no Graph calls
+    dyn.forEach(g => { if (!(g.id in MEMBER_COUNTS)) { MEMBER_COUNTS[g.id] = (DEMO_MEMBERS[g.id] || []).length; updateCountCells(g.id); } });
+    return;
+  }
+  if (!isAuthed) return;
+  const todo = dyn.filter(g => !(g.id in MEMBER_COUNTS) && !COUNTS_PENDING.has(g.id));
+  if (!todo.length) return;
+  todo.forEach(g => COUNTS_PENDING.add(g.id));
+  const gen = COUNTS_GEN;
+  const signal = COUNTS_ABORT.signal;
+  const finish = (gid, value) => {
+    if (gen !== COUNTS_GEN || !COUNTS_PENDING.has(gid)) return;
+    if (signal.aborted) { COUNTS_PENDING.delete(gid); return; }   // cancelled: no value, no error shown
+    COUNTS_PENDING.delete(gid);
+    MEMBER_COUNTS[gid] = value;
+    updateCountCells(gid);
+  };
+  const requests = todo.map((g, i) => ({ id: String(i), url: `/groups/${encodeURIComponent(g.id)}/members/$count`, headers: { ConsistencyLevel: 'eventual' } }));
+  graphBatch(requests, (id, r) => {
+    const gid = todo[Number(id)]?.id;
+    if (!gid) return;
+    const n = r.status === 200 ? parseCount(r.body) : null;
+    finish(gid, n !== null ? n : { error: r.status === 200 ? 'Unexpected $count response' : `${r.status || 'No response'} ${r.body?.error?.message || ''}`.trim() });
+  }, signal)
+    .catch(e => todo.forEach(g => finish(g.id, { error: e.message })))
+    .finally(() => todo.forEach(g => finish(g.id, { error: 'No response' })));
+}
+
+// ── Group findings: pure, same shape as report findings ──
+const ORDER_TAG_RE = /\[OrderID\]:([^"'\s)]+)/gi;
+function groupFindings({ groups, usage, countOf, devices }) {
+  const dyn = groups.filter(isDyn).sort((a, b) => ciCmp(a.displayName, b.displayName));
+  const red = [], amber = [], info = [];
+  const deviceTags = new Set(devices.map(d => (d.groupTag || '').toLowerCase()).filter(Boolean));
+  const unassigned = [], partial = [], tagIssues = [];   // tagIssues: { tag, group }
+  dyn.forEach(g => {
+    const u = usage[g.id] || [];
+    const incl = u.filter(x => x.mode === 'include');
+    const n = countOf(g.id);
+    if (n === 0 && incl.length) {
+      red.push({ severity: 'red', title: `${incl.length} item${incl.length === 1 ? '' : 's'} assigned to an empty group`,
+        detail: `${g.displayName}: ${incl.map(x => x.name).sort(ciCmp).join(', ')}`, groupId: g.id });
+    }
+    if (groupState(g) === 'Paused') {
+      amber.push({ severity: 'amber', title: `Rule paused: ${g.displayName}`, detail: 'Membership is not updated while rule processing is paused.', groupId: g.id });
+    }
+    if (deviceTags.size) {   // without any device data every tag would look unused
+      const tags = [...new Set([...(g.membershipRule || '').matchAll(ORDER_TAG_RE)].map(m => m[1]))];
+      tags.filter(t => !deviceTags.has(t.toLowerCase())).forEach(t => tagIssues.push({ tag: t, group: g }));
+    }
+    if (!u.length) unassigned.push(g);
+    if (!ruleSupport(g.membershipRule).supported) partial.push(g);
+  });
+  const distinctTags = [...new Set(tagIssues.map(x => x.tag.toLowerCase()))];
+  if (distinctTags.length > 3) {
+    amber.push({ severity: 'amber', title: `${distinctTags.length} group tags that no device has`,
+      detail: tagIssues.map(x => `${x.tag} (${x.group.displayName})`).join(', ') });
+  } else {
+    tagIssues.forEach(({ tag: t, group: g }) => amber.push({
+      severity: 'amber', title: `No device has group tag "${t}"`,
+      detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
+  }
+  if (unassigned.length > 3) {
+    amber.push({ severity: 'amber', title: `${unassigned.length} dynamic groups not assigned to anything`, detail: unassigned.map(g => g.displayName).join(', ') });
+  } else {
+    unassigned.forEach(g => amber.push({ severity: 'amber', title: `Not assigned: ${g.displayName}`, detail: 'No profile, policy or app targets this dynamic group.', groupId: g.id }));
+  }
+  if (partial.length) {
+    info.push({ severity: 'info', title: `${partial.length} group rule${partial.length === 1 ? '' : 's'} can't be fully simulated`,
+      detail: partial.map(g => g.displayName).join(', '), ...(partial.length === 1 ? { groupId: partial[0].id } : {}) });
+  }
+  return [...red, ...amber, ...info];
+}
+
+function groupFindingsHtml() {
+  const findings = groupFindings({ groups: DATA.groups, usage: GROUP_USAGE, countOf: memberCountOf, devices: DATA.managedDevices });
+  if (!findings.length) return '';
+  const shown = GROUPS.findingsAll ? findings : findings.slice(0, 5);
+  const color = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
+  return `<section class="card tr-section gp-findings">
+    <div class="tr-head"><span class="tr-sq" style="background:var(--amber);"></span><span class="tr-title">Findings</span><span class="tr-count">${findings.length}</span></div>
+    ${shown.map(f => `<div class="tr-row gp-frow${f.groupId ? ' gp-flink' : ''}"${f.groupId ? ` role="button" tabindex="0" onclick="selectGroup('${jsArg(f.groupId)}', false)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${jsArg(f.groupId)}', false)}"` : ''}>
+      <span class="tr-sq" style="background:${color[f.severity]};" aria-label="${f.severity}"></span>
+      <div class="tr-main"><div class="tr-name" title="${htmlAttr(f.title)}">${esc(f.title)}</div><div class="tr-sub" title="${htmlAttr(f.detail)}">${esc(f.detail)}</div></div>
+    </div>`).join('')}
+    ${findings.length > shown.length ? `<div class="gp-body"><button class="btn btn-ghost" onclick="GROUPS.findingsAll=true;el('gp-findings').innerHTML=groupFindingsHtml()">Show all ${findings.length}</button></div>` : ''}
+  </section>`;
 }
 
 function renderGroupDetailHtml() {
@@ -1748,7 +1993,7 @@ function renderGroupDetailHtml() {
 
 async function loadGroupMembers(g) {
   if (MEMBERS_CACHE[g.id]) return;   // cached, or a fetch is already in flight
-  if (demoMode) { MEMBERS_CACHE[g.id] = { status: 'ok', rows: DEMO_MEMBERS[g.id] || [] }; refreshMembers(g.id); return; }
+  if (demoMode) { MEMBERS_CACHE[g.id] = { status: 'ok', rows: DEMO_MEMBERS[g.id] || [] }; refreshMembers(g.id); updateCountCells(g.id); return; }
   MEMBERS_CACHE[g.id] = { status: 'loading' };
   refreshMembers(g.id);
   const G = 'https://graph.microsoft.com/v1.0/groups/' + encodeURIComponent(g.id);
@@ -1762,6 +2007,7 @@ async function loadGroupMembers(g) {
     MEMBERS_CACHE[g.id] = { status: 'error', error: e.message, forbidden: /\b403\b/.test(e.message) };
   }
   refreshMembers(g.id);
+  updateCountCells(g.id);
 }
 
 // Re-render only the members block (keeps list scroll and search focus intact)
