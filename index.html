@@ -406,6 +406,47 @@
       .tr-via { grid-area: via; }
     }
 
+    /* ── Groups tab (reuses .tr-* rows, pills and section heads) ── */
+    .gp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+    @media (min-width: 1200px) { .gp-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+    .gp-filters { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .gp-lbl { font-size: 11px; font-weight: 600; color: var(--text3); }
+    .gp-chiprow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .gp-chiprow .gp-lbl { margin: 0 2px 0 10px; }
+    .gp-chiprow .gp-lbl:first-child { margin-left: 0; }
+    .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 58px minmax(0, 1.5fr) 112px 64px; cursor: pointer; }
+    .tr-row.gp-mrow { grid-template-columns: minmax(0, 1.4fr) 84px minmax(0, 1fr) 92px 86px; }
+    .tr-row.gp-headrow {
+      background: var(--bg3); cursor: default; padding-top: 7px; padding-bottom: 7px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3);
+    }
+    .tr-row.gp-headrow:hover { background: var(--bg3); }
+    .gp-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .tr-row.gp-sel, .tr-row.gp-sel:hover { background: var(--accent-wash); box-shadow: inset 3px 0 0 var(--accent); }
+    .gp-cell { font-size: 12px; color: var(--text2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gp-tag { margin-left: 6px; padding: 0 6px; vertical-align: 1px; }
+    .tr-pill-gray { color: var(--text2); border-color: var(--border2); background: var(--wash); }
+    .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+    .gp-dmeta { display: flex; flex-wrap: wrap; gap: 6px; }
+    .gp-body { padding: 12px 16px; }
+    .gp-rule {
+      margin: 0; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.55;
+      color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .gp-warn { margin-top: 10px; padding: 8px 12px; font-size: 12.5px; color: var(--amber); background: var(--wash); border-left: 3px solid var(--amber); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+    .gp-warn ul { margin: 6px 0 0 18px; }
+    .gp-warn li { color: var(--text2); }
+    .gp-error { padding: 8px 12px; font-size: 12.5px; color: var(--red); background: var(--wash); border-left: 3px solid var(--red); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+    .gp-loading { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text3); }
+    .gp-sim { padding: 3px 10px; font-size: 11.5px; }
+    .gp-placeholder { display: flex; align-items: center; justify-content: center; min-height: 160px; text-align: center; }
+    @media (max-width: 760px) {
+      .tr-row.gp-row, .tr-row.gp-mrow { grid-template-areas: none; grid-template-columns: minmax(0, 1fr) auto auto; }
+      .gp-row .tr-main, .gp-mrow .tr-main { grid-area: auto; }
+      .gp-row > :nth-child(2), .gp-row > :nth-child(3), .gp-mrow > :nth-child(2), .gp-mrow > :nth-child(3) { display: none; }
+    }
+
     /* ── Theme: Paper / Deep teal — overrides earlier dark-theme rules ── */
     ::selection { background: var(--accent-wash); }
     ::-webkit-scrollbar-thumb { background: var(--wash2); border-color: var(--bg); }
@@ -494,6 +535,7 @@
   <div class="nav">
     <div class="nav-t on" id="tab-overview" onclick="switchTab('overview')">Environment</div>
     <div class="nav-t" id="tab-matrix" onclick="switchTab('matrix')">Assignments</div>
+    <div class="nav-t" id="tab-groups" onclick="switchTab('groups')">Groups</div>
     <div class="nav-t" id="tab-simulate" onclick="switchTab('simulate')">What applies?</div>
   </div>
 
@@ -595,10 +637,21 @@ const DEMO_DATA = {
   appProtection: [],
   groupTags: ['KIOSK','SALES'],
   managedDevices: [
-    { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', _source:'demo' },
-    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', osVersion:'10.0.26100', _source:'demo' }
+    { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', azureADDeviceId:'d3m0-0000-4000-8000-000000000001', _source:'demo' },
+    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000004', _source:'demo' }
   ],
   loading:false, loaded:true, errors:[]
+};
+// Demo group members (Entra device objects), keyed by demo group id. Demo makes no Graph calls.
+const DEMO_MEMBERS = {
+  'grp-sales-devices': [
+    { id:'ent-001', deviceId:'D3M0-0000-4000-8000-000000000001', displayName:'DEMO-SALES-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+    { id:'ent-002', deviceId:'d3m0-0000-4000-8000-000000000002', displayName:'DEMO-SALES-002', operatingSystem:'Windows', operatingSystemVersion:'10.0.22631' },
+    { id:'ent-003', deviceId:'d3m0-0000-4000-8000-000000000003', displayName:'DEMO-SALES-003', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+  ],
+  'grp-kiosk-devices': [
+    { id:'ent-004', deviceId:'d3m0-0000-4000-8000-000000000004', displayName:'DEMO-KIOSK-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+  ],
 };
 let demoMode = false;
 
@@ -606,12 +659,17 @@ let DATA = JSON.parse(JSON.stringify(EMPTY));
 let msalInstance = null;
 let currentAccount = null;
 let isAuthed = false;
+const TABS = ['overview','matrix','simulate','groups'];
 let currentTab = 'overview';
 let SIM = { deviceName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
 let simView = 'trace';   // 'trace' | 'graph'
 let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim()
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
 const APP_VERSION = '0.1.0';
+// Groups tab: list filters + selection; members are fetched lazily and cached per group
+let GROUPS = { search:'', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false };
+const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
+let GROUP_USAGE = {};       // buildGroupUsage() result, rebuilt on each Groups render
 let MATRIX = {
   policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
   groups:   { search:'', groupType:'' /* 'dynamic'|'static'|'' */ },
@@ -646,6 +704,7 @@ function simToUrl() {
     SIM_URL_FIELDS.forEach(k => { if (SIM[k]) params.set(k, SIM[k]); });
     if (simView === 'graph') params.set('view', 'graph');
   }
+  if (currentTab === 'groups' && GROUPS.selected) params.set('group', GROUPS.selected);
   const query = params.toString();
   const url = window.location.pathname + (query ? '?' + query : '');
   history.replaceState(null, '', url);
@@ -654,11 +713,12 @@ function simToUrl() {
 function restoreFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab');
-  if (tab && ['overview','matrix','simulate'].includes(tab)) currentTab = tab;
+  if (tab && TABS.includes(tab)) currentTab = tab;
   SIM_URL_FIELDS.forEach(k => { if (params.has(k)) SIM[k] = params.get(k); });
   simView = params.get('view') === 'graph' ? 'graph' : 'trace';
+  if (currentTab === 'groups' && params.get('group')) GROUPS.selected = params.get('group');
   // Reflect nav state
-  ['overview','matrix','simulate'].forEach(id => {
+  TABS.forEach(id => {
     const t = el(`tab-${id}`);
     if (t) t.classList.toggle('on', id === currentTab);
   });
@@ -759,9 +819,10 @@ function startDemo() {
   currentAccount = null;
   TENANT_NAME = 'Demo tenant';
   DATA = JSON.parse(JSON.stringify(DEMO_DATA));
-  currentTab = 'overview';
+  // Keep a ?tab=groups&group=… deep link; otherwise start on the overview as before
+  currentTab = new URLSearchParams(location.search).get('tab') === 'groups' && GROUPS.selected ? 'groups' : 'overview';
   SIM = { deviceName:'DEMO-SALES-001', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
-  ['overview','matrix','simulate'].forEach(id => {
+  TABS.forEach(id => {
     const t = el(`tab-${id}`);
     if (t) t.classList.toggle('on', id === currentTab);
   });
@@ -902,6 +963,7 @@ async function refreshData() {
   track('refresh', 'Data refresh triggered');
   DATA.loading = true;
   DATA.errors = [];
+  Object.keys(MEMBERS_CACHE).forEach(k => delete MEMBERS_CACHE[k]);
   el('hdr-syncing').style.display = 'inline-flex';
   el('hdr-live').style.display = 'none';
   renderCurrentTab();
@@ -910,7 +972,7 @@ async function refreshData() {
   const [pr, esp, gr, dc, sc, co, ap, es, app, dv, apDev] = await Promise.all([
     safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
     safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
-    safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule`)),
+    safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule,membershipRuleProcessingState`)),
     safe('DeviceConfig', () => graphGet(`${B}/deviceManagement/deviceConfigurations?$expand=assignments`)),
     safe('SettingsCat', () => graphGet(`${B}/deviceManagement/configurationPolicies?$expand=assignments`)),
     safe('Compliance', () => graphGet(`${B}/deviceManagement/deviceCompliancePolicies?$expand=assignments`)),
@@ -960,6 +1022,7 @@ async function refreshData() {
         model: a.model || '',
         manufacturer: a.manufacturer || '',
         osVersion: '',
+        azureADDeviceId: a.azureActiveDirectoryDeviceId || a.azureAdDeviceId || '',
         _source: 'autopilot-only',
       };
     }
@@ -994,7 +1057,7 @@ async function refreshData() {
 function switchTab(tab) {
   currentTab = tab;
   track(`tab-${tab}`, `Viewed ${tab} tab`);
-  ['overview','matrix','simulate'].forEach(id => el(`tab-${id}`).classList.toggle('on', id === tab));
+  TABS.forEach(id => el(`tab-${id}`).classList.toggle('on', id === tab));
   simToUrl();
   renderCurrentTab();
 }
@@ -1009,6 +1072,7 @@ function renderCurrentTab() {
   if (currentTab === 'overview') renderOverview(mount);
   else if (currentTab === 'matrix') renderMatrix(mount);
   else if (currentTab === 'simulate') renderSimulate(mount);
+  else if (currentTab === 'groups') renderGroups(mount);
 }
 
 function renderEmptyState(mount) {
@@ -1527,6 +1591,250 @@ function renderMatrix(mount) {
     </div>`;
 }
 
+// ── Groups tab: dynamic groups with rule, assignments and members ──
+// Group → what references it, from every assignable item. Separate from the Matrix tab's gMap.
+function buildGroupUsage() {
+  const usage = {};
+  const add = (item, name, kind) => resolveAssignmentsRaw(item).forEach(x => {
+    const gid = (x.raw.target || x.raw).groupId;
+    if (!gid) return;
+    (usage[gid] = usage[gid] || []).push({ name: name || '', kind, mode: x.kind === 'exclude' ? 'exclude' : 'include', intent: x.intent });
+  });
+  DATA.autopilotProfiles.forEach(p => add(p, p.displayName, 'Autopilot profile'));
+  DATA.enrollmentStatusPages.forEach(e => add(e, e.displayName, 'ESP'));
+  allPolicies().forEach(p => add(p, p.name || p.displayName, p._t));
+  DATA.apps.forEach(a => add(a, a.displayName, 'App'));
+  return usage;
+}
+
+const groupRuleType = g => /\bdevice\./i.test(g.membershipRule || '') ? 'Device' : /\buser\./i.test(g.membershipRule || '') ? 'User' : 'Unknown';
+const groupState = g => g.membershipRuleProcessingState === 'Paused' ? 'Paused' : 'On';
+const jsArg = s => esc(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+const htmlAttr = s => esc(s).replace(/"/g, '&quot;');
+
+function setGroupsField(field, value, focusId) {
+  GROUPS[field] = value || '';
+  const scrollPos = el('content-area').scrollTop;
+  renderGroups(el('content-area'));
+  if (focusId) {
+    const input = el(focusId);
+    if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  }
+  el('content-area').scrollTop = scrollPos;
+}
+function toggleGroupsFilter(field, value) {
+  GROUPS[field] = GROUPS[field] === value ? '' : value;
+  renderGroups(el('content-area'));
+}
+
+function selectGroup(id) {
+  GROUPS.selected = GROUPS.selected === id ? '' : id;
+  GROUPS.memberSearch = '';
+  GROUPS.showAll = false;
+  simToUrl();
+  renderGroups(el('content-area'));
+  if (GROUPS.selected && window.innerWidth < 1200) el('gp-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderGroups(mount) {
+  GROUP_USAGE = buildGroupUsage();
+  const all = DATA.groups.filter(isDyn);
+  const q = GROUPS.search.trim().toLowerCase();
+  const rows = all.filter(g => {
+    const usage = GROUP_USAGE[g.id] || [];
+    if (q) {
+      const hay = [g.displayName, g.membershipRule, ...usage.map(u => u.name)].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (GROUPS.type && groupRuleType(g) !== GROUPS.type) return false;
+    if (GROUPS.usage && (usage.length ? 'Assigned' : 'Unassigned') !== GROUPS.usage) return false;
+    if (GROUPS.state && groupState(g) !== GROUPS.state) return false;
+    return true;
+  }).sort((a, b) => ciCmp(a.displayName, b.displayName));
+
+  const chips = (field, values) => values.map(v => filterChip(`onclick="toggleGroupsFilter('${field}','${v}')"`, v, GROUPS[field] === v)).join('');
+  const listRows = rows.map(g => {
+    const usage = GROUP_USAGE[g.id] || [];
+    const nIncl = usage.filter(u => u.mode === 'include').length, nExcl = usage.length - nIncl;
+    const partial = !ruleSupport(g.membershipRule).supported;
+    const paused = groupState(g) === 'Paused';
+    return `<div class="tr-row gp-row${GROUPS.selected === g.id ? ' gp-sel' : ''}" role="button" tabindex="0"
+        onclick="selectGroup('${jsArg(g.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${jsArg(g.id)}')}">
+      <div class="tr-main"><div class="tr-name" title="${htmlAttr(g.displayName)}">${esc(g.displayName)}${partial ? ' <span class="tr-pill tr-pill-amber gp-tag">Partial parse</span>' : ''}</div></div>
+      <div class="gp-cell">${groupRuleType(g)}</div>
+      <div class="gp-cell tr-mono" title="${htmlAttr(g.membershipRule)}">${esc(g.membershipRule)}</div>
+      <div class="gp-cell">${usage.length ? `${nIncl} incl · ${nExcl} excl` : '<span class="tr-pill tr-pill-red">Unassigned</span>'}</div>
+      <div class="gp-cell"><span class="tr-pill ${paused ? 'tr-pill-amber' : 'tr-pill-gray'}">${paused ? 'Paused' : 'On'}</span></div>
+    </div>`;
+  }).join('');
+
+  const filterCount = [GROUPS.search, GROUPS.type, GROUPS.usage, GROUPS.state].filter(Boolean).length;
+  mount.innerHTML = `
+    <div class="fade">
+      ${demoBanner()}
+      <div class="gp-layout">
+        <section class="card tr-section">
+          <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Dynamic groups</span><span class="tr-count">${rows.length} / ${all.length}</span></div>
+          <div class="gp-filters">
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <div style="flex:1;"><label class="gp-lbl" for="gp-search">Search</label>
+                <input class="inp" id="gp-search" placeholder="Group, rule or assigned item…" value="${htmlAttr(GROUPS.search)}" oninput="setGroupsField('search',this.value,'gp-search')" /></div>
+              ${filterCount ? `<button class="btn btn-ghost" onclick="GROUPS.search='';GROUPS.type='';GROUPS.usage='';GROUPS.state='';renderGroups(el('content-area'))">Clear (${filterCount})</button>` : ''}
+            </div>
+            <div class="gp-chiprow"><span class="gp-lbl">Type</span>${chips('type', ['Device', 'User'])}<span class="gp-lbl">Usage</span>${chips('usage', ['Assigned', 'Unassigned'])}<span class="gp-lbl">State</span>${chips('state', ['On', 'Paused'])}</div>
+          </div>
+          <div class="tr-row gp-row gp-headrow"><div>Name</div><div>Type</div><div>Rule</div><div>Assignments</div><div>State</div></div>
+          ${listRows || `<div class="tr-empty empty-note">${all.length ? 'No groups match the filters.' : 'No dynamic groups found.'}</div>`}
+        </section>
+        <div id="gp-detail">${renderGroupDetailHtml()}</div>
+      </div>
+    </div>`;
+
+  const g = DATA.groups.find(x => x.id === GROUPS.selected);
+  if (g) loadGroupMembers(g);
+}
+
+function renderGroupDetailHtml() {
+  const g = DATA.groups.find(x => x.id === GROUPS.selected);
+  if (!g) return `<div class="card gp-placeholder empty-note">${GROUPS.selected ? 'That group was not found in this tenant.' : 'Select a group to see its rule, assignments and members.'}</div>`;
+  const type = groupRuleType(g), state = groupState(g);
+  const support = ruleSupport(g.membershipRule);
+
+  // Assignments, grouped by kind in a fixed order
+  const usage = GROUP_USAGE[g.id] || [];
+  const byKind = {};
+  usage.forEach(u => { (byKind[u.kind] = byKind[u.kind] || []).push(u); });
+  const kinds = Object.keys(byKind).sort(ciCmp);
+  const asnHtml = kinds.length ? kinds.map(k => `<div class="tr-subhead">${esc(k)} (${byKind[k].length})</div>${byKind[k]
+    .sort((a, b) => ciCmp(a.name, b.name))
+    .map(u => `<div class="tr-row">
+      <div class="tr-main"><div class="tr-name" title="${htmlAttr(u.name)}">${esc(u.name)}</div></div>
+      <div class="tr-pill-col"><span class="tr-pill ${u.mode === 'exclude' ? 'tr-pill-red' : 'tr-pill-green'}">${u.mode === 'exclude' ? 'Exclude' : 'Include'}</span></div>
+      <div class="tr-via">${u.intent ? esc(u.intent) : ''}</div>
+    </div>`).join('')}`).join('') : '<div class="tr-empty empty-note">Not assigned to anything.</div>';
+
+  return `
+    <section class="card tr-section">
+      <div class="gp-dhead">
+        <div class="title">${esc(g.displayName)}</div>
+        <div class="gp-dmeta"><span class="tr-pill tr-pill-gray">${type} group</span><span class="tr-pill ${state === 'Paused' ? 'tr-pill-amber' : 'tr-pill-gray'}">${state}</span></div>
+        ${g.description ? `<div class="desc">${esc(g.description)}</div>` : ''}
+      </div>
+      <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Rule</span></div>
+      <div class="gp-body">
+        <pre class="gp-rule">${esc(g.membershipRule)}</pre>
+        ${support.supported ? '' : `<div class="gp-warn"><div>Simulation can't evaluate these conditions. Results for this group may be wrong.</div>
+          <ul>${support.unsupported.map(u => `<li class="tr-mono">${u.reason === 'property' ? `${esc(u.name)} — property not simulated`
+            : u.reason === 'operator' ? `${esc(u.leaf)} — operator ${esc(u.name)} not supported` : `${esc(u.leaf)} — can't parse`}</li>`).join('')}</ul></div>`}
+      </div>
+      <div class="tr-head"><span class="tr-sq" style="background:var(--accent);"></span><span class="tr-title">Assignments</span><span class="tr-count">${usage.length}</span></div>
+      ${asnHtml}
+      <div class="tr-head"><span class="tr-sq" style="background:var(--blue);"></span><span class="tr-title">Members</span><span class="tr-count" id="gp-mcount">${memberCountText(g.id)}</span></div>
+      <div id="gp-members">${renderMembersHtml(g)}</div>
+    </section>`;
+}
+
+async function loadGroupMembers(g) {
+  if (MEMBERS_CACHE[g.id]) return;   // cached, or a fetch is already in flight
+  if (demoMode) { MEMBERS_CACHE[g.id] = { status: 'ok', rows: DEMO_MEMBERS[g.id] || [] }; refreshMembers(g.id); return; }
+  MEMBERS_CACHE[g.id] = { status: 'loading' };
+  refreshMembers(g.id);
+  const G = 'https://graph.microsoft.com/v1.0/groups/' + encodeURIComponent(g.id);
+  const type = groupRuleType(g);
+  const url = type === 'User' ? `${G}/members/microsoft.graph.user?$select=id,displayName,userPrincipalName,department&$top=999`
+            : type === 'Device' ? `${G}/members/microsoft.graph.device?$select=id,deviceId,displayName,operatingSystem,operatingSystemVersion&$top=999`
+            : `${G}/members?$select=id,displayName,deviceId,userPrincipalName&$top=999`;   // unknown: classify per row
+  try {
+    MEMBERS_CACHE[g.id] = { status: 'ok', rows: (await graphGet(url)) || [] };
+  } catch (e) {
+    MEMBERS_CACHE[g.id] = { status: 'error', error: e.message, forbidden: /\b403\b/.test(e.message) };
+  }
+  refreshMembers(g.id);
+}
+
+// Re-render only the members block (keeps list scroll and search focus intact)
+function refreshMembers(groupId, focusId) {
+  const host = el('gp-members');
+  const g = DATA.groups.find(x => x.id === groupId);
+  if (!host || !g || GROUPS.selected !== groupId || currentTab !== 'groups') return;
+  host.innerHTML = renderMembersHtml(g);
+  const count = el('gp-mcount');
+  if (count) count.textContent = memberCountText(groupId);
+  if (focusId) { const i = el(focusId); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+}
+
+const memberCountText = id => MEMBERS_CACHE[id]?.status === 'ok' ? String(MEMBERS_CACHE[id].rows.length) : '';
+
+function managedByEntraId() {
+  const map = {};
+  DATA.managedDevices.forEach(d => { if (d.azureADDeviceId) map[d.azureADDeviceId.toLowerCase()] = d; });
+  return map;
+}
+
+function renderMembersHtml(g) {
+  const c = MEMBERS_CACHE[g.id];
+  if (!c || c.status === 'loading') return `<div class="gp-body gp-loading"><div class="spin"></div><span>Loading members…</span></div>`;
+  if (c.status === 'error') return `<div class="gp-body"><div class="gp-error">${c.forbidden ? '' : 'Could not load members: '}${esc(c.error)}</div></div>`;
+
+  // Each row is a device or a user: from @odata.type when Graph sends it, else from the rule type
+  const fallbackKind = groupRuleType(g) === 'User' ? 'user' : 'device';
+  const kindOf = m => m['@odata.type'] ? (/device$/i.test(m['@odata.type']) ? 'device' : 'user') : fallbackKind;
+  const managed = managedByEntraId();
+  const q = GROUPS.memberSearch.trim().toLowerCase();
+  const rows = c.rows.map(m => { const kind = kindOf(m); return { m, kind, d: kind === 'device' ? managed[(m.deviceId || '').toLowerCase()] || null : null }; })
+    .filter(({ m, d }) => !q || [m.displayName, m.userPrincipalName, m.department, d?.groupTag, d?.model, d?.serialNumber].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => ciCmp(a.kind, b.kind) || ciCmp(a.m.displayName, b.m.displayName));
+  const shown = GROUPS.showAll ? rows : rows.slice(0, 200);
+  const shownDevices = shown.filter(r => r.kind === 'device'), shownUsers = shown.filter(r => r.kind === 'user');
+  const mixed = shownDevices.length && shownUsers.length;
+  const table = (list, isUser, label) => !list.length ? '' : `
+    ${mixed ? `<div class="tr-subhead">${label} (${list.length})</div>` : ''}
+    <div class="tr-row gp-mrow gp-headrow">${isUser ? '<div>Name</div><div>UPN</div><div>Department</div><div></div><div></div>' : '<div>Name</div><div>Group tag</div><div>Model</div><div>Source</div><div></div>'}</div>
+    ${list.map(r => rowHtml(r, isUser)).join('')}`;
+
+  const rowHtml = ({ m, d }, isUser) => isUser
+    ? `<div class="tr-row gp-mrow">
+        <div class="tr-main"><div class="tr-name" title="${htmlAttr(m.displayName)}">${esc(m.displayName)}</div></div>
+        <div class="gp-cell" title="${htmlAttr(m.userPrincipalName)}">${esc(m.userPrincipalName)}</div>
+        <div class="gp-cell">${esc(m.department)}</div><div></div><div></div>
+      </div>`
+    : `<div class="tr-row gp-mrow">
+        <div class="tr-main"><div class="tr-name" title="${htmlAttr(m.displayName)}">${esc(m.displayName)}</div>
+          <div class="tr-sub">${esc([m.operatingSystem, m.operatingSystemVersion].filter(Boolean).join(' '))}</div></div>
+        <div class="gp-cell">${esc(d?.groupTag || '—')}</div>
+        <div class="gp-cell" title="${htmlAttr(d?.model)}">${esc(d?.model || '—')}</div>
+        <div class="gp-cell">${!d ? 'Entra only' : d._source === 'autopilot-only' ? 'Autopilot only' : 'Enrolled'}</div>
+        <div><button class="btn btn-ghost gp-sim" onclick="simulateGroupMember('${jsArg(m.id)}')">Simulate</button></div>
+      </div>`;
+
+  return `
+    <div class="gp-body" style="padding-bottom:6px;">
+      <input class="inp" id="gp-msearch" placeholder="Search members…" value="${htmlAttr(GROUPS.memberSearch)}"
+        oninput="GROUPS.memberSearch=this.value;GROUPS.showAll=false;refreshMembers('${jsArg(g.id)}','gp-msearch')" />
+    </div>
+    ${rows.length ? `${table(shownDevices, false, 'Devices')}${table(shownUsers, true, 'Users')}
+      ${rows.length > shown.length ? `<div class="gp-body"><button class="btn btn-ghost" onclick="GROUPS.showAll=true;refreshMembers('${jsArg(g.id)}')">Show all ${rows.length}</button></div>` : ''}`
+    : `<div class="tr-empty empty-note">${c.rows.length ? 'No members match the search.' : 'This group has no members.'}</div>`}`;
+}
+
+function simulateGroupMember(memberId) {
+  const m = (MEMBERS_CACHE[GROUPS.selected]?.rows || []).find(r => r.id === memberId);
+  if (!m) return;
+  const d = managedByEntraId()[(m.deviceId || '').toLowerCase()] || null;
+  track('group-simulate', 'Simulate from group member');
+  Object.assign(SIM, {
+    deviceName: d?.deviceName || m.displayName || '',
+    serial: d?.serialNumber || '',
+    groupTag: d?.groupTag || '',
+    model: d?.model || '',
+    mfg: d?.manufacturer || '',
+    osVer: d?.osVersion || m.operatingSystemVersion || SIM.osVer,
+    azureDeviceId: m.deviceId || '',
+    deviceId: d?.id || '',
+  });
+  switchTab('simulate');
+}
+
 function renderSimulate(mount) {
   const tagOpts = DATA.groupTags.map(t => `<option value="${esc(t)}" ${SIM.groupTag === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
   mount.innerHTML = `
@@ -1688,7 +1996,7 @@ async function runSim() {
   const memberErrors = [];
   let membershipFromGraph = false;
 
-  if (isAuthed && SIM.azureDeviceId) {
+  if (!demoMode && isAuthed && SIM.azureDeviceId) {
     try {
       const res = await graphGet(`https://graph.microsoft.com/v1.0/devices(deviceId='${SIM.azureDeviceId}')/memberOf?$select=id,displayName`);
       (res || []).forEach(g => { if (g.id) deviceGroupIds.add(g.id); });
@@ -1696,7 +2004,7 @@ async function runSim() {
     } catch (e) { memberErrors.push('Device memberOf: ' + e.message); }
   }
 
-  if (isAuthed && SIM.userId) {
+  if (!demoMode && isAuthed && SIM.userId) {
     try {
       const res = await graphGet(`https://graph.microsoft.com/v1.0/users/${SIM.userId}/memberOf?$select=id,displayName`);
       (res || []).forEach(g => { if (g.id) userGroupIds.add(g.id); });
@@ -1705,10 +2013,7 @@ async function runSim() {
   }
 
   // Rule-based eval as fallback (for devices not enrolled / no azureDeviceId)
-  const props = {
-    device: { devicePhysicalIds: tag ? ['[ZTDId]', `[OrderID]:${tag}`] : ['[ZTDId]'], serialNumber: SIM.serial, manufacturer: SIM.mfg, model: SIM.model, osVersion: SIM.osVer, operatingSystem: 'Windows', groupTag: tag },
-    user: { userPrincipalName: SIM.upn, department: SIM.dept }
-  };
+  const props = buildSimProps(SIM);
 
   // Union: actual membership + rule evaluation
   const ruleMatched = DATA.groups.filter(g => isDyn(g) && g.membershipRule && evalRule(g.membershipRule, props));
@@ -1992,8 +2297,8 @@ async function runSim() {
   const actualCount = deviceGroupIds.size + userGroupIds.size;
   const infoBanner = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-      ${SIM.azureDeviceId ? `<span class="tag tag-targeted tag-plain">Device memberships: ${deviceGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">Device: no Entra ID (using rules)</span>`}
-      ${SIM.userId ? `<span class="tag tag-targeted tag-plain">User memberships: ${userGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">User: not selected</span>`}
+      ${!demoMode && SIM.azureDeviceId ? `<span class="tag tag-targeted tag-plain">Device memberships: ${deviceGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">Device: no Entra ID (using rules)</span>`}
+      ${!demoMode && SIM.userId ? `<span class="tag tag-targeted tag-plain">User memberships: ${userGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">User: not selected</span>`}
       ${ruleMatched.length ? `<span class="tag tag-purple tag-plain">Rule-matched: ${ruleMatched.length}</span>` : ''}
       ${memberErrors.length ? `<span class="tag tag-unassigned tag-plain">${esc(memberErrors[0])}</span>` : ''}
     </div>`;
@@ -2372,6 +2677,18 @@ function copySimMarkdown() {
     .catch(() => showToast('Could not copy Markdown', 'error'));
 }
 
+// The device/user properties the rule evaluator can see for a simulated device
+function buildSimProps(sim) {
+  const tag = sim.groupTag;
+  return {
+    device: { devicePhysicalIds: tag ? ['[ZTDId]', `[OrderID]:${tag}`] : ['[ZTDId]'], serialNumber: sim.serial, manufacturer: sim.mfg, model: sim.model, osVersion: sim.osVer, operatingSystem: 'Windows', groupTag: tag },
+    user: { userPrincipalName: sim.upn, department: sim.dept }
+  };
+}
+// Property paths the evaluator knows ('device.model', 'user.department', …), derived from buildSimProps
+const RULE_PROPS = new Set(Object.entries(buildSimProps({ groupTag: 'x', serial: 'x', mfg: 'x', model: 'x', osVer: 'x', upn: 'x', dept: 'x' }))
+  .flatMap(([obj, fields]) => Object.keys(fields).map(k => `${obj}.${k}`)));
+
 function evalRule(rule, props) { try { return evalExpr(rule.trim(), props); } catch { return false; } }
 function evalExpr(e, p) {
   e = e.trim();
@@ -2397,18 +2714,19 @@ function evalCond(c, p) {
   m = c.match(/^([\w.]+)\s+(-\w+)\s+(\S+)/i); if (m) return applyOp(String(getPV(p, m[1]) || ''), m[2], m[3]);
   return false;
 }
+// Operators the evaluator supports. Each gets lowercased value/target, plus the originals for -match.
+const RULE_OPS = {
+  '-eq':          (vl, tl) => vl === tl,
+  '-ne':          (vl, tl) => vl !== tl,
+  '-startswith':  (vl, tl) => vl.startsWith(tl),
+  '-endswith':    (vl, tl) => vl.endsWith(tl),
+  '-contains':    (vl, tl) => vl.includes(tl),
+  '-notcontains': (vl, tl) => !vl.includes(tl),
+  '-match':       (vl, tl, v, t) => { try { return new RegExp(t, 'i').test(v); } catch { return false; } },
+};
 function applyOp(v, op, t) {
-  const vl = v.toLowerCase(), tl = t.toLowerCase();
-  switch (op.toLowerCase()) {
-    case '-eq': return vl === tl;
-    case '-ne': return vl !== tl;
-    case '-startswith': return vl.startsWith(tl);
-    case '-endswith': return vl.endsWith(tl);
-    case '-contains': return vl.includes(tl);
-    case '-notcontains': return !vl.includes(tl);
-    case '-match': try { return new RegExp(t, 'i').test(v); } catch { return false; }
-    default: return false;
-  }
+  const fn = RULE_OPS[op.toLowerCase()];
+  return fn ? fn(v.toLowerCase(), t.toLowerCase(), v, t) : false;
 }
 function getPV(props, path) { let c = props; for (const k of path.split('.')) { c = c?.[k]; if (c === undefined) return ''; } return c; }
 function findClose(s, i) { let d = 0; for (; i < s.length; i++) { if (s[i] === '(') d++; else if (s[i] === ')') if (--d === 0) return i; } return -1; }
@@ -2420,6 +2738,34 @@ function splitTop(e, sep) {
     else if (d === 0 && e.slice(i, i + sl.length).toLowerCase() === sl) { const block = e.slice(last, i).trim(); if (block) parts.push(block); i += sl.length - 1; last = i + 1; }
   }
   const tail = e.slice(last).trim(); if (tail) parts.push(tail); return parts;
+}
+
+// Which leaves of a rule the evaluator above can handle. Mirrors evalExpr/evalCond; never evaluates.
+const RULE_LEAF_RES = [
+  /^([\w.]+)\s+-any\s+\(\s*_\s+(-\w+)\s+"([^"]*)"\s*\)/i,
+  /^([\w.]+)\s+-any\s+_\s+(-\w+)\s+"([^"]*)"/i,
+  /^([\w.]+)\s+(-\w+)\s+"([^"]*)"/i,
+  /^([\w.]+)\s+(-\w+)\s+(\S+)/i,
+];
+// Returns { supported, unsupported: [{ leaf, reason: 'operator'|'property'|'syntax', name }] }
+function ruleSupport(rule) {
+  const unsupported = [];
+  const walk = e => {
+    e = e.trim();
+    if (e.startsWith('(') && findClose(e, 0) === e.length - 1) e = e.slice(1, -1).trim();
+    const or = splitTop(e, '-or'); if (or.length > 1) return or.forEach(walk);
+    const and = splitTop(e, '-and'); if (and.length > 1) return and.forEach(walk);
+    let c = e;
+    if (c.startsWith('(') && c.endsWith(')')) c = c.slice(1, -1).trim();
+    if (c.toLowerCase().startsWith('-not ')) return walk(c.slice(5));
+    // Same regex order as evalCond: the first match decides
+    const m = RULE_LEAF_RES.map(re => c.match(re)).find(Boolean);
+    if (!m) unsupported.push({ leaf: e, reason: 'syntax', name: '' });
+    else if (!Object.hasOwn(RULE_OPS, m[2].toLowerCase())) unsupported.push({ leaf: e, reason: 'operator', name: m[2] });
+    else if (!RULE_PROPS.has(m[1])) unsupported.push({ leaf: e, reason: 'property', name: m[1] });
+  };
+  if (rule && rule.trim()) walk(rule);
+  return { supported: !unsupported.length, unsupported };
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { restoreFromUrl(); initMsal(); renderCurrentTab(); });
