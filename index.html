@@ -1002,7 +1002,9 @@ function throwOnAuthError(res) {
     isAuthed = false;
     el('hdr-connect').style.display = 'inline-flex';
     el('hdr-signout').style.display = 'none';
+    el('hdr-refresh').style.display = 'none';
     el('hdr-live').style.display = 'none';
+    el('hdr-syncing').style.display = 'none';
     el('hdr-sub').textContent = 'See what actually applies.';
     showToast('Session expired — please sign in again.', 'error');
     throw new Error('Session expired. Please sign in again.');
@@ -1246,10 +1248,10 @@ async function refreshData() {
   DATA.groupTags = [...tagSet].sort();
 
   DATA.loading = false;
-  DATA.loaded = true;
+  DATA.loaded = isAuthed;   // a 401 during the load signed us out: don't present partial data as loaded
   el('hdr-syncing').style.display = 'none';
-  el('hdr-live').style.display = 'inline-flex';
-  renderCurrentTab();
+  if (isAuthed) el('hdr-live').style.display = 'inline-flex';
+  renderCurrentTab();       // signed out → the empty state
 }
 
 // Mark the active nav item: the .on class plus aria-current for assistive tech
