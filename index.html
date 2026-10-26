@@ -33,6 +33,7 @@
       --accent-on-dark: #5eb8ab;
       --ink:     #23221f;   /* header, later sidebar */
       --ink-text:#a9a69f;
+      --ink-on:  #34322e;   /* active item on ink */
       --green:   #2e7550;
       --amber:   #8a5f0c;
       --red:     #a33a32;
@@ -490,6 +491,65 @@
       .gp-frow .tr-main { grid-area: auto; }
     }
 
+    /* ── Layout: ink sidebar + main column ── */
+    #app { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 100vh; }
+    .sb {
+      position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 50;
+      display: flex; flex-direction: column; gap: 18px; padding: 16px 12px;
+      background: var(--ink); color: var(--ink-text);
+    }
+    .sb-logo { display: flex; align-items: center; gap: 10px; padding: 2px 6px; font-size: 13px; font-weight: 600; letter-spacing: -0.02em; color: #fbfbf9; }
+    .sb-logo-icon {
+      width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex-shrink: 0;
+      background: rgba(94,184,171,.14); border: 1px solid rgba(94,184,171,.35);
+    }
+    .sb-logo-icon rect { fill: var(--accent-on-dark); }
+    .sb-nav { display: flex; flex-direction: column; gap: 2px; }
+    .sb-link {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 9px;
+      border-left: 3px solid transparent; border-radius: 0 6px 6px 0;
+      font-size: 13px; font-weight: 500; color: var(--ink-text); text-decoration: none; white-space: nowrap;
+    }
+    .sb-link svg { flex: none; }
+    .sb-link:hover { color: #fbfbf9; background: rgba(255,255,255,.05); }
+    .sb-link.on { background: var(--ink-on); color: #fbfbf9; border-left-color: var(--accent-on-dark); }
+    .sb-link .nav-badge { margin-left: auto; }
+    .sb-label { margin: 14px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-text); }
+    .sb-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 10px; }
+    #hdr-sub { display: block; padding: 0 4px; font-size: 11.5px; line-height: 1.45; color: var(--ink-text); overflow-wrap: anywhere; }
+    .sb-status { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sb-actions { display: flex; flex-direction: column; gap: 6px; }
+    .sb-actions .btn { width: 100%; }
+    .sb .btn-ghost { color: var(--ink-text); background: transparent; border-color: rgba(255,255,255,.18); }
+    .sb .btn-ghost:hover { color: #fbfbf9; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.3); }
+    .sb .btn-red { color: #e39a92; background: transparent; border-color: rgba(227,154,146,.3); }
+    .sb .btn-red:hover { background: rgba(227,154,146,.1); border-color: rgba(227,154,146,.5); }
+    .sb .pdot { background: var(--accent-on-dark); }
+    .sb .spin { border-color: rgba(255,255,255,.16); border-top-color: var(--accent-on-dark); }
+    .sb a:focus-visible, .sb button:focus-visible { outline: 2px solid var(--accent-on-dark); outline-offset: 2px; }
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .page-hd { padding: 22px 24px 0; }
+    .page-hd h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; color: var(--text); }
+    @media (max-width: 900px) {
+      #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }   /* top bar takes only what it needs */
+      .sb { height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; overflow: visible; }
+      .sb-logo { order: 1; padding: 0; }
+      .sb-foot { order: 2; flex: 1 1 0; flex-direction: row; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+      .sb-nav { order: 3; flex: 1 0 100%; flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+      .sb-nav::-webkit-scrollbar { display: none; }
+      .sb-label, .sb-status, #hdr-refresh { display: none !important; }
+      .sb-link { padding: 6px 10px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; }
+      .sb-link.on { border-bottom-color: var(--accent-on-dark); }
+      #hdr-sub { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+      .sb-actions { flex: none; }
+      .sb-actions { flex-direction: row; }
+      .sb-actions .btn { width: auto; min-height: 28px; padding: 4px 10px; }
+      .page-hd { padding: 16px 16px 0; }
+    }
+    @media (max-width: 480px) {
+      .sb-logo span { display: none; }
+    }
+
     /* ── Theme: Paper / Deep teal — overrides earlier dark-theme rules ── */
     ::selection { background: var(--accent-wash); }
     ::-webkit-scrollbar-thumb { background: var(--wash2); border-color: var(--bg); }
@@ -544,9 +604,9 @@
 </head>
 <body>
 <div id="app">
-  <div class="hdr">
-        <div class="hdr-logo">
-      <div class="hdr-logo-icon">
+  <aside class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">
         <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
           <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".45"/>
           <rect x="11" y="1" width="6" height="6" rx="1.5" fill="var(--accent)"/>
@@ -554,36 +614,42 @@
           <rect x="11" y="11" width="6" height="6" rx="1.5" fill="var(--accent)" opacity=".45"/>
         </svg>
       </div>
-      Autopilotlens
-      <div class="hdr-logo-divider"></div>
+      <span>Autopilotlens</span>
+    </div>
+    <nav class="sb-nav" aria-label="Main">
+      <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span><span class="nav-badge" id="nav-badge-overview" hidden></span></a>
+      <a class="sb-link" id="tab-simulate" href="?tab=simulate" onclick="navClick(event, 'simulate')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg><span>What applies?</span></a>
+      <a class="sb-link" id="tab-matrix" href="?tab=matrix" onclick="navClick(event, 'matrix')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.75" cy="4" r="1" fill="currentColor"/><circle cx="2.75" cy="8" r="1" fill="currentColor"/><circle cx="2.75" cy="12" r="1" fill="currentColor"/></svg><span>Assignments</span></a>
+      <div class="sb-label">Inventory</div>
+      <a class="sb-link" id="tab-groups" href="?tab=groups" onclick="navClick(event, 'groups')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6" cy="5.5" r="2.25" stroke="currentColor" stroke-width="1.5"/><path d="M1.75 13.25c.5-2.3 2.2-3.5 4.25-3.5s3.75 1.2 4.25 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10.5 3.5a2.25 2.25 0 010 4.25M12 9.9c1.2.5 2 1.6 2.25 3.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Groups</span></a>
+    </nav>
+    <div class="sb-foot">
       <small id="hdr-sub">See what actually applies.</small>
+      <div class="sb-status">
+        <div id="hdr-syncing" style="display:none;"><div class="spin"></div> Loading</div>
+        <div id="hdr-live" style="display:none;"><div class="pdot"></div> Live</div>
+      </div>
+      <div class="sb-actions">
+        <button class="btn btn-ghost" id="hdr-refresh" style="display:none;" onclick="refreshData()">Refresh</button>
+        <button class="btn btn-red" id="hdr-signout" style="display:none;" onclick="signOut()">Sign out</button>
+        <button class="btn btn-accent" id="hdr-connect" onclick="startLogin()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
+            <rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/>
+            <rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/>
+            <rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
+          </svg>
+          Sign in with Microsoft
+        </button>
+      </div>
     </div>
-    <div class="auth-area">
-      <div id="hdr-syncing" style="display:none;"><div class="spin"></div> Loading</div>
-      <div id="hdr-live" style="display:none;"><div class="pdot"></div> Live</div>
-      <button class="btn btn-ghost" id="hdr-refresh" style="display:none;" onclick="refreshData()">Refresh</button>
-      <button class="btn btn-red" id="hdr-signout" style="display:none;" onclick="signOut()">Sign out</button>
-      <button class="btn btn-accent" id="hdr-connect" onclick="startLogin()">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-          <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
-          <rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/>
-          <rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/>
-          <rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
-        </svg>
-        Sign in with Microsoft
-      </button>
-    </div>
-  </div>
+  </aside>
 
-  <div class="nav">
-    <div class="nav-t on" id="tab-overview" onclick="switchTab('overview')">Environment<span class="nav-badge" id="nav-badge-overview" hidden></span></div>
-    <div class="nav-t" id="tab-matrix" onclick="switchTab('matrix')">Assignments</div>
-    <div class="nav-t" id="tab-groups" onclick="switchTab('groups')">Groups</div>
-    <div class="nav-t" id="tab-simulate" onclick="switchTab('simulate')">What applies?</div>
-  </div>
-
-  <div class="content" id="content-area"></div>
-  <div id="modal-err" style="display:none;"></div>
+  <main class="main">
+    <header class="page-hd"><h1 id="page-title">Overview</h1></header>
+    <div class="content" id="content-area"></div>
+    <div id="modal-err" style="display:none;"></div>
+  </main>
 </div>
 
 <script>
@@ -822,10 +888,7 @@ function restoreFromUrl() {
   simView = params.get('view') === 'graph' ? 'graph' : 'trace';
   if (currentTab === 'groups' && params.get('group')) GROUPS.selected = params.get('group');
   // Reflect nav state
-  TABS.forEach(id => {
-    const t = el(`tab-${id}`);
-    if (t) t.classList.toggle('on', id === currentTab);
-  });
+  markActiveTab(currentTab);
 }
 
 function copySimLink() {
@@ -929,10 +992,7 @@ function startDemo() {
   // Deep-linked simulation fields win over the demo defaults (like the groups deep link above)
   const urlParams = new URLSearchParams(location.search);
   SIM_URL_FIELDS.forEach(k => { if (urlParams.has(k)) SIM[k] = urlParams.get(k); });
-  TABS.forEach(id => {
-    const t = el(`tab-${id}`);
-    if (t) t.classList.toggle('on', id === currentTab);
-  });
+  markActiveTab(currentTab);
   el('hdr-connect').style.display = 'inline-flex';
   el('hdr-connect').innerHTML = 'Sign in with Microsoft';
   el('hdr-signout').style.display = 'inline-flex';
@@ -1295,16 +1355,34 @@ async function refreshData() {
   renderCurrentTab();
 }
 
+// Mark the active nav item: the .on class plus aria-current for assistive tech
+function markActiveTab(tab) {
+  TABS.forEach(id => {
+    const t = el(`tab-${id}`);
+    if (!t) return;
+    t.classList.toggle('on', id === tab);
+    if (id === tab) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+  });
+}
+// Plain clicks switch in place; Ctrl/Cmd/Shift/middle clicks keep the link's default (new tab/window)
+function navClick(event, tab) {
+  if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  event.preventDefault();
+  switchTab(tab);
+}
+const TAB_TITLES = { overview: 'Overview', simulate: 'What applies?', matrix: 'Assignments', groups: 'Groups' };
+
 function switchTab(tab) {
   currentTab = tab;
   track(`tab-${tab}`, `Viewed ${tab} tab`);
-  TABS.forEach(id => el(`tab-${id}`).classList.toggle('on', id === tab));
+  markActiveTab(tab);
   simToUrl();
   renderCurrentTab();
 }
 
 function renderCurrentTab() {
   const mount = el('content-area');
+  el('page-title').textContent = TAB_TITLES[currentTab] || '';
   if (!isAuthed && !DATA.loading) { renderEmptyState(mount); return; }
   if (DATA.loading) {
     mount.innerHTML = `<div class="card fade" style="display:flex;align-items:center;justify-content:center;min-height:280px;gap:12px;color:var(--text3);"><div class="spin"></div><span>Loading your Intune configuration…</span></div>`;
