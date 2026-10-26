@@ -421,7 +421,8 @@
     .gp-chiprow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
     .gp-chiprow .gp-lbl { margin: 0 2px 0 10px; }
     .gp-chiprow .gp-lbl:first-child { margin-left: 0; }
-    .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 58px 72px minmax(0, 1.4fr) 112px 64px; cursor: pointer; }
+    .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 66px 72px minmax(0, 1.4fr) 112px 64px; cursor: pointer; }
+    .tr-row.gp-pinned { background: var(--wash); }
     .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
     .gp-muted { color: var(--text3); }
     .err-banner { display: block; }   /* summary on top, list below (base .demo-banner is flex) */
@@ -1015,16 +1016,16 @@ function throwOnAuthError(res) {
   if (res.status === 403) throw new Error('Permission denied (403). Admin consent may be required for one or more scopes.');
 }
 
-async function graphGet(url) {
+async function graphGet(url, { headers: extraHeaders, signal } = {}) {
   const token = await getAccessToken();
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...extraHeaders };
   let rows = [];
   let next = url;
   let pageCount = 0;
 
   while (next) {
     pageCount++;
-    const res = await fetchWithRetry(next, { headers });
+    const res = await fetchWithRetry(next, { headers, signal });
     throwOnAuthError(res);
 
     // Still 429/500 after retries, mid-pagination — return partial
@@ -1812,9 +1813,13 @@ function renderMatrix(mount) {
 function buildGroupUsage() {
   const usage = {};
   const add = (item, name, kind) => resolveAssignmentsRaw(item).forEach(x => {
-    const gid = (x.raw.target || x.raw).groupId;
+    const t = x.raw.target || x.raw;
+    // All devices / All users are built-in targets, not groups; they can't be excluded, so always include
+    const gid = x.kind === 'allDevices' ? '__allDevices__' : x.kind === 'allUsers' ? '__allUsers__' : t.groupId;
     if (!gid) return;
-    (usage[gid] = usage[gid] || []).push({ name: name || '', kind, mode: x.kind === 'exclude' ? 'exclude' : 'include', intent: x.intent });
+    const filterId = t.deviceAndAppManagementAssignmentFilterId || null;
+    (usage[gid] = usage[gid] || []).push({ name: name || '', kind, mode: x.kind === 'exclude' ? 'exclude' : 'include', intent: x.intent,
+      filterId, filterType: filterId ? (t.deviceAndAppManagementAssignmentFilterType || 'include') : null });
   });
   DATA.autopilotProfiles.forEach(p => add(p, p.displayName, 'Autopilot profile'));
   DATA.enrollmentStatusPages.forEach(e => add(e, e.displayName, 'ESP'));
@@ -1825,6 +1830,12 @@ function buildGroupUsage() {
 
 const groupRuleType = g => /\bdevice\./i.test(g.membershipRule || '') ? 'Device' : /\buser\./i.test(g.membershipRule || '') ? 'User' : 'Unknown';
 const groupState = g => g.membershipRuleProcessingState === 'Paused' ? 'Paused' : 'On';
+// Built-in assignment targets. Not Entra groups, so they never come from /groups.
+const BUILTIN_TARGETS = {
+  __allDevices__: { id: '__allDevices__', displayName: 'All devices', builtin: 'device', groupTypes: [], membershipRule: '' },
+  __allUsers__:   { id: '__allUsers__',   displayName: 'All users',   builtin: 'user',   groupTypes: [], membershipRule: '' },
+};
+const findGroup = id => BUILTIN_TARGETS[id] || DATA.groups.find(x => x.id === id);
 // Listed on the Groups tab: every dynamic group, plus static groups that something is assigned to
 const isListedGroup = (g, usage) => isDyn(g) || (usage[g.id] || []).length > 0;
 const jsArg = s => esc(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -1877,8 +1888,24 @@ function renderGroups(mount) {
     return ciCmp(a.displayName, b.displayName);
   });
 
+  // Built-in targets: pinned on top in every view while something targets them; search applies, sort doesn't
+  const pinnedAll = Object.values(BUILTIN_TARGETS).filter(b => (GROUP_USAGE[b.id] || []).length);
+  const pinned = pinnedAll.filter(b => {
+    if (GROUPS.type || GROUPS.state || GROUPS.usage === 'Unassigned') return false;   // rule/state filters don't apply to them
+    return !q || [b.displayName, ...GROUP_USAGE[b.id].map(u => u.name)].join(' ').toLowerCase().includes(q);
+  });
+  const pinnedRows = pinned.map(b => `<div class="tr-row gp-row gp-pinned${GROUPS.selected === b.id ? ' gp-sel' : ''}" role="button" tabindex="0"
+        onclick="selectGroup('${b.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${b.id}')}">
+      <div class="tr-main"><div class="tr-name" title="${b.displayName}">${b.displayName}</div></div>
+      <div class="gp-cell"><span class="tr-pill tr-pill-amber">Built-in</span></div>
+      <div class="gp-cell gp-num" data-count-for="${b.id}">${countCellHtml(b.id)}</div>
+      <div class="gp-cell gp-muted">${b.builtin === 'device' ? 'Every device' : 'Every user'}</div>
+      <div class="gp-cell">${GROUP_USAGE[b.id].length} incl</div>
+      <div class="gp-cell"><span class="gp-muted">—</span></div>
+    </div>`).join('');
+
   const chips = (field, values) => values.map(v => filterChip(`onclick="toggleGroupsFilter('${field}','${v}')"`, v, GROUPS[field] === v)).join('');
-  const listRows = rows.map(g => {
+  const listRows = pinnedRows + rows.map(g => {
     const usage = GROUP_USAGE[g.id] || [];
     const nIncl = usage.filter(u => u.mode === 'include').length, nExcl = usage.length - nIncl;
     const partial = !ruleSupport(g.membershipRule).supported;
@@ -1903,7 +1930,7 @@ function renderGroups(mount) {
       <div id="gp-findings">${groupFindingsHtml()}</div>
       <div class="gp-layout">
         <section class="card tr-section">
-          <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Groups</span><span class="tr-count">${rows.length} / ${all.length}</span></div>
+          <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Groups</span><span class="tr-count">${pinned.length + rows.length} / ${pinnedAll.length + all.length}</span></div>
           <div class="gp-filters">
             <div style="display:flex;gap:8px;align-items:flex-end;">
               <div style="flex:1;"><label class="gp-lbl" for="gp-search">Search</label>
@@ -1924,7 +1951,7 @@ function renderGroups(mount) {
       </div>
     </div>`;
 
-  const g = DATA.groups.find(x => x.id === GROUPS.selected);
+  const g = findGroup(GROUPS.selected);
   if (g) loadGroupMembers(g);
   ensureMemberCounts();
 }
@@ -1936,6 +1963,7 @@ function setGroupsSort(sort) {
 
 // Effective member count: the loaded member list wins when it is at least as large as the $count
 function memberCountOf(id) {
+  if (id === '__allDevices__') return DATA.managedDevices.length;
   const c = MEMBER_COUNTS[id];
   const cache = MEMBERS_CACHE[id];
   const loaded = cache?.status === 'ok' ? cache.rows.length : null;
@@ -1943,6 +1971,13 @@ function memberCountOf(id) {
   return loaded !== null ? loaded : c;   // undefined while pending, or { error }
 }
 function countCellHtml(id) {
+  if (id === '__allDevices__') return `<span title="Intune-managed and Autopilot-registered devices known to Autopilotlens">${DATA.managedDevices.length}</span>`;
+  if (id === '__allUsers__' && demoMode) return '<span title="Not available in the demo">—</span>';
+  if (id === '__allUsers__' && typeof memberCountOf(id) === 'number') {
+    const title = ALL_USERS_LICENSED ? "Licensed users (Intune 'All users')"
+      : "All users in the tenant (licensed-user count unavailable). Intune's All users means licensed users only.";
+    return `<span title="${htmlAttr(title)}">${memberCountOf(id)}</span>`;
+  }
   const c = memberCountOf(id);
   if (typeof c === 'number') return String(c);
   if (c && c.error) return `<span title="${htmlAttr(c.error)}">—</span>`;
@@ -1951,6 +1986,7 @@ function countCellHtml(id) {
 // Update just the count cells + findings (no full re-render: keeps search focus and scroll)
 function updateCountCells(id) {
   document.querySelectorAll(`[data-count-for="${CSS.escape(id)}"]`).forEach(c => { c.innerHTML = countCellHtml(id); });
+  if (BUILTIN_TARGETS[id] && GROUPS.selected === id) refreshMembers(id);   // count lives in the built-in detail too
   scheduleFindingsRefresh();
 }
 let findingsFrame = 0;
@@ -1971,6 +2007,7 @@ const parseCount = body => {
 // Request $count for every listed group (dynamic + static in use) that has none yet; results fill in cell by cell
 function ensureMemberCounts() {
   if (!DATA.loaded || DATA.loading) return;
+  ensureAllUsersCount();
   const dyn = DATA.groups.filter(g => isListedGroup(g, GROUP_USAGE));
   if (demoMode) {   // demo: counts from the sample members, no Graph calls
     dyn.forEach(g => { if (!(g.id in MEMBER_COUNTS)) { MEMBER_COUNTS[g.id] = (DEMO_MEMBERS[g.id] || []).length; updateCountCells(g.id); } });
@@ -1998,6 +2035,34 @@ function ensureMemberCounts() {
   }, signal)
     .catch(e => todo.forEach(g => finish(g.id, { error: e.message })))
     .finally(() => todo.forEach(g => finish(g.id, { error: 'No response' })));
+}
+
+// All users: Intune's "All users" means licensed users, so count those. Not a group, so not part of the
+// $batch; abortable like the batch counts. If the licence filter is rejected (400), count every user instead.
+let ALL_USERS_LICENSED = true;   // false when the count fell back to every user in the tenant
+function ensureAllUsersCount() {
+  const id = '__allUsers__';
+  if (demoMode || !isAuthed || !(GROUP_USAGE[id] || []).length || id in MEMBER_COUNTS || COUNTS_PENDING.has(id)) return;
+  COUNTS_PENDING.add(id);
+  const gen = COUNTS_GEN, signal = COUNTS_ABORT.signal;
+  const usersCount = filter => graphGet(`https://graph.microsoft.com/v1.0/users/$count${filter ? '?$filter=' + encodeURIComponent(filter) : ''}`,
+    { headers: { ConsistencyLevel: 'eventual' }, signal });
+  let licensed = true;
+  usersCount('assignedLicenses/$count ne 0')
+    .catch(e => {
+      if (signal.aborted || !/^400\b/.test(e.message)) throw e;
+      licensed = false;
+      return usersCount(null);
+    })
+    .then(body => { const n = parseCount(body); return n !== null ? n : { error: 'Unexpected $count response' }; }, e => ({ error: e.message }))
+    .then(value => {
+      if (gen !== COUNTS_GEN || !COUNTS_PENDING.has(id)) return;
+      COUNTS_PENDING.delete(id);
+      if (signal.aborted) return;   // cancelled: no value, no error shown
+      MEMBER_COUNTS[id] = value;
+      ALL_USERS_LICENSED = licensed;
+      updateCountCells(id);
+    });
 }
 
 // ── Group findings: pure, same shape as report findings ──
@@ -2035,6 +2100,12 @@ function groupFindings({ groups, usage, countOf, devices }) {
       severity: 'amber', title: `No device has group tag "${t}"`,
       detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
   }
+  Object.values(BUILTIN_TARGETS).forEach(b => {
+    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !x.filterId).map(x => x.name).sort(ciCmp);
+    if (!names.length) return;
+    amber.push({ severity: 'amber', title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
+      detail: names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : ''), groupId: b.id });
+  });
   if (unassigned.length > 3) {
     amber.push({ severity: 'amber', title: `${unassigned.length} dynamic groups not assigned to anything`, detail: unassigned.map(g => g.displayName).join(', ') });
   } else {
@@ -2063,7 +2134,7 @@ function groupFindingsHtml() {
 }
 
 function renderGroupDetailHtml() {
-  const g = DATA.groups.find(x => x.id === GROUPS.selected);
+  const g = findGroup(GROUPS.selected);
   if (!g) return `<div class="card gp-placeholder empty-note">${GROUPS.selected ? 'That group was not found in this tenant.' : 'Select a group to see its rule, assignments and members.'}</div>`;
   const type = groupRuleType(g), state = groupState(g);
   const support = ruleSupport(g.membershipRule);
@@ -2076,7 +2147,8 @@ function renderGroupDetailHtml() {
   const asnHtml = kinds.length ? kinds.map(k => `<div class="tr-subhead">${esc(k)} (${byKind[k].length})</div>${byKind[k]
     .sort((a, b) => ciCmp(a.name, b.name))
     .map(u => `<div class="tr-row">
-      <div class="tr-main"><div class="tr-name" title="${htmlAttr(u.name)}">${esc(u.name)}</div></div>
+      <div class="tr-main"><div class="tr-name" title="${htmlAttr(u.name)}">${esc(u.name)}</div>${g.builtin
+        ? `<div class="tr-sub">${u.filterId ? `filter: ${esc(u.filterId.slice(0, 8))}… (${esc(u.filterType)})` : '<span class="gp-muted">No filter</span>'}</div>` : ''}</div>
       <div class="tr-pill-col"><span class="tr-pill ${u.mode === 'exclude' ? 'tr-pill-red' : 'tr-pill-green'}">${u.mode === 'exclude' ? 'Exclude' : 'Include'}</span></div>
       <div class="tr-via">${u.intent ? esc(u.intent) : ''}</div>
     </div>`).join('')}`).join('') : '<div class="tr-empty empty-note">Not assigned to anything.</div>';
@@ -2085,7 +2157,8 @@ function renderGroupDetailHtml() {
     <section class="card tr-section">
       <div class="gp-dhead">
         <div class="title">${esc(g.displayName)}</div>
-        <div class="gp-dmeta">${isDyn(g) ? `<span class="tr-pill tr-pill-gray">${type} group</span><span class="tr-pill ${state === 'Paused' ? 'tr-pill-amber' : 'tr-pill-gray'}">${state}</span>` : '<span class="tr-pill tr-pill-gray">Static group</span>'}</div>
+        <div class="gp-dmeta">${g.builtin ? '<span class="tr-pill tr-pill-amber">Built-in</span>' : isDyn(g) ? `<span class="tr-pill tr-pill-gray">${type} group</span><span class="tr-pill ${state === 'Paused' ? 'tr-pill-amber' : 'tr-pill-gray'}">${state}</span>` : '<span class="tr-pill tr-pill-gray">Static group</span>'}</div>
+        ${g.builtin ? `<div class="desc">Built-in target. Applies to every ${g.builtin}. Use assignment filters or exclusions to narrow it.</div>` : ''}
         ${g.description ? `<div class="desc">${esc(g.description)}</div>` : ''}
       </div>
       ${isDyn(g) ? `<div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Rule</span></div>
@@ -2103,6 +2176,13 @@ function renderGroupDetailHtml() {
 }
 
 async function loadGroupMembers(g) {
+  if (g.builtin === 'user') return;   // All users: count only, never listed
+  if (g.builtin === 'device' && !MEMBERS_CACHE[g.id]) {   // All devices: the devices we already have, no Graph call
+    MEMBERS_CACHE[g.id] = { status: 'ok', rows: DATA.managedDevices.map(d => ({ id: 'md:' + d.id, deviceId: d.azureADDeviceId || '', displayName: d.deviceName,
+      operatingSystemVersion: d.osVersion || '', '@odata.type': '#microsoft.graph.device', _managed: d })) };
+    refreshMembers(g.id);
+    return;
+  }
   if (MEMBERS_CACHE[g.id]) return;   // cached, or a fetch is already in flight
   if (demoMode) { MEMBERS_CACHE[g.id] = { status: 'ok', rows: DEMO_MEMBERS[g.id] || [] }; refreshMembers(g.id); updateCountCells(g.id); return; }
   MEMBERS_CACHE[g.id] = { status: 'loading' };
@@ -2124,7 +2204,7 @@ async function loadGroupMembers(g) {
 // Re-render only the members block (keeps list scroll and search focus intact)
 function refreshMembers(groupId, focusId) {
   const host = el('gp-members');
-  const g = DATA.groups.find(x => x.id === groupId);
+  const g = findGroup(groupId);
   if (!host || !g || GROUPS.selected !== groupId || currentTab !== 'groups') return;
   host.innerHTML = renderMembersHtml(g);
   const count = el('gp-mcount');
@@ -2132,7 +2212,7 @@ function refreshMembers(groupId, focusId) {
   if (focusId) { const i = el(focusId); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
 }
 
-const memberCountText = id => MEMBERS_CACHE[id]?.status === 'ok' ? String(MEMBERS_CACHE[id].rows.length) : '';
+const memberCountText = id => { const c = memberCountOf(id); return typeof c === 'number' ? String(c) : ''; };
 
 function managedByEntraId() {
   const map = {};
@@ -2141,6 +2221,7 @@ function managedByEntraId() {
 }
 
 function renderMembersHtml(g) {
+  if (g.builtin === 'user') return `<div class="gp-body gp-muted">Users are not listed. The list can be very large.</div>`;
   const c = MEMBERS_CACHE[g.id];
   if (!c || c.status === 'loading') return `<div class="gp-body gp-loading"><div class="spin"></div><span>Loading members…</span></div>`;
   if (c.status === 'error') return `<div class="gp-body"><div class="gp-error">${c.forbidden ? '' : 'Could not load members: '}${esc(c.error)}</div></div>`;
@@ -2150,7 +2231,7 @@ function renderMembersHtml(g) {
   const kindOf = m => m['@odata.type'] ? (/device$/i.test(m['@odata.type']) ? 'device' : 'user') : fallbackKind;
   const managed = managedByEntraId();
   const q = GROUPS.memberSearch.trim().toLowerCase();
-  const rows = c.rows.map(m => { const kind = kindOf(m); return { m, kind, d: kind === 'device' ? managed[(m.deviceId || '').toLowerCase()] || null : null }; })
+  const rows = c.rows.map(m => { const kind = kindOf(m); return { m, kind, d: kind === 'device' ? m._managed || managed[(m.deviceId || '').toLowerCase()] || null : null }; })
     .filter(({ m, d }) => !q || [m.displayName, m.userPrincipalName, m.department, d?.groupTag, d?.model, d?.serialNumber].join(' ').toLowerCase().includes(q))
     .sort((a, b) => ciCmp(a.kind, b.kind) || ciCmp(a.m.displayName, b.m.displayName));
   const shown = GROUPS.showAll ? rows : rows.slice(0, 200);
@@ -2189,7 +2270,7 @@ function renderMembersHtml(g) {
 function simulateGroupMember(memberId) {
   const m = (MEMBERS_CACHE[GROUPS.selected]?.rows || []).find(r => r.id === memberId);
   if (!m) return;
-  const d = managedByEntraId()[(m.deviceId || '').toLowerCase()] || null;
+  const d = m._managed || managedByEntraId()[(m.deviceId || '').toLowerCase()] || null;
   track('group-simulate', 'Simulate from group member');
   Object.assign(SIM, {
     deviceName: d?.deviceName || m.displayName || '',
