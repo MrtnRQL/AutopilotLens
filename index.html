@@ -497,6 +497,51 @@
       .sb-logo span { display: none; }
     }
 
+    /* ── Print view (PDF export). Only active while body.pr-active (set by exportSimPdf), so a normal Ctrl+P still prints the page ── */
+    @media print {
+      /* Page numbers: Chromium supports @page margin boxes; Firefox ignores them (enable page numbers via the print dialog's headers/footers) */
+      @page { size: A4; margin: 14mm 14mm 16mm; @bottom-right { content: counter(page) " / " counter(pages); font: 8pt ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: #66635c; } }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      body.pr-active #app, body.pr-active .aav-toast, body.pr-active #tweaks-panel, body.pr-active .modal-bg { display: none !important; }
+      body.pr-active #print-root { display: block !important; }
+      html:has(> body.pr-active), body.pr-active { background: #fff !important; height: auto !important; }
+      #print-root { font-family: var(--font-sans); font-size: 10pt; line-height: 1.45; color: var(--text); }
+      thead { display: table-header-group; }
+      tr, .pr-finding, .pr-kpis, .pr-devstrip { break-inside: avoid; }
+      h2 { break-after: avoid; }
+      .pr-hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid var(--text); }
+      .pr-brand { display: flex; align-items: center; gap: 6px; font-size: 9pt; font-weight: 600; color: var(--text2); }
+      .pr-hd h1 { margin-top: 6px; font-size: 18pt; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+      .pr-sub { color: var(--text2); }
+      .pr-meta { display: grid; grid-template-columns: auto auto; gap: 2px 10px; margin: 0; font-size: 9pt; }
+      .pr-meta dt { color: var(--text3); }
+      .pr-meta dd { margin: 0; font-weight: 500; }
+      .pr-label { font-size: 8pt; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+      .pr-devstrip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; }
+      .pr-devstrip > div { padding: 6px 10px; border-left: 1px solid var(--border); overflow-wrap: anywhere; }
+      .pr-devstrip > div:first-child { border-left: 0; }
+      .pr-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+      .pr-kpi { padding: 8px 10px; background: var(--bg2); border: 1px solid var(--border); border-top: 3px solid; border-radius: 4px; }
+      .pr-kpi-n { font-size: 16pt; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .pr-section { margin-top: 14px; }
+      .pr-section h2 { margin-bottom: 6px; font-size: 12pt; font-weight: 600; }
+      .pr-finding { margin-bottom: 5px; padding: 4px 8px; background: var(--bg3); border-left: 3px solid; }
+      .pr-ftitle { font-weight: 600; }
+      .pr-fdetail, .pr-empty { color: var(--text2); }
+      .pr-flow svg { display: block; width: 100%; height: auto; }
+      .pr-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+      .pr-table th { padding: 4px 6px; text-align: left; font-size: 8pt; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); background: var(--bg3); border-bottom: 1px solid var(--border2); }
+      .pr-table td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid var(--hairline); overflow-wrap: anywhere; }
+      .pr-mono { font-family: var(--font-mono); font-size: 9pt; }
+      .pr-excl .pr-name { text-decoration: line-through; color: var(--text3); }
+      .pr-note-red { color: var(--red); }
+      .pr-pill { display: inline-block; padding: 0 6px; font-size: 8pt; font-weight: 500; line-height: 1.6; white-space: nowrap; border: 1px solid; border-radius: 4px; }
+      .pr-pill-green { color: var(--green); border-color: rgba(46,117,80,.3); background: rgba(46,117,80,.07); }
+      .pr-pill-amber { color: var(--amber); border-color: rgba(138,95,12,.3); background: rgba(138,95,12,.07); }
+      .pr-pill-red { color: var(--red); border-color: rgba(163,58,50,.3); background: rgba(163,58,50,.07); }
+      .pr-pill-gray { color: var(--text2); border-color: var(--border2); background: var(--wash); }
+      .pr-foot { margin-top: 16px; padding-top: 8px; font-size: 8pt; color: var(--text3); border-top: 1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -756,7 +801,7 @@ const SCOPES = [
   'https://graph.microsoft.com/Device.Read.All',
 ];
 
-const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const byId = id => DATA.groups.find(g => g.id === id);
 const isDyn = g => (g.groupTypes || []).includes('DynamicMembership') || !!g.membershipRule;
 const el = id => document.getElementById(id);
@@ -3208,6 +3253,7 @@ function exportButtonsHtml() {
   const tip = ready ? 'Contains tenant configuration data. Generated locally, nothing is uploaded.' : 'Run a simulation first';
   const attrs = ready ? '' : ' disabled aria-disabled="true"';
   return `<button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="exportSimMarkdown()" title="${tip}"${attrs}>Export .md</button>
+    <button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="exportSimPdf()" title="${tip}"${attrs}>Export PDF</button>
     <button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="copySimMarkdown()" title="${tip}"${attrs}>Copy Markdown</button>`;
 }
 
@@ -3423,17 +3469,22 @@ function simReportMarkdown() {
   return toMarkdown(buildReport(LAST_SIM.model));
 }
 
+// "autopilotlens-<device>-<YYYYMMDD-HHmm>": the .md file name and the PDF's suggested name
+function reportFileBase(model) {
+  const d = new Date(), p = v => String(v).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+  const sim = model.sim;
+  const slug = String(sim.deviceName || sim.serial || sim.model || 'device').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  return `autopilotlens-${slug}-${stamp}`;
+}
+
 function exportSimMarkdown() {
   if (!LAST_SIM?.model) return;
   const md = simReportMarkdown();
-  const d = new Date(), p = v => String(v).padStart(2, '0');
-  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
-  const sim = LAST_SIM.model.sim;
-  const slug = String(sim.deviceName || sim.serial || sim.model || 'device').toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `autopilotlens-${slug}-${stamp}.md`;
+  a.download = `${reportFileBase(LAST_SIM.model)}.md`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -3447,6 +3498,139 @@ function copySimMarkdown() {
   navigator.clipboard.writeText(simReportMarkdown())
     .then(() => showToast('Markdown copied to clipboard', 'success'))
     .catch(() => showToast('Could not copy Markdown', 'error'));
+}
+
+// ── PDF export: a print view of the report model; the browser's "Save as PDF" renders it ──
+// Assignment flow for print: Device → groups (+ All devices / All users) → one box per category per group.
+// Hex colors (the SVG may be read outside this page); fonts via the page's stack.
+function toReportSvg(r) {
+  const W = 680, ROW = 44, NH = 34, TOP = 30, MAX_GROUPS = 10;
+  const C = {
+    device: { stroke: '#23221f', fill: '#fbfbf9' }, group: { stroke: '#5e4a8a', fill: '#ebe7f2' },
+    broad: { stroke: '#8a5f0c', fill: '#f3ebdc' }, ok: { stroke: '#2e7550', fill: '#e4eee7' }, excl: { stroke: '#a33a32', fill: '#f4e3e1' },
+  };
+  const cut = (t, n) => { t = String(t ?? ''); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+  const font = 'style="font-family:var(--font-sans)"';
+  const groupsSec = r.sections.find(s => s.id === 'groups');
+  const cats = r.sections.filter(s => s.id !== 'groups' && s.rows.length)
+    .map(s => ({ ...s, label: { enrollment: 'Enrollment', configuration: 'Configuration', apps: 'Apps' }[s.id] || s.title }));
+  const rows = cats.flatMap(c => c.rows.map(x => ({ ...x, cat: c.label })));
+
+  // Middle column: broad targets that items use, then groups (capped)
+  const broadUsed = ['All devices', 'All users'].filter(b => rows.some(x => x.viaKind === 'broad' && x.via === b && x.status !== 'excluded'));
+  const groupNames = groupsSec.rows.map(g => g.name);
+  const shownGroups = groupNames.slice(0, MAX_GROUPS);
+  const mid = [
+    ...broadUsed.map(b => ({ key: 'b:' + b, label: b, sub: 'Built-in target', ...C.broad })),
+    ...shownGroups.map(g => ({ key: 'g:' + g, label: g, sub: 'Group', ...C.group })),
+    ...(groupNames.length > MAX_GROUPS ? [{ key: 'more', label: `+${groupNames.length - MAX_GROUPS} more groups`, sub: '', ...C.group }] : []),
+  ];
+  const midKey = (kind, name) => kind === 'broad' ? 'b:' + name
+    : shownGroups.includes(name) ? 'g:' + name : groupNames.includes(name) ? 'more' : null;
+
+  // Right column: one box per (category, via node); excluded items in their own red box per (category, excluding group)
+  const boxes = new Map();
+  rows.forEach(x => {
+    const excluded = x.status === 'excluded';
+    const from = excluded ? midKey('group', x.exclVia) : midKey(x.viaKind, x.via);
+    const key = `${x.cat}|${excluded ? 'x' : 'i'}|${from || 'device'}`;
+    if (!boxes.has(key)) boxes.set(key, { from, excluded, cat: x.cat, names: [], tone: excluded ? C.excl : x.status === 'uninstall' ? C.excl : C.ok });
+    boxes.get(key).names.push(x.name);
+  });
+  const right = [...boxes.values()];
+
+  const nRows = Math.max(mid.length, right.length, 1);
+  const H = TOP + nRows * ROW + 10;
+  const y = i => TOP + i * ROW;
+  const X = { dev: 10, mid: 245, right: 490 }, BW = { dev: 150, mid: 180, right: 180 };
+  const devY = TOP + ((nRows - 1) * ROW) / 2;
+  const node = (x, yy, w, n, label, sub) => `<rect x="${x}" y="${yy}" width="${w}" height="${NH}" rx="5" fill="${n.fill}" stroke="${n.stroke}" stroke-width="1"/>`
+    + `<text x="${x + 9}" y="${yy + (sub ? 14 : 21)}" font-size="10.5" font-weight="600" fill="${n.stroke}" ${font}>${esc(cut(label, 30))}</text>`
+    + (sub ? `<text x="${x + 9}" y="${yy + 27}" font-size="9" fill="${n.stroke}" opacity=".8" ${font}>${esc(cut(sub, 34))}</text>` : '');
+  const edge = (x1, y1, x2, y2, color, dashed) => { const m = (x1 + x2) / 2;
+    return `<path d="M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}" fill="none" stroke="${color}" stroke-width="1.2" opacity=".7"${dashed ? ' stroke-dasharray="4 3"' : ''}/>`; };
+
+  let edges = '', nodes = '';
+  const hdr = (x, t) => `<text x="${x}" y="16" font-size="9" font-weight="600" letter-spacing="1" fill="#66635c" ${font}>${t}</text>`;
+  nodes += hdr(X.dev, 'DEVICE') + hdr(X.mid, 'GROUPS AND TARGETS') + hdr(X.right, 'WHAT APPLIES');
+  nodes += node(X.dev, devY, BW.dev, C.device, r.device.name, r.device.groupTag ? 'Group tag ' + r.device.groupTag : '');
+  const midY = {};
+  mid.forEach((m, i) => {
+    midY[m.key] = y(i);
+    edges += edge(X.dev + BW.dev, devY + NH / 2, X.mid, y(i) + NH / 2, m.stroke, false);
+    nodes += node(X.mid, y(i), BW.mid, m, m.label, m.sub);
+  });
+  right.forEach((b, i) => {
+    const more = b.names.length - 1, prefix = b.excluded ? 'Excluded: ' : '', suffix = more ? ` +${more} more` : '';
+    const label = prefix + cut(b.names[0], 30 - prefix.length - suffix.length) + suffix;   // fits the node's 30-char cut
+    const fromY = b.from && midY[b.from] !== undefined ? midY[b.from] + NH / 2 : devY + NH / 2;
+    const fromX = b.from && midY[b.from] !== undefined ? X.mid + BW.mid : X.dev + BW.dev;
+    edges += edge(fromX, fromY, X.right, y(i) + NH / 2, b.tone.stroke, b.excluded);
+    nodes += node(X.right, y(i), BW.right, b.tone, label, `${b.cat} · ${b.names.length}`);
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Assignment flow">${edges}${nodes}</svg>`;
+}
+
+// Pure: report model → print HTML (all text through esc(); names exactly as exported)
+function toPrintView(r) {
+  const TONE = { accent: 'var(--accent)', amber: 'var(--amber)', red: 'var(--red)' };
+  const SEV = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
+  const PILL = { Targeted: 'green', Broad: 'amber', Conflict: 'amber', Excluded: 'red', Uninstall: 'red' };
+  const dash = v => v ? esc(v) : '—';
+  const logo = `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/></svg>`;
+  const table = sec => {
+    if (sec.id === 'groups') return `<table class="pr-table"><thead><tr><th>Group</th><th>Type</th><th>Source</th><th>Rule</th></tr></thead><tbody>
+      ${sec.rows.map(g => `<tr><td>${esc(g.name)}</td><td>${esc(g.type)}</td><td>${esc(g.via)}</td><td class="pr-mono">${dash(g.note)}</td></tr>`).join('')}</tbody></table>`;
+    return `<table class="pr-table"><thead><tr><th>Name</th><th>Type</th><th>Scope</th><th>Via</th><th>Note</th></tr></thead><tbody>
+      ${sec.rows.map(x => { const ex = x.status === 'excluded';
+        return `<tr${ex ? ' class="pr-excl"' : ''}><td class="pr-name">${esc(x.name)}</td><td>${esc(x.type)}</td>`
+          + `<td><span class="pr-pill pr-pill-${PILL[x.scope] || 'gray'}">${esc(x.scope)}</span></td><td>${esc(x.via)}</td>`
+          + `<td${ex ? ' class="pr-note-red"' : ''}>${dash(x.note)}</td></tr>`; }).join('')}</tbody></table>`;
+  };
+  return `<article class="pr-doc">
+  <header class="pr-hd">
+    <div>
+      <div class="pr-brand">${logo}<span>Autopilotlens</span></div>
+      <h1>Simulation report</h1>
+      <div class="pr-sub">What applies to ${esc(r.device.name)}</div>
+    </div>
+    <dl class="pr-meta">
+      <dt>Tenant</dt><dd>${dash(r.meta.tenant)}</dd>
+      <dt>Generated</dt><dd>${esc(localStamp(r.meta.generatedAt))}</dd>
+      <dt>Source</dt><dd>${dash(r.meta.source)}</dd>
+    </dl>
+  </header>
+  <div class="pr-devstrip">
+    <div><div class="pr-label">Device</div><div>${dash(r.device.name)}</div></div>
+    <div><div class="pr-label">Group tag</div><div>${dash(r.device.groupTag)}</div></div>
+    <div><div class="pr-label">Model</div><div>${dash(r.device.model)}</div></div>
+    <div><div class="pr-label">Primary user</div><div>${dash(r.device.primaryUser)}</div></div>
+  </div>
+  <div class="pr-kpis">${r.kpis.map(k => `<div class="pr-kpi" style="border-top-color:${TONE[k.tone] || 'var(--text3)'};"><div class="pr-kpi-n">${esc(k.value)}</div><div class="pr-label">${esc(k.label)}</div></div>`).join('')}</div>
+  <section class="pr-section"><h2>Findings</h2>
+    ${r.findings.length ? r.findings.map(f => `<div class="pr-finding" style="border-left-color:${SEV[f.severity]};"><div class="pr-ftitle">${esc(f.title)}</div><div class="pr-fdetail">${esc(f.detail)}</div></div>`).join('') : '<p class="pr-empty">No findings.</p>'}
+  </section>
+  <section class="pr-section pr-flow"><h2>Assignment flow</h2>${toReportSvg(r)}</section>
+  ${r.sections.filter(sec => sec.rows.length).map(sec => `<section class="pr-section"><h2>${esc(sec.title)} (${sec.count})</h2>${table(sec)}</section>`).join('')}
+  <footer class="pr-foot">Generated locally in the browser. No tenant data was sent to Autopilotlens. This document contains tenant configuration data.</footer>
+</article>`;
+}
+
+// Fill the print view and switch print styles to it. Returns the cleanup (empties it, restores the title).
+function openPrintView(report, title) {
+  const root = el('print-root'), prevTitle = document.title;
+  root.innerHTML = toPrintView(report);
+  document.body.classList.add('pr-active');
+  if (title) document.title = title;
+  return () => { root.innerHTML = ''; document.body.classList.remove('pr-active'); document.title = prevTitle; };
+}
+
+function exportSimPdf() {
+  if (!LAST_SIM?.model) return;
+  const close = openPrintView(buildReport(LAST_SIM.model), reportFileBase(LAST_SIM.model));   // title → "Save as PDF" file name
+  window.addEventListener('afterprint', close, { once: true });
+  track('export-pdf', 'PDF exported');
+  window.print();
 }
 
 // The device/user properties the rule evaluator can see for a simulated device, named as in Entra ID rules.
@@ -3626,5 +3810,6 @@ applyTweaks();
   window.parent.postMessage({type:'__edit_mode_available'},'*');
 })();
 </script>
+<div id="print-root" hidden></div>
 </body>
 </html>
