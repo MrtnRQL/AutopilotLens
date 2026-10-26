@@ -6,14 +6,14 @@
   <title>Autopilotlens — See what actually applies</title>
   <meta name="description" content="Visualize and simulate Microsoft Intune Autopilot flows. See exactly what policies, apps, and profiles apply to your devices.">
   <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <!-- GoatCounter analytics -->
   <script data-goatcounter="https://autopilotlens.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
     :root {
       color-scheme: light;
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
       --bg:      #f1f0ed;   /* page */
       --bg2:     #fbfbf9;   /* card */
       --bg3:     #f5f4f1;   /* card inside card, table head */
@@ -45,11 +45,16 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Minimal reset: the parts of Tailwind's preflight this page relied on */
+    html { line-height: 1.5; }
+    button, input, select, textarea { font-family: inherit; font-size: 100%; line-height: inherit; color: inherit; }
+    img, svg { display: block; vertical-align: middle; }
+    ul, ol { list-style: none; margin: 0; padding: 0; }
     html, body {
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: Inter, sans-serif;
+      font-family: var(--font-sans);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
     }
@@ -204,7 +209,7 @@
     }
     .stat-n {
       font-size: 28px; font-weight: 600;
-      font-family: "JetBrains Mono", monospace;
+      font-family: var(--font-mono);
       color: var(--text); letter-spacing: -0.04em;
       font-feature-settings: "tnum","lnum"; line-height: 1;
     }
@@ -334,7 +339,7 @@
     .aav-toast-error { border-color: rgba(187,96,96,.28); }
 
     .mono, code {
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-family: var(--font-mono);
       font-size: 11.5px; color: #c2cad4;
     }
     .empty { color: var(--text3); }
@@ -387,7 +392,7 @@
     .tr-main { min-width: 0; }
     .tr-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tr-sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tr-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); }
+    .tr-mono { font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
     .tr-sub-red { color: var(--red); }
     .tr-excluded .tr-name { text-decoration: line-through; color: var(--text3); }
     .tr-pill { display: inline-block; font-size: 11px; font-weight: 500; line-height: 1.5; padding: 1px 8px; border-radius: 4px; border: 1px solid; }
@@ -446,7 +451,7 @@
     .gp-dmeta { display: flex; flex-wrap: wrap; gap: 6px; }
     .gp-body { padding: 12px 16px; }
     .gp-rule {
-      margin: 0; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.55;
+      margin: 0; padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.55;
       color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm);
       white-space: pre-wrap; word-break: break-word;
     }
@@ -2545,7 +2550,7 @@ async function runSim() {
     const maxChars = Math.floor(w / 9);
     const l = String(label || '').length > maxChars ? String(label).slice(0, maxChars - 1) + '…' : String(label || '');
     const s = sub && String(sub).length > maxChars + 2 ? String(sub).slice(0, maxChars + 1) + '…' : String(sub || '');
-    return `<rect x="${x}" y="${y}" width="${w}" height="${NH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/><text x="${x+12}" y="${y+(s ? 17 : 26)}" font-size="11" font-weight="500" fill="${stroke}" font-family="Inter">${esc(l)}</text>${s ? `<text x="${x+12}" y="${y+31}" font-size="9" fill="${stroke}" opacity=".7" font-family="Inter">${esc(s)}</text>` : ''}`;
+    return `<rect x="${x}" y="${y}" width="${w}" height="${NH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/><text x="${x+12}" y="${y+(s ? 17 : 26)}" font-size="11" font-weight="500" fill="${stroke}" style="font-family:var(--font-sans)">${esc(l)}</text>${s ? `<text x="${x+12}" y="${y+31}" font-size="9" fill="${stroke}" opacity=".7" style="font-family:var(--font-sans)">${esc(s)}</text>` : ''}`;
   }
   // Small text label near the SOURCE end of a curve — shows group name between AP Profile and Group
   // posPct = where along the curve (0..1), yOffset = vertical pixel offset to break ties
@@ -2555,7 +2560,7 @@ async function runSim() {
     const w = short.length * 6 + 20;
     const lx = x1 + (x2 - x1) * posPct;
     const ly = y1 + (y2 - y1) * posPct + yOffset;
-    return `<g><rect x="${lx - w/2}" y="${ly - 9}" width="${w}" height="18" rx="4" fill="var(--bg2)" stroke="${color}" stroke-width="1" opacity=".98"/><text x="${lx}" y="${ly + 4}" font-size="9.5" font-weight="500" fill="${color}" text-anchor="middle" font-family="Inter">via ${esc(short)}</text></g>`;
+    return `<g><rect x="${lx - w/2}" y="${ly - 9}" width="${w}" height="18" rx="4" fill="var(--bg2)" stroke="${color}" stroke-width="1" opacity=".98"/><text x="${lx}" y="${ly + 4}" font-size="9.5" font-weight="500" fill="${color}" text-anchor="middle" style="font-family:var(--font-sans)">via ${esc(short)}</text></g>`;
   }
 
   // Color based on item type (per your existing per-subcategory palette)
@@ -2655,7 +2660,7 @@ async function runSim() {
       svgNodes += node(col4, py, FW, p.filterId.slice(0, 8) + '…', p.filterType || 'filter', filterFill, filterStroke);
     } else {
       // Dim placeholder for "no filter"
-      svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(35,34,31,.15)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" font-family="Inter" opacity=".5">No filter</text>`;
+      svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(35,34,31,.15)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" style="font-family:var(--font-sans)" opacity=".5">No filter</text>`;
       svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, '#23221f', 'stroke-dasharray="2 4"', 1, 0.2);
     }
 
@@ -2666,7 +2671,7 @@ async function runSim() {
     svgNodes += node(col5, py, SW, p.scope, '', scopeFill, scopeStroke);
   });
 
-  const hdr = (x, label, col) => `<text x="${x}" y="34" font-size="10" font-weight="500" fill="${col}" opacity=".8" font-family="Inter" letter-spacing="1">${label}</text>`;
+  const hdr = (x, label, col) => `<text x="${x}" y="34" font-size="10" font-weight="500" fill="${col}" opacity=".8" style="font-family:var(--font-sans)" letter-spacing="1">${label}</text>`;
   // Order: edges first (background), then labels over edges, then nodes on top
   const svg = `<svg width="${svgW}" height="${svgH}" style="min-width:${svgW}px;">${hdr(col0,'DEVICE','#23221f')}${hdr(col1,'AP PROFILE / ESP','#2a5d8a')}${hdr(col2,'GROUPS','#5e4a8a')}${hdr(col3,'CONFIGS & APPS','#2e7550')}${hdr(col4,'FILTERS','#8a5f0c')}${hdr(col5,'SCOPE','#23221f')}${svgEdges}${svgLabels}${svgNodes}</svg>`;
 
@@ -3188,7 +3193,7 @@ applyTweaks();
 (function() {
   const panel = document.createElement('div');
   panel.id = 'tweaks-panel';
-  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:800;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;width:220px;box-shadow:var(--shadow-md);display:none;flex-direction:column;gap:14px;font-family:Inter,sans-serif;';
+  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:800;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;width:220px;box-shadow:var(--shadow-md);display:none;flex-direction:column;gap:14px;font-family:var(--font-sans);';
   panel.innerHTML = `
     <div style="font-size:12px;font-weight:600;color:var(--text);letter-spacing:-0.01em;">Tweaks</div>
     <div>
