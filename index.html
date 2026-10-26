@@ -418,6 +418,12 @@
     .gp-chiprow .gp-lbl:first-child { margin-left: 0; }
     .tr-row.gp-row { grid-template-columns: minmax(0, 1.2fr) 58px 72px minmax(0, 1.4fr) 112px 64px; cursor: pointer; }
     .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .gp-muted { color: var(--text3); }
+    .err-banner { display: block; }   /* summary on top, list below (base .demo-banner is flex) */
+    .err-banner summary { cursor: pointer; }
+    .err-banner summary:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+    .err-banner ul { margin: 8px 0 2px 18px; }
+    .err-banner li { margin-top: 2px; word-break: break-word; }
     .gp-sort { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
     .gp-sort:hover, .gp-sort.on { color: var(--text); }
     .gp-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -567,6 +573,12 @@ const EMPTY = {
   apps: [],
   endpointSecurity: [],
   appProtection: [],
+  scripts: [],
+  remediations: [],
+  featureUpdates: [],
+  qualityUpdates: [],
+  driverUpdates: [],
+  appConfigs: [],
   groupTags: [],
   managedDevices: [],
   loading: false, loaded: false, errors: [],
@@ -656,6 +668,18 @@ const DEMO_DATA = {
     }
   ],
   appProtection: [],
+  scripts: [
+    { id:'scr-tz', displayName:'Set time zone', '@odata.type':'#microsoft.graph.deviceManagementScript', fileName:'Set-TimeZone.ps1',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }] }
+  ],
+  remediations: [],
+  featureUpdates: [
+    { id:'fu-24h2', displayName:'Windows 11 24H2', '@odata.type':'#microsoft.graph.windowsFeatureUpdateProfile', featureUpdateVersion:'Windows 11, version 24H2',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }] }
+  ],
+  qualityUpdates: [],
+  driverUpdates: [],
+  appConfigs: [],
   groupTags: ['KIOSK','SALES'],
   managedDevices: [
     { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', azureADDeviceId:'d3m0-0000-4000-8000-000000000001', _source:'demo' },
@@ -672,6 +696,10 @@ const DEMO_MEMBERS = {
   ],
   'grp-lenovo-devices': [
     { id:'ent-001', deviceId:'D3M0-0000-4000-8000-000000000001', displayName:'DEMO-SALES-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+  ],
+  'grp-exclusions': [   // static group: devices and users
+    { '@odata.type':'#microsoft.graph.device', id:'ent-005', deviceId:'d3m0-0000-4000-8000-000000000005', displayName:'DEMO-PILOT-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+    { '@odata.type':'#microsoft.graph.user', id:'usr-001', displayName:'Pilot User', userPrincipalName:'pilot.user@contoso.com', department:'IT' },
   ],
   'grp-kiosk-devices': [
     { id:'ent-004', deviceId:'d3m0-0000-4000-8000-000000000004', displayName:'DEMO-KIOSK-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
@@ -691,13 +719,16 @@ let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
 const APP_VERSION = '0.2.0';
 // Groups tab: list filters + selection; members are fetched lazily and cached per group
-let GROUPS = { search:'', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name', findingsAll:false };
+let GROUPS = { search:'', kind:'dynamic', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name', findingsAll:false };
 const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
 const MEMBER_COUNTS = {};   // groupId -> number | { error }
 const COUNTS_PENDING = new Set();   // groupIds with a $count request in flight
 let COUNTS_GEN = 0;         // bumped by refreshData so late results from an old fetch are dropped
 let COUNTS_ABORT = new AbortController();   // aborted by refreshData/signOut: no requests after that
 function resetCountsAbort() { COUNTS_ABORT.abort(); COUNTS_ABORT = new AbortController(); }
+let ASSIGN_GEN = 0;         // same pattern for the per-item assignments fallback in refreshData
+let ASSIGN_ABORT = new AbortController();
+function resetAssignAbort() { ASSIGN_ABORT.abort(); ASSIGN_ABORT = new AbortController(); }
 let GROUP_USAGE = {};       // buildGroupUsage() result, rebuilt on each Groups render
 let MATRIX = {
   policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
@@ -872,6 +903,7 @@ function startDemo() {
 function signOut() {
   TENANT_NAME = '';
   resetCountsAbort();
+  resetAssignAbort();
   if (demoMode) {
     demoMode = false;
     isAuthed = false;
@@ -1013,7 +1045,7 @@ async function graphGet(url) {
 // Returns Map(id → { status, body }); onResult(id, result) fires as each sub-response settles.
 // Throws only for an outer 401/403 (like graphGet) — never for an individual sub-request.
 // signal: when aborted, stops before the next dispatch or retry round and resolves silently.
-async function graphBatch(requests, onResult = () => {}, signal) {
+async function graphBatch(requests, onResult = () => {}, signal, version = 'v1.0') {
   const results = new Map();
   if (!requests.length) return results;
   const token = await getAccessToken();
@@ -1025,7 +1057,7 @@ async function graphBatch(requests, onResult = () => {}, signal) {
     let pending = chunk;
     for (let round = 0; pending.length; round++) {
       if (signal?.aborted) return;
-      const res = await fetchWithRetry('https://graph.microsoft.com/v1.0/$batch', {
+      const res = await fetchWithRetry(`https://graph.microsoft.com/${version}/$batch`, {
         method: 'POST',
         signal,
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1080,19 +1112,61 @@ async function refreshData() {
   renderCurrentTab();
   const safe = async (label, fn) => { try { return await fn(); } catch (e) { DATA.errors.push(`${label}: ${e.message}`); return null; } };
   const B = 'https://graph.microsoft.com/beta';
-  const [pr, esp, gr, dc, sc, co, ap, es, app, dv, apDev] = await Promise.all([
+
+  // List + $expand=assignments. If a type rejects the $expand (400), list it plain and load
+  // /{id}/assignments per item through $batch (abortable; a newer refresh wins).
+  resetAssignAbort();
+  const assignGen = ++ASSIGN_GEN, assignSignal = ASSIGN_ABORT.signal;
+  const fallbacks = [];
+  const withAssignments = async (label, path) => {
+    try {
+      return await graphGet(`${B}${path}?$expand=assignments`);
+    } catch (e) {
+      if (!/^400\b/.test(e.message)) throw e;
+      fallbacks.push(label);
+      const items = await graphGet(`${B}${path}`);
+      const res = await graphBatch(items.map((it, i) => ({ id: String(i), url: `${path}/${encodeURIComponent(it.id)}/assignments` })), undefined, assignSignal, 'beta');
+      if (assignSignal.aborted || assignGen !== ASSIGN_GEN) return null;
+      let failed = 0;
+      await Promise.all(items.map(async (it, i) => {
+        const r = res.get(String(i));
+        if (r?.status !== 200) { it.assignments = []; failed++; return; }
+        it.assignments = r.body?.value || [];
+        const next = r.body?.['@odata.nextLink'];
+        if (next) {   // more pages for this item: graphGet follows the rest
+          try { it.assignments = it.assignments.concat(await graphGet(next)); } catch { failed++; }
+        }
+      }));
+      if (assignSignal.aborted || assignGen !== ASSIGN_GEN) return null;
+      if (failed) DATA.errors.push(`${label}: assignments could not be loaded for ${failed} item${failed === 1 ? '' : 's'}`);
+      return items;
+    }
+  };
+
+  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac] = await Promise.all([
     safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
     safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
     safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule,membershipRuleProcessingState`)),
     safe('DeviceConfig', () => graphGet(`${B}/deviceManagement/deviceConfigurations?$expand=assignments`)),
     safe('SettingsCat', () => graphGet(`${B}/deviceManagement/configurationPolicies?$expand=assignments`)),
     safe('Compliance', () => graphGet(`${B}/deviceManagement/deviceCompliancePolicies?$expand=assignments`)),
-    safe('AppProtect', () => graphGet(`${B}/deviceAppManagement/managedAppPolicies`)),
+    // App Protection: one endpoint per platform (managedAppPolicies never returns assignments)
+    safe('AppProtect iOS', () => graphGet(`${B}/deviceAppManagement/iosManagedAppProtections?$expand=assignments`)),
+    safe('AppProtect Android', () => graphGet(`${B}/deviceAppManagement/androidManagedAppProtections?$expand=assignments`)),
+    safe('AppProtect Windows', () => graphGet(`${B}/deviceAppManagement/windowsManagedAppProtections?$expand=assignments`)),
     safe('EPSecurity', () => graphGet(`${B}/deviceManagement/intents?$expand=assignments`)),
     safe('Apps', () => graphGet(`${B}/deviceAppManagement/mobileApps?$expand=assignments&$filter=isof('microsoft.graph.managedApp') eq false`)),
     safe('Devices', () => graphGet(`${B}/deviceManagement/managedDevices?$select=id,deviceName,serialNumber,osVersion,model,manufacturer,azureADDeviceId,userPrincipalName&$top=999`)),
     safe('APDevices', () => graphGet(`https://graph.microsoft.com/v1.0/deviceManagement/windowsAutopilotDeviceIdentities`)),
+    safe('Scripts', () => withAssignments('Scripts', '/deviceManagement/deviceManagementScripts')),                 // beta
+    safe('Remediations', () => withAssignments('Remediations', '/deviceManagement/deviceHealthScripts')),          // beta
+    safe('Feature Updates', () => withAssignments('Feature Updates', '/deviceManagement/windowsFeatureUpdateProfiles')), // beta
+    safe('Quality Updates', () => withAssignments('Quality Updates', '/deviceManagement/windowsQualityUpdateProfiles')), // beta
+    safe('Driver Updates', () => withAssignments('Driver Updates', '/deviceManagement/windowsDriverUpdateProfiles')),  // beta
+    safe('App Configs', () => withAssignments('App Configs', '/deviceAppManagement/mobileAppConfigurations')),       // beta
   ]);
+  if (fallbacks.length) console.info('[AAV] $expand=assignments not supported; loaded assignments per item for:', fallbacks.join(', '));
+  DATA.assignmentFallbacks = fallbacks;
 
   if (pr) DATA.autopilotProfiles = pr;
   if (esp) DATA.enrollmentStatusPages = esp;
@@ -1102,7 +1176,18 @@ async function refreshData() {
   if (co) DATA.compliancePolicies = co;
   if (app) DATA.apps = app;
   if (es) DATA.endpointSecurity = es;
-  if (ap) DATA.appProtection = ap;
+  // App Protection targets users, so in simulation it can only match via user group membership (or All users)
+  if (apIos || apAndroid || apWin) DATA.appProtection = [
+    ...(apIos || []).map(p => ({ ...p, platforms: 'ios' })),
+    ...(apAndroid || []).map(p => ({ ...p, platforms: 'android' })),
+    ...(apWin || []).map(p => ({ ...p, platforms: 'windows' })),
+  ];
+  if (scr) DATA.scripts = scr;
+  if (rem) DATA.remediations = rem;
+  if (fu) DATA.featureUpdates = fu;
+  if (qu) DATA.qualityUpdates = qu;
+  if (du) DATA.driverUpdates = du;
+  if (ac) DATA.appConfigs = ac;
   // Merge enrolled devices + Autopilot-only devices into one list
   const enrolled = dv || [];
   const autopilotOnly = apDev || [];
@@ -1247,6 +1332,12 @@ function allPolicies() {
     ...DATA.compliancePolicies.map(p => ({ ...p, _t:'Compliance', name:p.displayName })),
     ...DATA.endpointSecurity.map(p => ({ ...p, _t:'EP Security', name:p.displayName })),
     ...DATA.appProtection.map(p => ({ ...p, _t:'App Protection', name:p.displayName })),
+    ...DATA.scripts.map(p => ({ ...p, _t:'Script', name:p.displayName })),
+    ...DATA.remediations.map(p => ({ ...p, _t:'Remediation', name:p.displayName })),
+    ...DATA.featureUpdates.map(p => ({ ...p, _t:'Feature Update', name:p.displayName })),
+    ...DATA.qualityUpdates.map(p => ({ ...p, _t:'Quality Update', name:p.displayName })),
+    ...DATA.driverUpdates.map(p => ({ ...p, _t:'Driver Update', name:p.displayName })),
+    ...DATA.appConfigs.map(p => ({ ...p, _t:'App Config', name:p.displayName })),
   ];
 }
 
@@ -1272,9 +1363,16 @@ function asnTags(policy) {
   }).join('') + (a.length > 3 ? ` <span class="tag tag-gray tag-plain">+${a.length - 3}</span>` : '');
 }
 
+// "FeatureUpdates: 403 …" → "Feature Updates" (source label of a refreshData error)
+const errorSource = e => String(e).split(':')[0].replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+
 function demoBanner() {
-  if (DATA.errors.length) return `<div class="demo-banner" style="border-color:rgba(163,58,50,.25);background:#f4e3e1;color:var(--red);">⚠ Partial data — ${esc(DATA.errors[0])}</div>`;
-  return '';
+  if (!DATA.errors.length) return '';
+  const sources = [...new Set(DATA.errors.map(errorSource))];
+  return `<details class="demo-banner err-banner" style="border-color:rgba(163,58,50,.25);background:#f4e3e1;color:var(--red);">
+    <summary>⚠ Partial data — ${sources.length} source${sources.length === 1 ? '' : 's'} failed (${esc(sources.join(', '))})</summary>
+    <ul>${DATA.errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul>
+  </details>`;
 }
 
 
@@ -1533,7 +1631,8 @@ function renderMatrix(mount) {
     return true;
   });
 
-  const allPolicyTypes = ['Device Config', 'Settings Cat', 'Compliance', 'EP Security', 'App Protection'];
+  const allPolicyTypes = ['Device Config', 'Settings Cat', 'Compliance', 'EP Security', 'App Protection',
+    'Script', 'Remediation', 'Feature Update', 'Quality Update', 'Driver Update', 'App Config'];
   const allAppTypes = [...new Set(allApps.map(a => (a['@odata.type'] || '').replace('#microsoft.graph.', '')))].filter(Boolean);
   const allPlatforms = ['Windows', 'iOS', 'Android', 'macOS', 'Cross'];
   const allScopes = ['Broad', 'Targeted', 'Unassigned'];
@@ -1720,6 +1819,8 @@ function buildGroupUsage() {
 
 const groupRuleType = g => /\bdevice\./i.test(g.membershipRule || '') ? 'Device' : /\buser\./i.test(g.membershipRule || '') ? 'User' : 'Unknown';
 const groupState = g => g.membershipRuleProcessingState === 'Paused' ? 'Paused' : 'On';
+// Listed on the Groups tab: every dynamic group, plus static groups that something is assigned to
+const isListedGroup = (g, usage) => isDyn(g) || (usage[g.id] || []).length > 0;
 const jsArg = s => esc(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 const htmlAttr = s => esc(s).replace(/"/g, '&quot;');
 
@@ -1749,7 +1850,8 @@ function selectGroup(id, toggle = true) {
 
 function renderGroups(mount) {
   GROUP_USAGE = buildGroupUsage();
-  const all = DATA.groups.filter(isDyn);
+  const all = DATA.groups.filter(g => isListedGroup(g, GROUP_USAGE)
+    && (GROUPS.kind === 'all' || (GROUPS.kind === 'static') === !isDyn(g)));
   const q = GROUPS.search.trim().toLowerCase();
   const rows = all.filter(g => {
     const usage = GROUP_USAGE[g.id] || [];
@@ -1757,9 +1859,9 @@ function renderGroups(mount) {
       const hay = [g.displayName, g.membershipRule, ...usage.map(u => u.name)].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (GROUPS.type && groupRuleType(g) !== GROUPS.type) return false;
+    if (GROUPS.type && (!isDyn(g) || groupRuleType(g) !== GROUPS.type)) return false;
     if (GROUPS.usage && (usage.length ? 'Assigned' : 'Unassigned') !== GROUPS.usage) return false;
-    if (GROUPS.state && groupState(g) !== GROUPS.state) return false;
+    if (GROUPS.state && (!isDyn(g) || groupState(g) !== GROUPS.state)) return false;
     return true;
   }).sort((a, b) => {
     if (GROUPS.sort === 'members') {
@@ -1778,29 +1880,31 @@ function renderGroups(mount) {
     return `<div class="tr-row gp-row${GROUPS.selected === g.id ? ' gp-sel' : ''}" role="button" tabindex="0"
         onclick="selectGroup('${jsArg(g.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${jsArg(g.id)}')}">
       <div class="tr-main"><div class="tr-name" title="${htmlAttr(g.displayName)}">${esc(g.displayName)}${partial ? ' <span class="tr-pill tr-pill-amber gp-tag">Partial parse</span>' : ''}</div></div>
-      <div class="gp-cell">${groupRuleType(g)}</div>
+      <div class="gp-cell">${isDyn(g) ? groupRuleType(g) : 'Static'}</div>
       <div class="gp-cell gp-num" data-count-for="${htmlAttr(g.id)}">${countCellHtml(g.id)}</div>
-      <div class="gp-cell tr-mono" title="${htmlAttr(g.membershipRule)}">${esc(g.membershipRule)}</div>
+      ${isDyn(g) ? `<div class="gp-cell tr-mono" title="${htmlAttr(g.membershipRule)}">${esc(g.membershipRule)}</div>` : '<div class="gp-cell gp-muted">Assigned membership</div>'}
       <div class="gp-cell">${usage.length ? `${nIncl} incl · ${nExcl} excl` : '<span class="tr-pill tr-pill-red">Unassigned</span>'}</div>
-      <div class="gp-cell"><span class="tr-pill ${paused ? 'tr-pill-amber' : 'tr-pill-gray'}">${paused ? 'Paused' : 'On'}</span></div>
+      <div class="gp-cell">${isDyn(g) ? `<span class="tr-pill ${paused ? 'tr-pill-amber' : 'tr-pill-gray'}">${paused ? 'Paused' : 'On'}</span>` : '<span class="gp-muted">—</span>'}</div>
     </div>`;
   }).join('');
 
-  const filterCount = [GROUPS.search, GROUPS.type, GROUPS.usage, GROUPS.state].filter(Boolean).length;
+  const filterCount = [GROUPS.search, GROUPS.kind !== 'dynamic', GROUPS.type, GROUPS.usage, GROUPS.state].filter(Boolean).length;
+  const kindChips = [['dynamic', 'Dynamic'], ['static', 'Static'], ['all', 'All']]
+    .map(([k, label]) => filterChip(`onclick="setGroupsField('kind','${k}')" aria-pressed="${GROUPS.kind === k}"`, label, GROUPS.kind === k)).join('');
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
       <div id="gp-findings">${groupFindingsHtml()}</div>
       <div class="gp-layout">
         <section class="card tr-section">
-          <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Dynamic groups</span><span class="tr-count">${rows.length} / ${all.length}</span></div>
+          <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Groups</span><span class="tr-count">${rows.length} / ${all.length}</span></div>
           <div class="gp-filters">
             <div style="display:flex;gap:8px;align-items:flex-end;">
               <div style="flex:1;"><label class="gp-lbl" for="gp-search">Search</label>
                 <input class="inp" id="gp-search" placeholder="Group, rule or assigned item…" value="${htmlAttr(GROUPS.search)}" oninput="setGroupsField('search',this.value,'gp-search')" /></div>
-              ${filterCount ? `<button class="btn btn-ghost" onclick="GROUPS.search='';GROUPS.type='';GROUPS.usage='';GROUPS.state='';renderGroups(el('content-area'))">Clear (${filterCount})</button>` : ''}
+              ${filterCount ? `<button class="btn btn-ghost" onclick="GROUPS.search='';GROUPS.kind='dynamic';GROUPS.type='';GROUPS.usage='';GROUPS.state='';renderGroups(el('content-area'))">Clear (${filterCount})</button>` : ''}
             </div>
-            <div class="gp-chiprow"><span class="gp-lbl">Type</span>${chips('type', ['Device', 'User'])}<span class="gp-lbl">Usage</span>${chips('usage', ['Assigned', 'Unassigned'])}<span class="gp-lbl">State</span>${chips('state', ['On', 'Paused'])}</div>
+            <div class="gp-chiprow"><span class="gp-lbl">Groups</span>${kindChips}<span class="gp-lbl">Type</span>${chips('type', ['Device', 'User'])}<span class="gp-lbl">Usage</span>${chips('usage', ['Assigned', 'Unassigned'])}<span class="gp-lbl">State</span>${chips('state', ['On', 'Paused'])}</div>
           </div>
           <div class="tr-row gp-row gp-headrow">
             <div><button type="button" class="gp-sort${GROUPS.sort === 'name' ? ' on' : ''}" onclick="setGroupsSort('name')" aria-pressed="${GROUPS.sort === 'name'}">Name${GROUPS.sort === 'name' ? ' ▾' : ''}</button></div>
@@ -1808,7 +1912,7 @@ function renderGroups(mount) {
             <div class="gp-num"><button type="button" class="gp-sort${GROUPS.sort === 'members' ? ' on' : ''}" onclick="setGroupsSort('members')" aria-pressed="${GROUPS.sort === 'members'}">Members${GROUPS.sort === 'members' ? ' ▾' : ''}</button></div>
             <div>Rule</div><div>Assignments</div><div>State</div>
           </div>
-          ${listRows || `<div class="tr-empty empty-note">${all.length ? 'No groups match the filters.' : 'No dynamic groups found.'}</div>`}
+          ${listRows || `<div class="tr-empty empty-note">${all.length ? 'No groups match the filters.' : GROUPS.kind === 'static' ? 'No static groups are assigned to anything.' : 'No dynamic groups found.'}</div>`}
         </section>
         <div id="gp-detail">${renderGroupDetailHtml()}</div>
       </div>
@@ -1858,10 +1962,10 @@ const parseCount = body => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
-// Request $count for every dynamic group that has none yet; results fill in cell by cell
+// Request $count for every listed group (dynamic + static in use) that has none yet; results fill in cell by cell
 function ensureMemberCounts() {
   if (!DATA.loaded || DATA.loading) return;
-  const dyn = DATA.groups.filter(isDyn);
+  const dyn = DATA.groups.filter(g => isListedGroup(g, GROUP_USAGE));
   if (demoMode) {   // demo: counts from the sample members, no Graph calls
     dyn.forEach(g => { if (!(g.id in MEMBER_COUNTS)) { MEMBER_COUNTS[g.id] = (DEMO_MEMBERS[g.id] || []).length; updateCountCells(g.id); } });
     return;
@@ -1893,11 +1997,11 @@ function ensureMemberCounts() {
 // ── Group findings: pure, same shape as report findings ──
 const ORDER_TAG_RE = /\[OrderID\]:([^"'\s)]+)/gi;
 function groupFindings({ groups, usage, countOf, devices }) {
-  const dyn = groups.filter(isDyn).sort((a, b) => ciCmp(a.displayName, b.displayName));
+  const listed = groups.filter(g => isListedGroup(g, usage)).sort((a, b) => ciCmp(a.displayName, b.displayName));
   const red = [], amber = [], info = [];
   const deviceTags = new Set(devices.map(d => (d.groupTag || '').toLowerCase()).filter(Boolean));
   const unassigned = [], partial = [], tagIssues = [];   // tagIssues: { tag, group }
-  dyn.forEach(g => {
+  listed.forEach(g => {
     const u = usage[g.id] || [];
     const incl = u.filter(x => x.mode === 'include');
     const n = countOf(g.id);
@@ -1905,6 +2009,7 @@ function groupFindings({ groups, usage, countOf, devices }) {
       red.push({ severity: 'red', title: `${incl.length} item${incl.length === 1 ? '' : 's'} assigned to an empty group`,
         detail: `${g.displayName}: ${incl.map(x => x.name).sort(ciCmp).join(', ')}`, groupId: g.id });
     }
+    if (!isDyn(g)) return;   // the checks below are about rules; unassigned static groups are normal
     if (groupState(g) === 'Paused') {
       amber.push({ severity: 'amber', title: `Rule paused: ${g.displayName}`, detail: 'Membership is not updated while rule processing is paused.', groupId: g.id });
     }
@@ -1974,16 +2079,16 @@ function renderGroupDetailHtml() {
     <section class="card tr-section">
       <div class="gp-dhead">
         <div class="title">${esc(g.displayName)}</div>
-        <div class="gp-dmeta"><span class="tr-pill tr-pill-gray">${type} group</span><span class="tr-pill ${state === 'Paused' ? 'tr-pill-amber' : 'tr-pill-gray'}">${state}</span></div>
+        <div class="gp-dmeta">${isDyn(g) ? `<span class="tr-pill tr-pill-gray">${type} group</span><span class="tr-pill ${state === 'Paused' ? 'tr-pill-amber' : 'tr-pill-gray'}">${state}</span>` : '<span class="tr-pill tr-pill-gray">Static group</span>'}</div>
         ${g.description ? `<div class="desc">${esc(g.description)}</div>` : ''}
       </div>
-      <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Rule</span></div>
+      ${isDyn(g) ? `<div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Rule</span></div>
       <div class="gp-body">
         <pre class="gp-rule">${esc(g.membershipRule)}</pre>
         ${support.supported ? '' : `<div class="gp-warn"><div>Simulation can't evaluate these conditions. Results for this group may be wrong.</div>
           <ul>${support.unsupported.map(u => `<li class="tr-mono">${u.reason === 'property' ? `${esc(u.name)} — property not simulated`
             : u.reason === 'operator' ? `${esc(u.leaf)} — operator ${esc(u.name)} not supported` : `${esc(u.leaf)} — can't parse`}</li>`).join('')}</ul></div>`}
-      </div>
+      </div>` : ''}
       <div class="tr-head"><span class="tr-sq" style="background:var(--accent);"></span><span class="tr-title">Assignments</span><span class="tr-count">${usage.length}</span></div>
       ${asnHtml}
       <div class="tr-head"><span class="tr-sq" style="background:var(--blue);"></span><span class="tr-title">Members</span><span class="tr-count" id="gp-mcount">${memberCountText(g.id)}</span></div>
@@ -2457,6 +2562,8 @@ async function runSim() {
     if (p._t === 'Compliance') return '#8a5f0c';
     if (p._t === 'EP Security') return '#a33a32';
     if (p._t === 'App Protection') return '#5e4a8a';
+    if (p._t === 'Script' || p._t === 'Remediation') return '#2a5d8a';   // = --blue (hex: the SVG appends alpha)
+    if (/ Update$/.test(p._t || '')) return '#5e4a8a';                     // = --purple
     if (p._t) return '#2e7550';          // other policy types
     return '#2a5d8a';                     // apps (have no _t)
   }
@@ -2648,7 +2755,7 @@ async function runSim() {
     ${trSection('Groups this device is in', 'var(--purple)', mG.length,
       groupRows || `<div class="tr-empty empty-note">No matching groups found.${SIM.azureDeviceId || SIM.userId ? '' : ' Select a device or user to resolve actual membership.'}</div>`)}
     ${enrollRows.length ? trSection('Enrollment', 'var(--blue)', enrollRows.length, enrollRows.join('')) : ''}
-    ${polM.length ? trSection('Configuration and compliance', 'var(--accent)', polM.length, configBody) : ''}
+    ${polM.length ? trSection('Configuration, compliance and scripts', 'var(--accent)', polM.length, configBody) : ''}
     ${appRows.length ? trSection('Apps', 'var(--accent)', appRows.length + (nConflict ? ` · ${nConflict} conflict${nConflict > 1 ? 's' : ''}` : ''), appRows.join('')) : ''}`;
 
   const graphHtml = `
@@ -2809,7 +2916,7 @@ function buildReport(model, now = new Date()) {
   const sections = [
     { id: 'groups', title: 'Groups this device is in', rows: groupRows },
     { id: 'enrollment', title: 'Enrollment', rows: rowsOf(model.enrollment) },
-    { id: 'configuration', title: 'Configuration and compliance', rows: rowsOf(model.policies) },
+    { id: 'configuration', title: 'Configuration, compliance and scripts', rows: rowsOf(model.policies) },
     { id: 'apps', title: 'Apps', rows: rowsOf(model.apps) },
   ].map(sec => ({ ...sec, count: sec.rows.length }));
 

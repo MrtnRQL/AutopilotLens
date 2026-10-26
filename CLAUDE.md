@@ -6,3 +6,9 @@
 - Status colors carry meaning. Don't use them decoratively: green = targeted, amber = broad,
   red = excluded/unassigned, purple = "via group".
 - On ink surfaces, use --accent-on-dark (#5eb8ab) instead of --accent.
+
+## Testing
+- Stub tests must register and BLOCK all calls to graph.microsoft.com and login.microsoftonline.com.
+  Nothing may reach the network, even by accident.
+- Restore stubs only after all pending requests, timers and retries have settled (wait for the pending sets/queues to drain).
+- Never use real tokens in stub tests.
