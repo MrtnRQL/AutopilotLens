@@ -607,9 +607,11 @@ let msalInstance = null;
 let currentAccount = null;
 let isAuthed = false;
 let currentTab = 'overview';
-let SIM = { groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
+let SIM = { deviceName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
 let simView = 'trace';   // 'trace' | 'graph'
-let LAST_SIM = null;     // { traceHtml, graphHtml } from the last runSim()
+let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim()
+let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
+const APP_VERSION = '0.1.0';
 let MATRIX = {
   policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
   groups:   { search:'', groupType:'' /* 'dynamic'|'static'|'' */ },
@@ -635,7 +637,7 @@ const isDyn = g => (g.groupTypes || []).includes('DynamicMembership') || !!g.mem
 const el = id => document.getElementById(id);
 
 // ── URL state: serialize/restore Simulate params ──
-const SIM_URL_FIELDS = ['groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
+const SIM_URL_FIELDS = ['deviceName', 'groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
 
 function simToUrl() {
   const params = new URLSearchParams();
@@ -738,6 +740,7 @@ async function onAuth(account) {
     const org = await graphGet('https://graph.microsoft.com/v1.0/organization?$select=displayName');
     const tenantName = org?.[0]?.displayName;
     if (tenantName) {
+      TENANT_NAME = tenantName;
       el('hdr-sub').innerHTML = `<span style="color:var(--text2);font-weight:500;">${esc(tenantName)}</span> · ${esc(account.username || '')}`;
     }
   } catch (e) {
@@ -754,9 +757,10 @@ function startDemo() {
   demoMode = true;
   isAuthed = true;
   currentAccount = null;
+  TENANT_NAME = 'Demo tenant';
   DATA = JSON.parse(JSON.stringify(DEMO_DATA));
   currentTab = 'overview';
-  SIM = { groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
+  SIM = { deviceName:'DEMO-SALES-001', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
   ['overview','matrix','simulate'].forEach(id => {
     const t = el(`tab-${id}`);
     if (t) t.classList.toggle('on', id === currentTab);
@@ -773,6 +777,7 @@ function startDemo() {
 }
 
 function signOut() {
+  TENANT_NAME = '';
   if (demoMode) {
     demoMode = false;
     isAuthed = false;
@@ -1615,6 +1620,7 @@ function renderDeviceList(devices) {
     </div>`).join('');
 }
 function selectDevice(d) {
+  SIM.deviceName = d.deviceName || '';
   SIM.serial = d.serialNumber || '';
   SIM.mfg = d.manufacturer || '';
   SIM.model = d.model || '';
@@ -1680,11 +1686,13 @@ async function runSim() {
   let deviceGroupIds = new Set();
   let userGroupIds = new Set();
   const memberErrors = [];
+  let membershipFromGraph = false;
 
   if (isAuthed && SIM.azureDeviceId) {
     try {
       const res = await graphGet(`https://graph.microsoft.com/v1.0/devices(deviceId='${SIM.azureDeviceId}')/memberOf?$select=id,displayName`);
       (res || []).forEach(g => { if (g.id) deviceGroupIds.add(g.id); });
+      membershipFromGraph = true;
     } catch (e) { memberErrors.push('Device memberOf: ' + e.message); }
   }
 
@@ -1692,6 +1700,7 @@ async function runSim() {
     try {
       const res = await graphGet(`https://graph.microsoft.com/v1.0/users/${SIM.userId}/memberOf?$select=id,displayName`);
       (res || []).forEach(g => { if (g.id) userGroupIds.add(g.id); });
+      membershipFromGraph = true;
     } catch (e) { memberErrors.push('User memberOf: ' + e.message); }
   }
 
@@ -2089,7 +2098,24 @@ async function runSim() {
         ${mA.length ? `<div class="meta-row" style="margin-top:0;">${mA.map(a => `<span class="tag tag-plain">${esc(a.displayName)}</span>`).join('')}</div>` : `<div class="empty-note">No apps targeted.</div>`}
       </div>`;
 
-  LAST_SIM = { traceHtml, graphHtml };
+  // Raw results for export — reuses the match objects above, tagged with a display type
+  profM.forEach(m => { m.type = 'Autopilot profile'; });
+  espM.forEach(m => { m.type = 'Enrollment Status Page'; });
+  polM.forEach(m => { m.type = m.item._t; });
+  appM.forEach(m => { m.type = (m.item['@odata.type'] || '').replace('#microsoft.graph.', '') || 'App'; });
+  const model = {
+    sim: { ...SIM },
+    env: { tenant: TENANT_NAME, demo: demoMode, generatedBy: currentAccount?.username || '' },
+    groups: mG.map(g => ({ group: g, source: deviceGroupIds.has(g.id) ? 'Device membership' : userGroupIds.has(g.id) ? 'User membership' : 'Rule match' })),
+    enrollment: [...profM, ...espM],
+    policies: polM,
+    apps: appM,
+    counts: { policies: mPol.length, apps: mA.length, broad: nBroad, excluded: nBlocked, conflicts: nConflict },
+    membershipMode: membershipFromGraph ? 'actual' : 'rules-only',
+  };
+
+  LAST_SIM = { traceHtml, graphHtml, model };
+  const exportTip = 'Contains tenant configuration data. Generated locally, nothing is uploaded.';
   el('sim-out').innerHTML = `
     <div class="fade" style="display:flex;flex-direction:column;gap:14px;">
       ${infoBanner}
@@ -2098,6 +2124,10 @@ async function runSim() {
           <button type="button" data-sim-view="trace" onclick="setSimView('trace')">Trace</button>
           <button type="button" data-sim-view="graph" onclick="setSimView('graph')">Graph</button>
         </div>
+        ${LAST_SIM?.model ? `<div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-ghost" onclick="exportSimMarkdown()" title="${exportTip}">Export .md</button>
+          <button type="button" class="btn btn-ghost" onclick="copySimMarkdown()" title="${exportTip}">Copy Markdown</button>
+        </div>` : ''}
       </div>
       <div id="sim-view" style="display:flex;flex-direction:column;gap:14px;"></div>
     </div>`;
@@ -2121,6 +2151,225 @@ function setSimView(view) {
   track('sim-view-' + simView, 'Simulation view: ' + simView);
   renderSimView();
   simToUrl();
+}
+
+// ── Report export: Markdown + Mermaid, generated locally (no DOM in the builders, no network) ──
+const ciCmp = (a, b) => { const x = String(a || '').toLowerCase(), y = String(b || '').toLowerCase(); return x < y ? -1 : x > y ? 1 : 0; };
+const byTypeName = (a, b) => ciCmp(a.type, b.type) || ciCmp(a.name, b.name);
+const viaText = x => !x ? '' : x.kind === 'allDevices' ? 'All devices' : x.kind === 'allUsers' ? 'All users' : x.label;
+const matchName = m => m.item.name || m.item.displayName || '';
+
+function reportRow(m) {
+  const notes = [];
+  if (m.status === 'excluded') notes.push(`Excluded via ${m.exclVia.label}`);
+  if (m.status === 'conflict') notes.push(`Available + Uninstall (uninstall via ${viaText(m.conflictWith)})`);
+  if (m.intent) notes.push(`intent: ${m.intent}`);
+  if (m.item.deploymentMode) notes.push(m.item.deploymentMode + (m.item.preprovisioningAllowed ? ', pre-provisioning' : ''));
+  if (m.filterId) notes.push(`filter: ${m.filterId.slice(0, 8)}… (${m.filterType || 'filter'})`);
+  (m.partialExcl || []).forEach(p => notes.push(`excluded from ${p.intent} via ${p.label}`));
+  return {
+    name: matchName(m),
+    type: m.type || '',
+    scope: m.status === 'excluded' ? 'Excluded' : m.status === 'uninstall' ? 'Uninstall' : m.status === 'conflict' ? 'Conflict' : m.scope,
+    status: m.status,
+    via: viaText(m.via),
+    viaKind: m.via.kind === 'allDevices' || m.via.kind === 'allUsers' ? 'broad' : 'group',
+    exclVia: m.exclVia ? m.exclVia.label : null,
+    note: notes.join('; '),
+  };
+}
+
+function buildReport(model, now = new Date()) {
+  const s = model.sim, env = model.env || {}, c = model.counts;
+  const device = {
+    name: s.deviceName || s.serial || s.model || 'device', serial: s.serial || '', groupTag: s.groupTag || '',
+    manufacturer: s.mfg || '', model: s.model || '', osVersion: s.osVer || '', primaryUser: s.upn || '',
+  };
+  const meta = {
+    title: `Simulation report — ${device.name}`, tenant: env.tenant || '', generatedAt: now.toISOString(),
+    generatedBy: env.generatedBy || '', source: env.demo ? 'Demo data' : 'Live · Graph', appVersion: APP_VERSION,
+  };
+  const kpis = [
+    { label: 'policies apply', value: c.policies, tone: 'accent' },
+    { label: 'apps', value: c.apps, tone: 'accent' },
+    { label: 'via broad scope', value: c.broad, tone: 'amber' },
+    { label: 'excluded', value: c.excluded, tone: 'red' },
+  ];
+
+  const sortM = list => [...list].sort((a, b) => ciCmp(matchName(a), matchName(b)));
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const pa = [...model.policies, ...model.apps];
+  const findings = [];
+  const excl = sortM(pa.filter(m => m.status === 'excluded'));
+  if (excl.length > 3) {
+    findings.push({ severity: 'red', title: `${excl.length} policies and apps excluded`, detail: excl.map(m => `${matchName(m)} (via ${m.exclVia.label})`).join('; ') });
+  } else {
+    excl.forEach(m => findings.push({ severity: 'red', title: `${matchName(m)} excluded via ${m.exclVia.label}`, detail: `${m.type}. Would otherwise apply via ${viaText(m.via)}.` }));
+  }
+  sortM(model.apps.filter(m => m.status === 'conflict')).forEach(m => findings.push({
+    severity: 'red', title: `Intent conflict: ${matchName(m)}`,
+    detail: `Available via ${viaText(m.via)} + Uninstall via ${viaText(m.conflictWith)}. Result depends on user vs device targeting.`,
+  }));
+  const profiles = sortM(model.enrollment.filter(m => m.type === 'Autopilot profile' && m.status === 'applies'));
+  if (!profiles.length) findings.push({ severity: 'red', title: 'No Autopilot profile matched', detail: 'This device would not receive an Autopilot deployment profile.' });
+  if (profiles.length > 1) findings.push({ severity: 'amber', title: `${profiles.length} Autopilot profiles matched: ${profiles.map(matchName).join(', ')}`, detail: 'Intune uses the oldest assignment. Verify which one wins.' });
+  const broad = sortM(pa.filter(m => m.status === 'applies' && m.scope === 'Broad' && !m.filterId));
+  if (broad.length) findings.push({
+    severity: 'amber', title: `${plural(broad.length, 'assignment', 'assignments')} via All devices / All users without a filter`,
+    detail: broad.slice(0, 5).map(matchName).join(', ') + (broad.length > 5 ? `, and ${broad.length - 5} more` : '') + '.',
+  });
+  if (model.membershipMode === 'rules-only') findings.push({ severity: 'info', title: 'Rules-only membership', detail: 'Group membership predicted from dynamic rules. Select an enrolled device for actual membership.' });
+  if (profiles.length === 1) findings.push({ severity: 'info', title: 'Autopilot profile resolved', detail: `${matchName(profiles[0])} (${profiles[0].item.deploymentMode || 'unknown mode'})` });
+
+  const rowsOf = list => list.map(reportRow).sort(byTypeName);
+  const groupRows = model.groups.map(({ group, source }) => ({
+    name: group.displayName || group.id, type: isDyn(group) ? 'Dynamic' : 'Static', scope: '', status: 'member',
+    via: source, viaKind: 'group', exclVia: null, note: group.membershipRule || '',
+  })).sort(byTypeName);
+  const sections = [
+    { id: 'groups', title: 'Groups this device is in', rows: groupRows },
+    { id: 'enrollment', title: 'Enrollment', rows: rowsOf(model.enrollment) },
+    { id: 'configuration', title: 'Configuration and compliance', rows: rowsOf(model.policies) },
+    { id: 'apps', title: 'Apps', rows: rowsOf(model.apps) },
+  ].map(sec => ({ ...sec, count: sec.rows.length }));
+
+  return { meta, device, kpis, findings, sections };
+}
+
+const mdCell = s => String(s ?? '').replace(/\r\n|\r|\n/g, ' ').replace(/\|/g, '\\|').trim();
+const mdCode = s => { const t = mdCell(s); return !t ? '' : t.includes('`') ? '`` ' + t + ' ``' : '`' + t + '`'; };
+const FINDING_ICON = { red: '🔴', amber: '🟠', info: 'ℹ️' };
+// UTC ISO → local "YYYY-MM-DD HH:mm (UTC±hh:mm)" for display
+function localStamp(iso) {
+  const d = new Date(iso), p = v => String(v).padStart(2, '0');
+  const off = -d.getTimezoneOffset(), a = Math.abs(off);
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())} (UTC${off < 0 ? '-' : '+'}${p(Math.floor(a / 60))}:${p(a % 60)})`;
+}
+
+function toMarkdown(r) {
+  const L = [];
+  L.push(`# Simulation report — ${mdCell(r.device.name)}`, '');
+  L.push('| Tenant | Generated | Group tag | Primary user | Source |', '|---|---|---|---|---|');
+  L.push('| ' + [r.meta.tenant, localStamp(r.meta.generatedAt), r.device.groupTag, r.device.primaryUser, r.meta.source].map(v => mdCell(v) || '—').join(' | ') + ' |', '');
+  L.push(r.kpis.map(k => `**${k.value}** ${k.label}`).join(' · '), '');
+  L.push('## Findings', '');
+  if (r.findings.length) r.findings.forEach(f => L.push(`- ${FINDING_ICON[f.severity]} **${mdCell(f.title)}** — ${mdCell(f.detail)}`));
+  else L.push('_No findings._');
+  L.push('', '## Assignment flow', '', '```mermaid', toMermaid(r), '```', '');
+  r.sections.filter(sec => sec.rows.length).forEach(sec => {
+    L.push(`## ${mdCell(sec.title)} (${sec.count})`, '');
+    if (sec.id === 'groups') {
+      L.push('| Group | Type | Source | Rule |', '|---|---|---|---|');
+      sec.rows.forEach(g => L.push(`| ${mdCell(g.name)} | ${mdCell(g.type)} | ${mdCell(g.via)} | ${mdCode(g.note)} |`));
+    } else {
+      L.push('| Name | Type | Scope | Via | Note |', '|---|---|---|---|---|');
+      sec.rows.forEach(x => {
+        const ex = x.status === 'excluded';
+        L.push(`| ${ex ? `~~${mdCell(x.name)}~~` : mdCell(x.name)} | ${mdCell(x.type)} | ${ex ? '**Excluded**' : mdCell(x.scope)} | ${mdCell(x.via)} | ${mdCell(x.note)} |`);
+      });
+    }
+    L.push('');
+  });
+  L.push(`_Generated locally by Autopilotlens ${r.meta.appVersion}. Contains tenant configuration data._`, '');
+  return L.join('\n');
+}
+
+function toMermaid(r) {
+  const MAX_NODES = 50, PER_GROUP = 6;
+  const label = s => {
+    let t = String(s ?? '').replace(/\s+/g, ' ').trim();
+    if (t.length > 40) t = t.slice(0, 39) + '…';
+    return '"' + t.replace(/"/g, '#quot;') + '"';
+  };
+  const groups = r.sections.find(sec => sec.id === 'groups').rows;
+  const cats = r.sections.filter(sec => sec.id !== 'groups' && sec.rows.length);
+
+  // Shrink items per subgraph until the whole chart fits under the node cap
+  const broadUsed = rows => ['All devices', 'All users'].filter(b => rows.some(x => x.viaKind === 'broad' && x.via === b && x.status !== 'excluded'));
+  const shownFor = k => cats.map(sec => sec.rows.slice(0, k));
+  const total = k => {
+    const shown = shownFor(k);
+    return 1 + groups.length + broadUsed(shown.flat()).length
+      + cats.reduce((n, sec, i) => n + shown[i].length + (sec.rows.length > k ? 1 : 0), 0);
+  };
+  let k = PER_GROUP;
+  while (k > 0 && total(k) > MAX_NODES) k--;
+  const shown = shownFor(k);
+
+  const L = ['flowchart LR'];
+  const cls = { group: [], broad: [], ok: [], excl: [] };
+  L.push(`  d0[${label(r.device.name)}]`);
+  const gid = new Map();
+  groups.forEach((g, i) => {
+    if (!gid.has(g.name)) gid.set(g.name, 'g' + i);
+    L.push(`  g${i}[${label(g.name)}]`);
+    cls.group.push('g' + i);
+  });
+  const bid = new Map();
+  broadUsed(shown.flat()).forEach((b, i) => {
+    bid.set(b, 'b' + i);
+    L.push(`  b${i}([${label(b)}])`);
+    cls.broad.push('b' + i);
+  });
+
+  const edges = [];
+  groups.forEach((g, i) => edges.push(`  d0 --> g${i}`));
+  bid.forEach(id => edges.push(`  d0 --> ${id}`));
+  let n = 0, more = 0;
+  cats.forEach((sec, si) => {
+    L.push(`  subgraph s${si}[${label(sec.title)}]`);
+    shown[si].forEach(x => {
+      const id = 'i' + n++;
+      L.push(`    ${id}[${label(x.name)}]`);
+      if (x.status === 'excluded') {
+        edges.push(`  ${gid.get(x.exclVia) || 'd0'} -.->|excluded| ${id}`);
+        cls.excl.push(id);
+      } else {
+        edges.push(`  ${(x.viaKind === 'broad' ? bid.get(x.via) : gid.get(x.via)) || 'd0'} --> ${id}`);
+        (x.status === 'uninstall' ? cls.excl : x.status === 'conflict' ? cls.broad : cls.ok).push(id);
+      }
+    });
+    if (sec.rows.length > shown[si].length) L.push(`    m${more++}[${label(`+${sec.rows.length - shown[si].length} more`)}]`);
+    L.push('  end');
+  });
+
+  L.push(...edges);
+  L.push('  classDef broad fill:#f3ebdc,stroke:#8a5f0c');
+  L.push('  classDef excl fill:#f4e3e1,stroke:#a33a32,color:#a33a32');
+  L.push('  classDef group fill:#ebe7f2,stroke:#5e4a8a');
+  L.push('  classDef ok fill:#e4eee7,stroke:#2e7550');
+  Object.entries(cls).forEach(([c, ids]) => { if (ids.length) L.push(`  class ${ids.join(',')} ${c}`); });
+  return L.join('\n');
+}
+
+function simReportMarkdown() {
+  return toMarkdown(buildReport(LAST_SIM.model));
+}
+
+function exportSimMarkdown() {
+  if (!LAST_SIM?.model) return;
+  const md = simReportMarkdown();
+  const d = new Date(), p = v => String(v).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+  const sim = LAST_SIM.model.sim;
+  const slug = String(sim.deviceName || sim.serial || sim.model || 'device').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `autopilotlens-${slug}-${stamp}.md`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  track('export-md', 'Markdown exported');
+}
+
+function copySimMarkdown() {
+  if (!LAST_SIM?.model) return;
+  track('copy-md', 'Markdown copied');
+  navigator.clipboard.writeText(simReportMarkdown())
+    .then(() => showToast('Markdown copied to clipboard', 'success'))
+    .catch(() => showToast('Could not copy Markdown', 'error'));
 }
 
 function evalRule(rule, props) { try { return evalExpr(rule.trim(), props); } catch { return false; } }
