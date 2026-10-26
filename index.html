@@ -406,6 +406,8 @@
       .tr-via { grid-area: via; }
     }
 
+    .sim-export-btn:disabled, .sim-export-btn:disabled:hover { opacity: .5; cursor: not-allowed; color: var(--text2); background: transparent; border-color: var(--border2); }
+
     /* ── Groups tab (reuses .tr-* rows, pills and section heads) ── */
     .gp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
     @media (min-width: 1200px) { .gp-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -1896,6 +1898,7 @@ function renderSimulate(mount) {
             Copy link
           </button>
         </div>
+        <div id="sim-export" style="display:flex;gap:8px;">${exportButtonsHtml()}</div>
       </div>
 
       <div id="sim-out">
@@ -2440,7 +2443,6 @@ async function runSim() {
   };
 
   LAST_SIM = { traceHtml, graphHtml, model };
-  const exportTip = 'Contains tenant configuration data. Generated locally, nothing is uploaded.';
   el('sim-out').innerHTML = `
     <div class="fade" style="display:flex;flex-direction:column;gap:14px;">
       ${infoBanner}
@@ -2449,14 +2451,21 @@ async function runSim() {
           <button type="button" data-sim-view="trace" onclick="setSimView('trace')">Trace</button>
           <button type="button" data-sim-view="graph" onclick="setSimView('graph')">Graph</button>
         </div>
-        ${LAST_SIM?.model ? `<div style="display:flex;gap:8px;">
-          <button type="button" class="btn btn-ghost" onclick="exportSimMarkdown()" title="${exportTip}">Export .md</button>
-          <button type="button" class="btn btn-ghost" onclick="copySimMarkdown()" title="${exportTip}">Copy Markdown</button>
-        </div>` : ''}
       </div>
       <div id="sim-view" style="display:flex;flex-direction:column;gap:14px;"></div>
     </div>`;
   renderSimView();
+  const exportRow = el('sim-export');
+  if (exportRow) exportRow.innerHTML = exportButtonsHtml();
+}
+
+// Export buttons for the sim form: disabled until a simulation has produced a model
+function exportButtonsHtml() {
+  const ready = !!LAST_SIM?.model;
+  const tip = ready ? 'Contains tenant configuration data. Generated locally, nothing is uploaded.' : 'Run a simulation first';
+  const attrs = ready ? '' : ' disabled aria-disabled="true"';
+  return `<button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="exportSimMarkdown()" title="${tip}"${attrs}>Export .md</button>
+    <button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="copySimMarkdown()" title="${tip}"${attrs}>Copy Markdown</button>`;
 }
 
 // Swap Trace ↔ Graph from the cached render — no Graph calls, no re-run
