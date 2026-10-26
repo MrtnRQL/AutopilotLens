@@ -425,6 +425,24 @@
     .tr-row.gp-pinned { background: var(--wash); }
     .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
     .gp-muted { color: var(--text3); }
+    /* Overview findings */
+    .ov-findings { margin-bottom: 16px; }
+    .ov-counts { display: inline-flex; gap: 6px; margin-left: auto; }
+    .ov-chips { padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+    .ov-frow { display: grid; grid-template-columns: 7px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+    .ov-frow > .tr-sq { margin-top: 6px; }
+    .ov-ftitle { font-size: 13px; font-weight: 500; color: var(--text); }
+    .ov-fdetail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .ov-itoggle, .ov-link { font: inherit; font-size: 12px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); white-space: nowrap; }
+    .ov-itoggle { margin-top: 4px; color: var(--text2); }
+    .ov-itoggle:hover, .ov-link:hover { text-decoration: underline; }
+    .ov-itoggle:focus-visible, .ov-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ov-items { margin-top: 6px; border-left: 2px solid var(--hairline); padding-left: 10px; }
+    .ov-items li { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text2); padding: 3px 0; }
+    .nav-badge { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; color: var(--bg4); vertical-align: 1px; }
+    .nav-badge[hidden] { display: none; }
+    .nav-badge-red { background: var(--red); }
+    .nav-badge-amber { background: var(--amber); }
     .err-banner { display: block; }   /* summary on top, list below (base .demo-banner is flex) */
     .err-banner summary { cursor: pointer; }
     .err-banner summary:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
@@ -558,7 +576,7 @@
   </div>
 
   <div class="nav">
-    <div class="nav-t on" id="tab-overview" onclick="switchTab('overview')">Environment</div>
+    <div class="nav-t on" id="tab-overview" onclick="switchTab('overview')">Environment<span class="nav-badge" id="nav-badge-overview" hidden></span></div>
     <div class="nav-t" id="tab-matrix" onclick="switchTab('matrix')">Assignments</div>
     <div class="nav-t" id="tab-groups" onclick="switchTab('groups')">Groups</div>
     <div class="nav-t" id="tab-simulate" onclick="switchTab('simulate')">What applies?</div>
@@ -571,6 +589,7 @@
 <script>
 const EMPTY = {
   autopilotProfiles: [],
+  autopilotIdentities: [],
   enrollmentStatusPages: [],
   groups: [],
   deviceConfigs: [],
@@ -605,6 +624,7 @@ const DEMO_DATA = {
   enrollmentStatusPages: [
     {
       id:'esp-standard', displayName:'ESP - Standard', description:'Blocks device use until required apps and policies are installed',
+      selectedMobileAppIds:['app-m365', 'app-company', 'app-missing'],   // M365 is required only to SALES, the ESP targets All devices
       assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
     }
   ],
@@ -638,14 +658,24 @@ const DEMO_DATA = {
       assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
     },
     {
+      id:'dc-legacy-proxy', displayName:'Legacy proxy settings', '@odata.type':'#microsoft.graph.windows10CustomConfiguration',
+      assignments:[]   // demo: unassigned
+    },
+    {
       id:'dc-kiosk', displayName:'Kiosk lock-down profile', '@odata.type':'#microsoft.graph.windows10CustomConfiguration',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-kiosk-devices' } }]
+      assignments:[
+        { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-kiosk-devices' } },
+        { target:{ '@odata.type':'#microsoft.graph.exclusionGroupAssignmentTarget', groupId:'grp-kiosk-devices' } }   // demo: include + exclude
+      ]
     }
   ],
   settingsCatalog: [
     {
       id:'sc-edge', name:'Edge security settings', platforms:'windows10',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+      assignments:[
+        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } },
+        { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-deleted-0001' } }   // demo: deleted group
+      ]
     }
   ],
   compliancePolicies: [
@@ -686,10 +716,13 @@ const DEMO_DATA = {
   qualityUpdates: [],
   driverUpdates: [],
   appConfigs: [],
-  groupTags: ['KIOSK','SALES'],
+  groupTags: ['KIOSK','LAB','SALES','SALES2'],
+  autopilotIdentities: [],
   managedDevices: [
     { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', azureADDeviceId:'d3m0-0000-4000-8000-000000000001', _source:'demo' },
-    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000004', _source:'demo' }
+    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000004', _source:'demo' },
+    { id:'dev-003', deviceName:'DEMO-LAB-001', serialNumber:'LAB001SER', groupTag:'LAB', manufacturer:'HP', model:'EliteBook 840', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000006', _source:'demo' },
+    { id:'dev-004', deviceName:'DEMO-SALES2-001', serialNumber:'SAL2001SER', groupTag:'SALES2', manufacturer:'Dell', model:'Latitude 7440', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000007', _source:'demo' }
   ],
   loading:false, loaded:true, errors:[]
 };
@@ -699,6 +732,7 @@ const DEMO_MEMBERS = {
     { id:'ent-001', deviceId:'D3M0-0000-4000-8000-000000000001', displayName:'DEMO-SALES-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
     { id:'ent-002', deviceId:'d3m0-0000-4000-8000-000000000002', displayName:'DEMO-SALES-002', operatingSystem:'Windows', operatingSystemVersion:'10.0.22631' },
     { id:'ent-003', deviceId:'d3m0-0000-4000-8000-000000000003', displayName:'DEMO-SALES-003', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+    { id:'ent-007', deviceId:'d3m0-0000-4000-8000-000000000007', displayName:'DEMO-SALES2-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
   ],
   'grp-lenovo-devices': [
     { id:'ent-001', deviceId:'D3M0-0000-4000-8000-000000000001', displayName:'DEMO-SALES-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
@@ -706,6 +740,9 @@ const DEMO_MEMBERS = {
   'grp-exclusions': [   // static group: devices and users
     { '@odata.type':'#microsoft.graph.device', id:'ent-005', deviceId:'d3m0-0000-4000-8000-000000000005', displayName:'DEMO-PILOT-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
     { '@odata.type':'#microsoft.graph.user', id:'usr-001', displayName:'Pilot User', userPrincipalName:'pilot.user@contoso.com', department:'IT' },
+  ],
+  'grp-lab-devices': [
+    { id:'ent-006', deviceId:'d3m0-0000-4000-8000-000000000006', displayName:'DEMO-LAB-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
   ],
   'grp-kiosk-devices': [
     { id:'ent-004', deviceId:'d3m0-0000-4000-8000-000000000004', displayName:'DEMO-KIOSK-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
@@ -1198,6 +1235,7 @@ async function refreshData() {
   // Merge enrolled devices + Autopilot-only devices into one list
   const enrolled = dv || [];
   const autopilotOnly = apDev || [];
+  DATA.autopilotIdentities = autopilotOnly;   // raw identities, for profile-assignment status findings
 
   // Build a serial-keyed map so enrolled + Autopilot info is combined per device
   const deviceMap = {};
@@ -1276,6 +1314,7 @@ function renderCurrentTab() {
   else if (currentTab === 'matrix') renderMatrix(mount);
   else if (currentTab === 'simulate') renderSimulate(mount);
   else if (currentTab === 'groups') renderGroups(mount);
+  scheduleFindingsRefresh();   // nav badge
 }
 
 function renderEmptyState(mount) {
@@ -1395,6 +1434,7 @@ function renderOverview(mount) {
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
+      <section class="card tr-section ov-findings" id="ov-findings">${overviewFindingsInner(buildFindings())}</section>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
         <div class="stat"><div class="stat-n">${DATA.autopilotProfiles.length}</div><div class="stat-l">Autopilot Profiles</div></div>
         <div class="stat"><div class="stat-n">${dynG.length}</div><div class="stat-l">Dynamic Groups</div></div>
@@ -1989,14 +2029,27 @@ function updateCountCells(id) {
   if (BUILTIN_TARGETS[id] && GROUPS.selected === id) refreshMembers(id);   // count lives in the built-in detail too
   scheduleFindingsRefresh();
 }
-let findingsFrame = 0;
+// Findings depend on member counts, so recompute (at most once per 250 ms) and patch only the findings UI
+let findingsTimer = 0;
 function scheduleFindingsRefresh() {
-  if (findingsFrame) return;
-  findingsFrame = requestAnimationFrame(() => {
-    findingsFrame = 0;
-    const host = el('gp-findings');
-    if (host && currentTab === 'groups') host.innerHTML = groupFindingsHtml();
-  });
+  if (findingsTimer) return;
+  findingsTimer = setTimeout(() => { findingsTimer = 0; refreshFindingsUI(); }, 250);
+}
+function refreshFindingsUI() {
+  if (!isAuthed || DATA.loading || !DATA.loaded) { updateNavBadge([]); return; }
+  const findings = buildFindings();
+  updateNavBadge(findings);
+  if (currentTab === 'overview' && el('ov-findings')) el('ov-findings').innerHTML = overviewFindingsInner(findings);
+  if (currentTab === 'groups' && el('gp-findings')) el('gp-findings').innerHTML = groupFindingsHtml(findings);
+}
+function updateNavBadge(findings) {
+  const b = el('nav-badge-overview');
+  if (!b) return;
+  const red = findings.filter(f => f.severity === 'red').length, n = red + findings.filter(f => f.severity === 'amber').length;
+  b.hidden = !n;
+  b.textContent = n;
+  b.className = 'nav-badge ' + (red ? 'nav-badge-red' : 'nav-badge-amber');
+  b.title = `${red} red, ${n - red} amber findings`;
 }
 
 const parseCount = body => {
@@ -2072,54 +2125,327 @@ function groupFindings({ groups, usage, countOf, devices }) {
   const red = [], amber = [], info = [];
   const deviceTags = new Set(devices.map(d => (d.groupTag || '').toLowerCase()).filter(Boolean));
   const unassigned = [], partial = [], tagIssues = [];   // tagIssues: { tag, group }
+  const deviceTagList = [...new Map(devices.filter(d => d.groupTag).map(d => [d.groupTag.toLowerCase(), d.groupTag])).values()].sort(ciCmp);
   listed.forEach(g => {
     const u = usage[g.id] || [];
     const incl = u.filter(x => x.mode === 'include');
     const n = countOf(g.id);
     if (n === 0 && incl.length) {
-      red.push({ severity: 'red', title: `${incl.length} item${incl.length === 1 ? '' : 's'} assigned to an empty group`,
+      red.push({ severity: 'red', key: 'empty:' + g.id, title: `${incl.length} item${incl.length === 1 ? '' : 's'} assigned to an empty group`,
         detail: `${g.displayName}: ${incl.map(x => x.name).sort(ciCmp).join(', ')}`, groupId: g.id });
     }
     if (!isDyn(g)) return;   // the checks below are about rules; unassigned static groups are normal
     if (groupState(g) === 'Paused') {
-      amber.push({ severity: 'amber', title: `Rule paused: ${g.displayName}`, detail: 'Membership is not updated while rule processing is paused.', groupId: g.id });
+      amber.push({ severity: 'amber', key: 'paused:' + g.id, title: `Rule paused: ${g.displayName}`, detail: 'Membership is not updated while rule processing is paused.', groupId: g.id });
     }
     if (deviceTags.size) {   // without any device data every tag would look unused
       const tags = [...new Set([...(g.membershipRule || '').matchAll(ORDER_TAG_RE)].map(m => m[1]))];
       tags.filter(t => !deviceTags.has(t.toLowerCase())).forEach(t => tagIssues.push({ tag: t, group: g }));
+    }
+    // -contains "[OrderID]:X" is a substring match: tag X also catches X2, XLAB, …
+    const containsTags = [...(g.membershipRule || '').matchAll(/-contains\s+"\[OrderID\]:([^"]+)"/gi)].map(m => m[1]);
+    if (containsTags.length && deviceTagList.length) {
+      const own = new Set(containsTags.map(t => t.toLowerCase()));
+      const extra = deviceTagList.filter(t => !own.has(t.toLowerCase())
+        && evalRule(g.membershipRule, buildSimProps({ ...SIM_DEFAULTS, groupTag: t })));
+      if (extra.length) {
+        const x = containsTags[0];
+        amber.push({ severity: 'amber', key: 'contains-wide:' + g.id, groupId: g.id, title: `Rule matches more group tags than intended: ${g.displayName}`,
+          detail: `Rule uses -contains, so '${containsTags.join("', '")}' also matches: ${extra.join(', ')}. Use -eq or -any (_ -eq "[OrderID]:${x}") for an exact match.` });
+      }
     }
     if (!u.length) unassigned.push(g);
     if (!ruleSupport(g.membershipRule).supported) partial.push(g);
   });
   const distinctTags = [...new Set(tagIssues.map(x => x.tag.toLowerCase()))];
   if (distinctTags.length > 3) {
-    amber.push({ severity: 'amber', title: `${distinctTags.length} group tags that no device has`,
-      detail: tagIssues.map(x => `${x.tag} (${x.group.displayName})`).join(', ') });
+    amber.push({ severity: 'amber', key: 'unused-tags', title: `${distinctTags.length} group tags that no device has`,
+      detail: tagIssues.map(x => `${x.tag} (${x.group.displayName})`).join(', '),
+      items: tagIssues.map(x => ({ label: `${x.tag} (${x.group.displayName})`, groupId: x.group.id })) });
   } else {
     tagIssues.forEach(({ tag: t, group: g }) => amber.push({
-      severity: 'amber', title: `No device has group tag "${t}"`,
+      severity: 'amber', key: `unused-tag:${t.toLowerCase()}:${g.id}`, title: `No device has group tag "${t}"`,
       detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
   }
   Object.values(BUILTIN_TARGETS).forEach(b => {
     const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !x.filterId).map(x => x.name).sort(ciCmp);
     if (!names.length) return;
-    amber.push({ severity: 'amber', title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
+    amber.push({ severity: 'amber', key: 'nofilter:' + b.id, title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
       detail: names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : ''), groupId: b.id });
   });
   if (unassigned.length > 3) {
-    amber.push({ severity: 'amber', title: `${unassigned.length} dynamic groups not assigned to anything`, detail: unassigned.map(g => g.displayName).join(', ') });
+    amber.push({ severity: 'amber', key: 'unassigned-groups', title: `${unassigned.length} dynamic groups not assigned to anything`, detail: unassigned.map(g => g.displayName).join(', '),
+      items: unassigned.map(g => ({ label: g.displayName, groupId: g.id })) });
   } else {
-    unassigned.forEach(g => amber.push({ severity: 'amber', title: `Not assigned: ${g.displayName}`, detail: 'No profile, policy or app targets this dynamic group.', groupId: g.id }));
+    unassigned.forEach(g => amber.push({ severity: 'amber', key: 'unassigned-group:' + g.id, title: `Not assigned: ${g.displayName}`, detail: 'No profile, policy or app targets this dynamic group.', groupId: g.id }));
   }
   if (partial.length) {
-    info.push({ severity: 'info', title: `${partial.length} group rule${partial.length === 1 ? '' : 's'} can't be fully simulated`,
-      detail: partial.map(g => g.displayName).join(', '), ...(partial.length === 1 ? { groupId: partial[0].id } : {}) });
+    info.push({ severity: 'info', key: 'partial-rules', title: `${partial.length} group rule${partial.length === 1 ? '' : 's'} can't be fully simulated`,
+      detail: partial.map(g => g.displayName).join(', '), ...(partial.length === 1 ? { groupId: partial[0].id } : {}),
+      items: partial.length > 1 ? partial.map(g => ({ label: g.displayName, groupId: g.id })) : [] });
   }
   return [...red, ...amber, ...info];
 }
 
-function groupFindingsHtml() {
-  const findings = groupFindings({ groups: DATA.groups, usage: GROUP_USAGE, countOf: memberCountOf, devices: DATA.managedDevices });
+// ── Tenant-wide findings: one model for the Overview card, the Groups tab and the nav badge ──
+const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Data quality'];
+const FINDING_SEVERITY = { red: 0, amber: 1, info: 2 };
+const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', upn: '', dept: '', jobTitle: '' };
+
+// Finding: { id, severity, category, title, detail, items: [{ label, link }], link }
+// link: { tab, group?, search?, table?, sim? }. Reads DATA, MEMBER_COUNTS (via memberCountOf) and buildGroupUsage(); no DOM.
+function buildFindings() {
+  const failed = new Set(DATA.errors.map(e => String(e).split(':')[0].trim()));   // refreshData source labels
+  const loaded = deps => deps.every(d => !failed.has(d));
+  const usage = buildGroupUsage();
+  const groupIds = new Set(DATA.groups.map(g => g.id));
+  const groupName = id => BUILTIN_TARGETS[id]?.displayName || DATA.groups.find(g => g.id === id)?.displayName || id;
+  const out = [];
+  const add = f => out.push({ items: [], link: null, ...f });
+  const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+  const MAX = 3;   // more than 3 similar → one aggregated finding
+
+  // Everything that can be assigned, with a link to where it can be looked at
+  const assignable = [
+    ...DATA.autopilotProfiles.map(p => ({ item: p, name: p.displayName, kind: 'Autopilot profile', link: null })),
+    ...DATA.enrollmentStatusPages.map(e => ({ item: e, name: e.displayName, kind: 'ESP', link: null })),
+    ...allPolicies().map(p => ({ item: p, name: p.name || p.displayName || '', kind: p._t, link: { tab: 'matrix', table: 'policies', search: p.name || p.displayName || '' } })),
+    ...DATA.apps.map(a => ({ item: a, name: a.displayName || '', kind: 'App', link: { tab: 'matrix', table: 'apps', search: a.displayName || '' } })),
+  ];
+  const itemRef = x => ({ label: `${x.name} (${x.kind})`, link: x.link });
+
+  // ── Autopilot: per group tag (evaluated per tag, not per device) ──
+  if (loaded(['AP Profiles', 'Groups', 'Devices', 'APDevices'])) {
+    const tags = new Map();   // lowercase → { tag, devices }
+    DATA.managedDevices.forEach(d => {
+      if (!d.groupTag) return;
+      const k = d.groupTag.toLowerCase();
+      if (!tags.has(k)) tags.set(k, { tag: d.groupTag, devices: 0 });
+      tags.get(k).devices++;
+    });
+    const dynGroups = DATA.groups.filter(g => isDyn(g) && g.membershipRule);
+    const uncertain = DATA.autopilotProfiles.some(p => resolveAssignmentsRaw(p).some(x => x.kind === 'include' && x.group && !isDyn(x.group)));
+    const none = [], many = [];
+    [...tags.values()].sort((a, b) => ciCmp(a.tag, b.tag)).forEach(t => {
+      const props = buildSimProps({ ...SIM_DEFAULTS, groupTag: t.tag });
+      const matched = new Set(dynGroups.filter(g => evalRule(g.membershipRule, props)).map(g => g.id));
+      const profiles = DATA.autopilotProfiles.filter(p => {
+        const asn = resolveAssignmentsRaw(p);
+        const hit = asn.some(x => x.kind === 'allDevices' || (x.kind === 'include' && x.group && matched.has(x.group.id)));
+        const excluded = asn.some(x => x.kind === 'exclude' && x.group && matched.has(x.group.id));
+        return hit && !excluded;
+      });
+      const simLink = { tab: 'simulate', sim: { groupTag: t.tag } };
+      if (!profiles.length) none.push({ ...t, simLink });
+      else if (profiles.length > 1) many.push({ ...t, simLink, profiles: profiles.map(p => p.displayName).sort(ciCmp) });
+    });
+    const staticNote = uncertain ? ' Some profiles target static groups, which can\'t be evaluated per tag.' : '';
+    if (none.length > MAX) {
+      add({ id: 'tag-no-profile:many', severity: 'red', category: 'Autopilot', title: `${none.length} group tags have no Autopilot profile`,
+        detail: `Devices with these tags get no deployment profile.${staticNote}`,
+        items: none.map(t => ({ label: `${t.tag} (${plural(t.devices, 'device')})`, link: t.simLink })) });
+    } else {
+      none.forEach(t => add({ id: 'tag-no-profile:' + t.tag.toLowerCase(), severity: 'red', category: 'Autopilot', title: `${t.tag} has no Autopilot profile`,
+        detail: `${plural(t.devices, 'device')} with group tag ${t.tag} would get no deployment profile.${staticNote}`, link: t.simLink }));
+    }
+    const manyDetail = 'Intune uses the oldest assignment. Verify which profile these devices get. (Evaluated per group tag, not per device.)';
+    if (many.length > MAX) {
+      add({ id: 'tag-many-profiles:many', severity: 'amber', category: 'Autopilot', title: `${many.length} group tags match more than one Autopilot profile`,
+        detail: manyDetail, items: many.map(t => ({ label: `${t.tag}: ${t.profiles.join(', ')}`, link: t.simLink })) });
+    } else {
+      many.forEach(t => add({ id: 'tag-many-profiles:' + t.tag.toLowerCase(), severity: 'amber', category: 'Autopilot',
+        title: `${t.tag} matches ${t.profiles.length} Autopilot profiles`, detail: `${t.profiles.join(', ')}. ${manyDetail}`, link: t.simLink }));
+    }
+  }
+  // deploymentProfileAssignmentStatus may only be returned by the beta endpoint; skip silently when absent
+  if (loaded(['APDevices']) && DATA.autopilotIdentities.some(a => a.deploymentProfileAssignmentStatus !== undefined)) {
+    const bad = DATA.autopilotIdentities.filter(a => /^(notAssigned|failed)/i.test(a.deploymentProfileAssignmentStatus || ''))
+      .sort((a, b) => ciCmp(a.serialNumber, b.serialNumber));
+    if (bad.length) add({ id: 'profile-status', severity: 'amber', category: 'Autopilot', title: `${plural(bad.length, 'Autopilot device')} without an assigned profile`,
+      detail: 'Profile assignment status is "not assigned" or failed.',
+      items: bad.map(a => ({ label: `${a.serialNumber || a.id} (${a.deploymentProfileAssignmentStatus}${a.groupTag ? ', tag ' + a.groupTag : ''})`,
+        link: a.groupTag ? { tab: 'simulate', sim: { groupTag: a.groupTag, serial: a.serialNumber || '' } } : null })) });
+  }
+
+  // ── ESP: blocking apps ──
+  if (loaded(['ESP', 'Apps'])) {
+    const apps = new Map(DATA.apps.map(a => [a.id, a]));
+    const missing = [], notRequired = [], uncovered = [];
+    [...DATA.enrollmentStatusPages].sort((a, b) => ciCmp(a.displayName, b.displayName)).forEach(esp => {
+      const espTargets = resolveAssignmentsRaw(esp).filter(x => x.kind !== 'exclude')
+        .map(x => x.kind === 'allDevices' ? '__allDevices__' : x.kind === 'allUsers' ? '__allUsers__' : (x.raw.target || x.raw).groupId).filter(Boolean);
+      (esp.selectedMobileAppIds || []).forEach(appId => {
+        const app = apps.get(appId);
+        if (!app) { missing.push({ esp, appId }); return; }
+        const req = resolveAssignmentsRaw(app).filter(x => x.kind !== 'exclude' && x.intent === 'required');
+        if (!req.length) { notRequired.push({ esp, app }); return; }
+        if (req.some(x => x.kind === 'allDevices' || x.kind === 'allUsers')) return;
+        const reqIds = new Set(req.map(x => (x.raw.target || x.raw).groupId));
+        const gaps = espTargets.filter(t => !reqIds.has(t));
+        if (gaps.length) uncovered.push({ esp, app, gaps });
+      });
+    });
+    const appLink = app => ({ tab: 'matrix', table: 'apps', search: app.displayName || '' });
+    if (missing.length > MAX) {
+      add({ id: 'esp-missing-app:many', severity: 'red', category: 'ESP', title: `${missing.length} ESP blocking apps don't exist`,
+        detail: 'The ESP waits for apps that are no longer in Intune.', items: missing.map(m => ({ label: `${m.appId} (${m.esp.displayName})`, link: null })) });
+    } else {
+      missing.forEach(m => add({ id: `esp-missing-app:${m.esp.id}:${m.appId}`, severity: 'red', category: 'ESP',
+        title: `${m.esp.displayName} blocks on an app that doesn't exist`, detail: `App id ${m.appId} is not in Intune. The ESP may wait until it times out.` }));
+    }
+    const nrDetail = 'ESP only tracks apps that are assigned as Required. This app won\'t actually block setup.';
+    if (notRequired.length > MAX) {
+      add({ id: 'esp-not-required:many', severity: 'amber', category: 'ESP', title: `${notRequired.length} ESP blocking apps aren't assigned as Required`,
+        detail: nrDetail, items: notRequired.map(m => ({ label: `${m.app.displayName} (${m.esp.displayName})`, link: appLink(m.app) })) });
+    } else {
+      notRequired.forEach(m => add({ id: `esp-not-required:${m.esp.id}:${m.app.id}`, severity: 'amber', category: 'ESP',
+        title: `${m.app.displayName} is an ESP blocking app but not Required`, detail: `${m.esp.displayName}. ${nrDetail}`, link: appLink(m.app) }));
+    }
+    if (uncovered.length > MAX) {
+      add({ id: 'esp-coverage:many', severity: 'info', category: 'ESP', title: `${uncovered.length} ESP blocking apps don't cover all ESP targets`,
+        detail: 'These apps are Required only to some of the groups the ESP targets.',
+        items: uncovered.map(m => ({ label: `${m.app.displayName}: not ${m.gaps.map(groupName).join(', ')}`, link: appLink(m.app) })) });
+    } else {
+      uncovered.forEach(m => add({ id: `esp-coverage:${m.esp.id}:${m.app.id}`, severity: 'info', category: 'ESP',
+        title: `${m.app.displayName} is Required only to part of what ${m.esp.displayName} targets`,
+        detail: `Not covered: ${m.gaps.map(groupName).join(', ')}.`, link: appLink(m.app) }));
+    }
+  }
+
+  // ── Assignments ──
+  const both = [];
+  assignable.forEach(x => {
+    const asn = resolveAssignmentsRaw(x.item);
+    const inc = new Set(asn.filter(a => a.kind === 'include' && a.group).map(a => a.group.id));
+    const clash = [...new Set(asn.filter(a => a.kind === 'exclude' && a.group && inc.has(a.group.id)).map(a => a.group.id))];
+    if (clash.length) both.push({ ...x, clash });
+  });
+  both.sort((a, b) => ciCmp(a.kind, b.kind) || ciCmp(a.name, b.name));
+  if (both.length > MAX) {
+    add({ id: 'include-exclude:many', severity: 'red', category: 'Assignments', title: `${both.length} items include and exclude the same group`,
+      detail: 'Exclusion wins, so these groups get nothing from the item.', items: both.map(x => ({ label: `${x.name} (${x.clash.map(groupName).join(', ')})`, link: x.link })) });
+  } else {
+    both.forEach(x => add({ id: `include-exclude:${x.kind}:${x.item.id}`, severity: 'red', category: 'Assignments',
+      title: `${x.name} includes and excludes the same group`, detail: `${x.kind}. ${x.clash.map(groupName).join(', ')}: exclusion wins, so the group gets nothing.`, link: x.link }));
+  }
+  if (loaded(['Groups'])) {   // without the group list every group would look deleted
+    const missing = new Map();   // groupId → [assignable]
+    assignable.forEach(x => {
+      const ids = new Set(resolveAssignmentsRaw(x.item).map(a => (a.raw.target || a.raw).groupId).filter(id => id && !groupIds.has(id)));
+      ids.forEach(id => { if (!missing.has(id)) missing.set(id, []); missing.get(id).push(x); });
+    });
+    const ids = [...missing.keys()].sort();
+    if (ids.length > MAX) {
+      add({ id: 'deleted-group:many', severity: 'amber', category: 'Assignments', title: `Assignments to ${ids.length} groups that no longer exist`,
+        detail: 'These assignments do nothing. Remove them or reassign to an existing group.',
+        items: ids.flatMap(id => missing.get(id).map(x => ({ label: `${id}: ${x.name} (${x.kind})`, link: x.link }))) });
+    } else {
+      ids.forEach(id => add({ id: 'deleted-group:' + id, severity: 'amber', category: 'Assignments', title: `Assigned to a group that no longer exists`,
+        detail: `Group id ${id}. These assignments do nothing.`, items: missing.get(id).map(itemRef) }));
+    }
+  }
+  const unassignedByKind = new Map();
+  assignable.forEach(x => { if (!(x.item.assignments || []).length) { if (!unassignedByKind.has(x.kind)) unassignedByKind.set(x.kind, []); unassignedByKind.get(x.kind).push(x); } });
+  unassignedByKind.forEach((list, kind) => add({ id: 'unassigned:' + kind, severity: 'info', category: 'Assignments',
+    title: `${plural(list.length, kind + ' item')} not assigned`, detail: 'Not assigned to any group, All devices or All users.',
+    items: list.sort((a, b) => ciCmp(a.name, b.name)).map(x => ({ label: x.name, link: x.link })) }));
+
+  // ── Groups + Broad scope (groupFindings, unchanged). No group list → only the broad-scope part runs ──
+  groupFindings({ groups: loaded(['Groups']) ? DATA.groups : [], usage, countOf: memberCountOf,
+    devices: loaded(['Devices', 'APDevices']) ? DATA.managedDevices : [] }).forEach(f => {
+    const broad = !!BUILTIN_TARGETS[f.groupId];
+    add({ id: (broad ? 'broad:' : 'groups:') + (f.key || f.groupId || f.title), severity: f.severity, category: broad ? 'Broad scope' : 'Groups',
+      title: f.title, detail: f.detail, link: f.groupId ? { tab: 'groups', group: f.groupId } : null,
+      items: (f.items || []).map(i => ({ label: i.label, link: i.groupId ? { tab: 'groups', group: i.groupId } : null })) });
+  });
+
+  // ── Data quality: one per failed source ──
+  [...failed].sort(ciCmp).forEach(src => add({ id: 'source:' + src, severity: 'info', category: 'Data quality',
+    title: `${errorSource(src + ':')} couldn't be loaded. Related checks were skipped.`,
+    detail: DATA.errors.filter(e => String(e).split(':')[0].trim() === src).join(' ') }));
+
+  return out.sort((a, b) => FINDING_SEVERITY[a.severity] - FINDING_SEVERITY[b.severity]
+    || FINDING_CATEGORIES.indexOf(a.category) - FINDING_CATEGORIES.indexOf(b.category)
+    || ciCmp(a.title, b.title) || ciCmp(a.id, b.id));
+}
+
+// ── Overview findings card ──
+const FINDINGS_UI = { cats: new Set(), showInfo: false, open: new Set() };
+let FINDINGS_SHOWN = [];   // the list the card rendered last; links resolve against it
+
+function overviewFindingsInner(findings) {
+  FINDINGS_SHOWN = findings;
+  const count = sev => findings.filter(f => f.severity === sev).length;
+  const cats = FINDING_CATEGORIES.filter(c => findings.some(f => f.category === c));
+  const filtered = findings.filter(f => !FINDINGS_UI.cats.size || FINDINGS_UI.cats.has(f.category));
+  const main = filtered.filter(f => f.severity !== 'info'), info = filtered.filter(f => f.severity === 'info');
+  const color = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
+  const row = f => {
+    const i = findings.indexOf(f), open = FINDINGS_UI.open.has(f.id);
+    return `<div class="ov-frow">
+      <span class="tr-sq" style="background:${color[f.severity]};" role="img" aria-label="${f.severity}"></span>
+      <div class="ov-fmain">
+        <div class="ov-ftitle">${esc(f.title)}</div>
+        ${f.detail ? `<div class="ov-fdetail">${esc(f.detail)}</div>` : ''}
+        ${f.items.length ? `<button type="button" class="ov-itoggle" aria-expanded="${open}" onclick="toggleFindingItems(${i})">${plural(f.items.length)} ${open ? '▾' : '▸'}</button>` : ''}
+        ${open ? `<ul class="ov-items">${f.items.map((it, j) => `<li><span>${esc(it.label)}</span>${it.link ? `<button type="button" class="ov-link" onclick="openFindingLink(FINDINGS_SHOWN[${i}].items[${j}].link)">View →</button>` : ''}</li>`).join('')}</ul>` : ''}
+      </div>
+      ${f.link ? `<button type="button" class="ov-link" onclick="openFindingLink(FINDINGS_SHOWN[${i}].link)">View →</button>` : '<span></span>'}
+    </div>`;
+  };
+  const plural = n => `${n} item${n === 1 ? '' : 's'}`;
+  const failedAny = DATA.errors.length > 0;
+  return `
+    <div class="tr-head">
+      <span class="tr-sq" style="background:var(--amber);"></span><span class="tr-title">Findings</span>
+      <span class="ov-counts"><span class="tr-pill tr-pill-red">${count('red')} red</span><span class="tr-pill tr-pill-amber">${count('amber')} amber</span><span class="tr-pill tr-pill-gray">${count('info')} info</span></span>
+    </div>
+    ${cats.length ? `<div class="gp-chiprow ov-chips">${cats.map(c => filterChip(`onclick="toggleFindingCategory('${c}')" aria-pressed="${FINDINGS_UI.cats.has(c)}"`, `${c} (${findings.filter(f => f.category === c).length})`, FINDINGS_UI.cats.has(c))).join('')}</div>` : ''}
+    ${!findings.length ? `<div class="tr-empty empty-note">${failedAny ? 'No findings in the data that loaded.' : 'No findings.'}</div>` : ''}
+    ${main.map(row).join('')}
+    ${info.length ? (FINDINGS_UI.showInfo ? info.map(row).join('') + `<div class="gp-body"><button type="button" class="btn btn-ghost" onclick="FINDINGS_UI.showInfo=false;rerenderOverviewFindings()">Hide info</button></div>`
+      : `<div class="gp-body"><button type="button" class="btn btn-ghost" onclick="FINDINGS_UI.showInfo=true;rerenderOverviewFindings()">Show ${info.length} info</button></div>`) : ''}
+    ${findings.length && !filtered.length ? '<div class="tr-empty empty-note">No findings in the selected categories.</div>' : ''}`;
+}
+function rerenderOverviewFindings() {
+  const host = el('ov-findings');
+  if (host) host.innerHTML = overviewFindingsInner(buildFindings());
+}
+function toggleFindingCategory(c) {
+  if (FINDINGS_UI.cats.has(c)) FINDINGS_UI.cats.delete(c); else FINDINGS_UI.cats.add(c);
+  rerenderOverviewFindings();
+}
+function toggleFindingItems(i) {
+  const f = FINDINGS_SHOWN[i];
+  if (!f) return;
+  if (FINDINGS_UI.open.has(f.id)) FINDINGS_UI.open.delete(f.id); else FINDINGS_UI.open.add(f.id);
+  rerenderOverviewFindings();
+}
+
+// Navigate to where a finding can be looked at
+function openFindingLink(link) {
+  if (!link) return;
+  track('finding-open', 'Finding link opened');
+  if (link.group) {
+    GROUPS.selected = link.group;
+    GROUPS.memberSearch = '';
+    GROUPS.showAll = false;
+    switchTab('groups');
+  } else if (link.search !== undefined) {
+    MATRIX.policies.search = ''; MATRIX.apps.search = '';   // a search left over from an earlier link would hide rows
+    switchTab('matrix');
+    setMatrixField(link.table || 'policies', 'search', link.search);
+  } else if (link.sim) {
+    // A fresh device for the tag; user fields stay as they are. Not run automatically.
+    Object.assign(SIM, { deviceName: '', enrollmentProfileName: '', serial: '', mfg: '', model: '', deviceId: '', azureDeviceId: '' }, link.sim);
+    switchTab('simulate');
+  } else if (link.tab) {
+    switchTab(link.tab);
+  }
+}
+
+function groupFindingsHtml(all = buildFindings()) {
+  const findings = all.filter(f => f.category === 'Groups' || f.category === 'Broad scope').map(f => ({ ...f, groupId: f.link?.group }));
   if (!findings.length) return '';
   const shown = GROUPS.findingsAll ? findings : findings.slice(0, 5);
   const color = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
