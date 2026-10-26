@@ -406,6 +406,8 @@
       .tr-via { grid-area: via; }
     }
 
+    .sim-export-btn:disabled, .sim-export-btn:disabled:hover { opacity: .5; cursor: not-allowed; color: var(--text2); background: transparent; border-color: var(--border2); }
+
     /* ── Groups tab (reuses .tr-* rows, pills and section heads) ── */
     .gp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
     @media (min-width: 1200px) { .gp-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -587,6 +589,10 @@ const DEMO_DATA = {
       membershipRule:'(device.devicePhysicalIds -any (_ -contains "[OrderID]:KIOSK"))'
     },
     {
+      id:'grp-lenovo-devices', displayName:'AP - Lenovo devices', description:'All Lenovo devices (not assigned)', groupTypes:['DynamicMembership'],
+      membershipRule:'(device.deviceManufacturer -eq "Lenovo")'
+    },
+    {
       id:'grp-all-windows', displayName:'All Windows devices', description:'Example static assignment group', groupTypes:[], membershipRule:''
     },
     {
@@ -649,6 +655,9 @@ const DEMO_MEMBERS = {
     { id:'ent-002', deviceId:'d3m0-0000-4000-8000-000000000002', displayName:'DEMO-SALES-002', operatingSystem:'Windows', operatingSystemVersion:'10.0.22631' },
     { id:'ent-003', deviceId:'d3m0-0000-4000-8000-000000000003', displayName:'DEMO-SALES-003', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
   ],
+  'grp-lenovo-devices': [
+    { id:'ent-001', deviceId:'D3M0-0000-4000-8000-000000000001', displayName:'DEMO-SALES-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
+  ],
   'grp-kiosk-devices': [
     { id:'ent-004', deviceId:'d3m0-0000-4000-8000-000000000004', displayName:'DEMO-KIOSK-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
   ],
@@ -661,11 +670,11 @@ let currentAccount = null;
 let isAuthed = false;
 const TABS = ['overview','matrix','simulate','groups'];
 let currentTab = 'overview';
-let SIM = { deviceName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
+let SIM = { deviceName:'', enrollmentProfileName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', jobTitle:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
 let simView = 'trace';   // 'trace' | 'graph'
 let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim()
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 // Groups tab: list filters + selection; members are fetched lazily and cached per group
 let GROUPS = { search:'', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false };
 const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
@@ -695,7 +704,7 @@ const isDyn = g => (g.groupTypes || []).includes('DynamicMembership') || !!g.mem
 const el = id => document.getElementById(id);
 
 // ── URL state: serialize/restore Simulate params ──
-const SIM_URL_FIELDS = ['deviceName', 'groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
+const SIM_URL_FIELDS = ['deviceName', 'enrollmentProfileName', 'groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'jobTitle', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
 
 function simToUrl() {
   const params = new URLSearchParams();
@@ -821,7 +830,10 @@ function startDemo() {
   DATA = JSON.parse(JSON.stringify(DEMO_DATA));
   // Keep a ?tab=groups&group=… deep link; otherwise start on the overview as before
   currentTab = new URLSearchParams(location.search).get('tab') === 'groups' && GROUPS.selected ? 'groups' : 'overview';
-  SIM = { deviceName:'DEMO-SALES-001', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
+  SIM = { deviceName:'DEMO-SALES-001', enrollmentProfileName:'Windows Autopilot - Sales', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
+  // Deep-linked simulation fields win over the demo defaults (like the groups deep link above)
+  const urlParams = new URLSearchParams(location.search);
+  SIM_URL_FIELDS.forEach(k => { if (urlParams.has(k)) SIM[k] = urlParams.get(k); });
   TABS.forEach(id => {
     const t = el(`tab-${id}`);
     if (t) t.classList.toggle('on', id === currentTab);
@@ -1837,6 +1849,9 @@ function simulateGroupMember(memberId) {
 
 function renderSimulate(mount) {
   const tagOpts = DATA.groupTags.map(t => `<option value="${esc(t)}" ${SIM.groupTag === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const profileNames = [...new Set(DATA.autopilotProfiles.map(p => p.displayName).filter(Boolean))].sort(ciCmp);
+  const profileOpts = profileNames.map(n => `<option value="${esc(n).replace(/"/g, '&quot;')}" ${SIM.enrollmentProfileName === n ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  const customProfile = SIM.enrollmentProfileName && !profileNames.includes(SIM.enrollmentProfileName) ? SIM.enrollmentProfileName : '';
   mount.innerHTML = `
     <div class="fade sim-grid" style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;">
       <div style="display:flex;flex-direction:column;gap:12px;">
@@ -1850,12 +1865,18 @@ function renderSimulate(mount) {
             <div>
               <label class="lbl">Group Tag</label>
               <select class="inp" id="sim-tag" onchange="SIM.groupTag=this.value;simToUrl();"><option value="">None</option>${tagOpts}</select>
-              <input class="inp" style="margin-top:6px;" placeholder="Or type a custom tag…" oninput="SIM.groupTag=this.value;document.getElementById('sim-tag').value='';simToUrl();" />
+              <input class="inp" style="margin-top:6px;" placeholder="Or type a custom tag…" value="${DATA.groupTags.includes(SIM.groupTag) ? '' : esc(SIM.groupTag).replace(/"/g, '&quot;')}" oninput="SIM.groupTag=this.value;document.getElementById('sim-tag').value='';simToUrl();" />
             </div>
             <div><label class="lbl">Serial</label><input class="inp" value="${esc(SIM.serial)}" oninput="SIM.serial=this.value;simToUrl();" /></div>
             <div><label class="lbl">Manufacturer</label><input class="inp" value="${esc(SIM.mfg)}" oninput="SIM.mfg=this.value;simToUrl();" /></div>
             <div><label class="lbl">Model</label><input class="inp" value="${esc(SIM.model)}" oninput="SIM.model=this.value;simToUrl();" /></div>
             <div><label class="lbl">OS Version</label><input class="inp" value="${esc(SIM.osVer)}" oninput="SIM.osVer=this.value;simToUrl();" /></div>
+            <div>
+              <label class="lbl" for="sim-profile">Enrollment profile name</label>
+              <select class="inp" id="sim-profile" onchange="SIM.enrollmentProfileName=this.value;el('sim-profile-custom').value='';simToUrl();"><option value="">None</option>${profileOpts}</select>
+              <input class="inp" id="sim-profile-custom" style="margin-top:6px;" placeholder="Or type a profile name…" value="${esc(customProfile).replace(/"/g, '&quot;')}" oninput="SIM.enrollmentProfileName=this.value;el('sim-profile').value='';simToUrl();" />
+              <div class="cell-sub" style="margin-top:6px;">Set by Intune when an Autopilot profile is assigned. Used by rules like device.enrollmentProfileName.</div>
+            </div>
           </div>
         </div>
 
@@ -1877,6 +1898,7 @@ function renderSimulate(mount) {
             Copy link
           </button>
         </div>
+        <div id="sim-export" style="display:flex;gap:8px;">${exportButtonsHtml()}</div>
       </div>
 
       <div id="sim-out">
@@ -1976,6 +1998,7 @@ async function searchUsers() {
 function selectUser(u) {
   SIM.upn = u.userPrincipalName || '';
   SIM.dept = u.department || '';
+  SIM.jobTitle = u.jobTitle || '';
   SIM.displayName = u.displayName || '';
   SIM.userId = u.id || '';
   closeModal('user-picker');
@@ -2420,7 +2443,6 @@ async function runSim() {
   };
 
   LAST_SIM = { traceHtml, graphHtml, model };
-  const exportTip = 'Contains tenant configuration data. Generated locally, nothing is uploaded.';
   el('sim-out').innerHTML = `
     <div class="fade" style="display:flex;flex-direction:column;gap:14px;">
       ${infoBanner}
@@ -2429,14 +2451,21 @@ async function runSim() {
           <button type="button" data-sim-view="trace" onclick="setSimView('trace')">Trace</button>
           <button type="button" data-sim-view="graph" onclick="setSimView('graph')">Graph</button>
         </div>
-        ${LAST_SIM?.model ? `<div style="display:flex;gap:8px;">
-          <button type="button" class="btn btn-ghost" onclick="exportSimMarkdown()" title="${exportTip}">Export .md</button>
-          <button type="button" class="btn btn-ghost" onclick="copySimMarkdown()" title="${exportTip}">Copy Markdown</button>
-        </div>` : ''}
       </div>
       <div id="sim-view" style="display:flex;flex-direction:column;gap:14px;"></div>
     </div>`;
   renderSimView();
+  const exportRow = el('sim-export');
+  if (exportRow) exportRow.innerHTML = exportButtonsHtml();
+}
+
+// Export buttons for the sim form: disabled until a simulation has produced a model
+function exportButtonsHtml() {
+  const ready = !!LAST_SIM?.model;
+  const tip = ready ? 'Contains tenant configuration data. Generated locally, nothing is uploaded.' : 'Run a simulation first';
+  const attrs = ready ? '' : ' disabled aria-disabled="true"';
+  return `<button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="exportSimMarkdown()" title="${tip}"${attrs}>Export .md</button>
+    <button type="button" class="btn btn-ghost sim-export-btn" style="flex:1;" onclick="copySimMarkdown()" title="${tip}"${attrs}>Copy Markdown</button>`;
 }
 
 // Swap Trace ↔ Graph from the cached render — no Graph calls, no re-run
@@ -2677,16 +2706,27 @@ function copySimMarkdown() {
     .catch(() => showToast('Could not copy Markdown', 'error'));
 }
 
-// The device/user properties the rule evaluator can see for a simulated device
+// The device/user properties the rule evaluator can see for a simulated device, named as in Entra ID rules.
+// Only properties we have a real value for; anything else stays "property not simulated".
 function buildSimProps(sim) {
   const tag = sim.groupTag;
   return {
-    device: { devicePhysicalIds: tag ? ['[ZTDId]', `[OrderID]:${tag}`] : ['[ZTDId]'], serialNumber: sim.serial, manufacturer: sim.mfg, model: sim.model, osVersion: sim.osVer, operatingSystem: 'Windows', groupTag: tag },
-    user: { userPrincipalName: sim.upn, department: sim.dept }
+    device: {
+      devicePhysicalIds: tag ? ['[ZTDId]', `[OrderID]:${tag}`] : ['[ZTDId]'],
+      deviceModel: sim.model,
+      deviceManufacturer: sim.mfg,
+      deviceOSVersion: sim.osVer,
+      deviceOSType: 'Windows',
+      displayName: sim.deviceName,
+      deviceOwnership: 'Company',        // Autopilot-registered devices are always corporate
+      accountEnabled: 'true',
+      enrollmentProfileName: sim.enrollmentProfileName,
+    },
+    user: { userPrincipalName: sim.upn, department: sim.dept, jobTitle: sim.jobTitle },
   };
 }
-// Property paths the evaluator knows ('device.model', 'user.department', …), derived from buildSimProps
-const RULE_PROPS = new Set(Object.entries(buildSimProps({ groupTag: 'x', serial: 'x', mfg: 'x', model: 'x', osVer: 'x', upn: 'x', dept: 'x' }))
+// Property paths the evaluator knows ('device.deviceModel', 'user.department', …), derived from buildSimProps
+const RULE_PROPS = new Set(Object.entries(buildSimProps({ groupTag: 'x', deviceName: 'x', mfg: 'x', model: 'x', osVer: 'x', enrollmentProfileName: 'x', upn: 'x', dept: 'x', jobTitle: 'x' }))
   .flatMap(([obj, fields]) => Object.keys(fields).map(k => `${obj}.${k}`)));
 
 function evalRule(rule, props) { try { return evalExpr(rule.trim(), props); } catch { return false; } }
