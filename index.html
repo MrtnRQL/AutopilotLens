@@ -489,6 +489,10 @@
     .gt-batch { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; min-height: 30px; }
     .gt-bstatus { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
     .gt-show { margin-left: 8px; font-size: 12px; }
+    .gt-notice { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--amber); border-radius: var(--radius); background: #f3ebdc; color: var(--text); font-size: 12.5px; line-height: 1.5; }
+    .gt-notice p { margin: 0; }
+    .gt-notice-title { font-weight: 600; color: var(--amber); }
+    .gt-notice .tr-mono { overflow-wrap: anywhere; }
     .gt-req { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .gt-pre { width: 100%; max-height: 220px; overflow: auto; margin: 0; padding: 8px 10px; font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
     .gt-note { padding: 12px 18px; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
@@ -3215,7 +3219,7 @@ function selectAllMatching() { filteredDevices().filter(r => r.d.autopilotId).fo
 const GE_BASE = 'https://developer.microsoft.com/graph/graph-explorer';
 const GE_MAX_URL = 7500, GE_MAX_BATCH = 20;
 const TAG_JOB_KEY = 'apl-tag-job';   // sessionStorage only: survives a reload, gone when the tab closes
-let TAG_UI = { tag: '', shown: new Set() };   // shown: batch numbers with "Show request" open
+let TAG_UI = { tag: '', shown: new Set(), ackAt: '', showNotice: false };   // shown: batch numbers with "Show request" open; ackAt: notice acknowledged before the job exists
 let TAG_VERIFYING = false;
 
 // Graph Explorer share links carry requestBody as base64 of a JSON *string literal* holding the body text (what its own
@@ -3248,7 +3252,7 @@ function planTagBatches(items, tag) {
 
 function loadTagJob() { try { return JSON.parse(sessionStorage.getItem(TAG_JOB_KEY) || 'null'); } catch { return null; } }
 function saveTagJob(job) { try { sessionStorage.setItem(TAG_JOB_KEY, JSON.stringify(job)); } catch { /* the job just won't survive a reload */ } }
-function clearTagJob() { try { sessionStorage.removeItem(TAG_JOB_KEY); } catch { /* nothing stored */ } }
+function clearTagJob() { TAG_UI.ackAt = ''; TAG_UI.showNotice = false; try { sessionStorage.removeItem(TAG_JOB_KEY); } catch { /* nothing stored */ } }
 const tagJobScope = () => demoMode ? 'demo' : (currentAccount?.tenantId || '');
 // The stored job, only when it belongs to this tenant (or to the demo)
 function activeTagJob() { const j = loadTagJob(); return j && j.scope === tagJobScope() ? j : null; }
@@ -3318,13 +3322,33 @@ function tagPreviewHtml(items, newTag) {
 }
 
 const tagRetryable = it => it.status === 'not changed' || it.status === 'error';   // 'not found' can't succeed
+// Risk acknowledgment: on the job once it exists, before that on the draft
+const tagAckAt = () => activeTagJob()?.acknowledgedAt || TAG_UI.ackAt || '';
+function acknowledgeTagRisk() {
+  const now = new Date().toISOString(), job = activeTagJob();
+  if (job) { job.acknowledgedAt = now; saveTagJob(job); } else TAG_UI.ackAt = now;
+  TAG_UI.showNotice = false;
+  renderTagDialogBody();
+}
+function toggleTagNotice() { TAG_UI.showNotice = !TAG_UI.showNotice; renderTagDialogBody(); }
+function tagNoticeHtml() {
+  const text = `<div class="gt-notice-title">You make these changes, with your own account.</div>
+    <p>Autopilotlens doesn't change anything in your tenant. It only prepares the requests you run in Graph Explorer.</p>
+    <p>Requirements: your account needs the Graph permission <code class="tr-mono">DeviceManagementServiceConfig.ReadWrite.All</code> (consented for Graph Explorer) and an Intune role that allows changing Autopilot devices. Without them, Graph returns 403 and nothing is changed.</p>
+    <p>Group tags control Autopilot profiles and dynamic groups, so a wrong tag can give devices the wrong setup. Use at your own risk. The tool is provided as is, with no warranty.</p>`;
+  if (!tagAckAt()) return `<div class="gt-notice" role="note">${text}<div><button type="button" class="btn btn-ghost" onclick="acknowledgeTagRisk()">OK, I understand the risk</button></div></div>`;
+  return TAG_UI.showNotice
+    ? `<div class="gt-notice" role="note">${text}<div><button type="button" class="ov-link" aria-expanded="true" onclick="toggleTagNotice()">Hide notice</button></div></div>`
+    : `<div class="gp-muted">Risk acknowledged · your own account and permissions · <button type="button" class="ov-link" aria-expanded="false" onclick="toggleTagNotice()">Show notice</button></div>`;
+}
 function batchStatusHtml(job, b) {
   const items = job.items.filter(it => it.batch === b.n);
   const demo = job.scope === 'demo';
+  const lock = tagAckAt() ? '' : ' disabled title="Read the notice above first"';   // every link button waits for the acknowledgment
   const ok = items.filter(it => it.status === 'verified').length, checked = items.filter(it => it.status !== 'pending').length;
   if (b.status !== 'opened' && !checked) return demo
-    ? `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Demo: simulate run</button>`
-    : `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Open in Graph Explorer ↗</button>`;
+    ? `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})"${lock}>Demo: simulate run</button>`
+    : `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})"${lock}>Open in Graph Explorer ↗</button>`;
   if (ok === items.length) return `<span class="tr-pill tr-pill-green">✓ ${ok} verified</span>`;
   let status;
   if (checked) {
@@ -3339,8 +3363,8 @@ function batchStatusHtml(job, b) {
   const retryTip = [`Includes ${nc} not changed${errs ? ` and ${errs} ${errs === 1 ? 'error' : 'errors'}` : ''}.`,
     notFound.length ? `Not found (excluded): ${notFound.map(it => it.serial || it.autopilotId).join(', ')}` : ''].filter(Boolean).join(' ');
   return `<span class="gt-bstatus">${status}
-    <button type="button" class="btn btn-ghost" onclick="reopenTagBatch(${b.n})">${demo ? 'Demo: run again' : 'Open again ↗'}</button>
-    ${retry.length ? `<button type="button" class="btn btn-ghost" title="${htmlAttr(retryTip)}" onclick="retryTagBatch(${b.n})">${demo ? 'Demo: retry' : 'Retry'} ${retry.length} not changed${demo ? '' : ' ↗'}</button>` : ''}</span>`;
+    <button type="button" class="btn btn-ghost" onclick="reopenTagBatch(${b.n})"${lock}>${demo ? 'Demo: run again' : 'Open again ↗'}</button>
+    ${retry.length ? `<button type="button" class="btn btn-ghost" onclick="retryTagBatch(${b.n})"${lock || ` title="${htmlAttr(retryTip)}"`}>${demo ? 'Demo: retry' : 'Retry'} ${retry.length} not changed${demo ? '' : ' ↗'}</button>` : ''}</span>`;
 }
 
 function openTagDialog() {
@@ -3389,7 +3413,7 @@ function renderTagDialogBody() {
   if (!mount) return;
   const job = activeTagJob();
   // One row per batch, with the readable request behind "Show request" (fallback when Graph Explorer's editor stays empty)
-  const batchList = (jobLike, batches, tag) => batches.map(b => {
+  const batchList = (jobLike, batches, tag) => tagNoticeHtml() + batches.map(b => {
     const open = TAG_UI.shown.has(b.n);
     return `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}
         <button type="button" class="ov-link gt-show" aria-expanded="${open}" onclick="toggleTagRequest(${b.n})">${open ? 'Hide request' : 'Show request'}</button></span>${batchStatusHtml(jobLike, b)}</div>
@@ -3398,7 +3422,7 @@ function renderTagDialogBody() {
   }).join('') + `<div class="gp-muted">In Graph Explorer, the request body appears as a quoted string with escaped characters (\\" and \\\\u00c6 for Æ). This is how Graph Explorer stores shared requests. It's sent correctly when you press Run query.</div>
     <div class="gp-muted">If the Request body in Graph Explorer is empty: set method POST, URL https://graph.microsoft.com/v1.0/$batch, paste the copied body, and Run.</div>
     <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div>`;
-  const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. You need permission to change Autopilot devices. Without it, Graph returns 403 and nothing changes. Then come back and press Verify.
+  const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. Then come back and press Verify.
       <div>Make sure you're signed in to Graph Explorer (top right) before Run query. Otherwise it runs against a sample tenant and nothing changes in yours. The first time, Graph Explorer may ask you to consent to the permission.</div>
       <div class="gp-muted">The link contains Autopilot device IDs and the tag (no names, no tokens) and opens on Microsoft's site.</div></div>`;
   if (job) {
@@ -3450,7 +3474,8 @@ function openTagBatch(n) {
     const items = tagDraft(tag).change;
     const batches = planTagBatches(items, tag);
     if (!items.length || !batches) return;
-    job = { id: 'job-' + Date.now().toString(36), createdAt: new Date().toISOString(), scope: tagJobScope(), newTag: tag, items, batches };
+    if (!TAG_UI.ackAt) return;
+    job = { id: 'job-' + Date.now().toString(36), createdAt: new Date().toISOString(), scope: tagJobScope(), newTag: tag, items, batches, acknowledgedAt: TAG_UI.ackAt };
     track('grouptagger-links', `${items.length} devices, ${batches.length} batches`);
   }
   const b = job.batches.find(x => x.n === n);
@@ -3463,6 +3488,7 @@ function openTagBatch(n) {
 }
 // Opens a link (not in demo), counts the attempt on the items it contains and remembers it for "Open again"
 function launchTagLink(job, b, url, items) {
+  if (!(job.acknowledgedAt || tagAckAt())) return;   // the notice must be acknowledged first
   if (job.scope !== 'demo') window.open(url, '_blank', 'noopener');
   const now = new Date().toISOString();
   items.forEach(it => { it.attempts = (it.attempts || 0) + 1; it.lastOpenedAt = now; });
@@ -3535,8 +3561,8 @@ async function verifyTagJob() {
 function downloadTagLog() {
   const job = activeTagJob();
   if (!job) return;
-  const head = ['serial', 'deviceName', 'autopilotId', 'oldTag', 'newTag', 'batch', 'status', 'verifiedAt', 'attempts'];
-  const lines = job.items.map(it => [it.serial, it.deviceName, it.autopilotId, it.oldTag, job.newTag, it.batch, it.status, it.verifiedAt, it.attempts || 0].map(csvField).join(','));
+  const head = ['serial', 'deviceName', 'autopilotId', 'oldTag', 'newTag', 'batch', 'status', 'verifiedAt', 'attempts', 'acknowledgedAt'];
+  const lines = job.items.map(it => [it.serial, it.deviceName, it.autopilotId, it.oldTag, job.newTag, it.batch, it.status, it.verifiedAt, it.attempts || 0, job.acknowledgedAt || ''].map(csvField).join(','));
   const url = URL.createObjectURL(new Blob(['\uFEFF' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
@@ -3548,6 +3574,7 @@ function downloadTagLog() {
 }
 function finishTagJob() {
   if (activeTagJob()) { clearTagJob(); DEVICE_SEL.clear(); TAG_UI.tag = ''; TAG_UI.shown.clear(); }
+  TAG_UI.ackAt = '';   // a new job needs the notice again
   closeTagDialog();
 }
 
