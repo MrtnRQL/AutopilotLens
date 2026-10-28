@@ -446,6 +446,9 @@
     .gp-cell { font-size: 12px; color: var(--text2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gp-tag { margin-left: 6px; padding: 0 6px; vertical-align: 1px; }
     .tr-pill-gray { color: var(--text2); border-color: var(--border2); background: var(--wash); }
+    .tr-pill-col .tr-pill { white-space: normal; text-align: center; }   /* "Depends on filter" wraps inside the pill column */
+    .tr-filter { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; }
+    .tr-stat-hint { margin-top: 2px; font-size: 11px; color: var(--text3); }
     .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
     .gp-dmeta { display: flex; flex-wrap: wrap; gap: 6px; }
     .gp-body { padding: 12px 16px; }
@@ -648,6 +651,7 @@ const EMPTY = {
   qualityUpdates: [],
   driverUpdates: [],
   appConfigs: [],
+  assignmentFilters: [],
   groupTags: [],
   managedDevices: [],
   loading: false, loaded: false, errors: [],
@@ -717,7 +721,7 @@ const DEMO_DATA = {
     {
       id:'sc-edge', name:'Edge security settings', platforms:'windows10',
       assignments:[
-        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } },
+        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-corp', deviceAndAppManagementAssignmentFilterType:'include' } },
         { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-deleted-0001' } }   // demo: deleted group
       ]
     }
@@ -738,7 +742,7 @@ const DEMO_DATA = {
     },
     {
       id:'app-company', displayName:'Company Portal', '@odata.type':'#microsoft.graph.winGetApp',
-      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-lenovo', deviceAndAppManagementAssignmentFilterType:'exclude' } }]
     }
   ],
   endpointSecurity: [
@@ -755,11 +759,19 @@ const DEMO_DATA = {
   remediations: [],
   featureUpdates: [
     { id:'fu-24h2', displayName:'Windows 11 24H2', '@odata.type':'#microsoft.graph.windowsFeatureUpdateProfile', featureUpdateVersion:'Windows 11, version 24H2',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }] }
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-sku', deviceAndAppManagementAssignmentFilterType:'include' } }] }
   ],
   qualityUpdates: [],
   driverUpdates: [],
   appConfigs: [],
+  assignmentFilters: [
+    { id:'flt-corp', displayName:'Corp-only', description:'Corporate-owned devices', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.deviceOwnership -eq "Corporate")' },
+    { id:'flt-lenovo', displayName:'Lenovo only', description:'Lenovo hardware', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.manufacturer -eq "Lenovo")' },
+    { id:'flt-sku', displayName:'Enterprise SKU', description:'Windows Enterprise edition', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.operatingSystemSKU -eq "Enterprise")' },
+  ],
   groupTags: ['KIOSK','LAB','SALES','SALES2'],
   autopilotIdentities: [],
   managedDevices: [
@@ -1233,7 +1245,7 @@ async function refreshData() {
     }
   };
 
-  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac] = await Promise.all([
+  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac, flt] = await Promise.all([
     safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
     safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
     safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule,membershipRuleProcessingState`)),
@@ -1254,6 +1266,7 @@ async function refreshData() {
     safe('Quality Updates', () => withAssignments('Quality Updates', '/deviceManagement/windowsQualityUpdateProfiles')), // beta
     safe('Driver Updates', () => withAssignments('Driver Updates', '/deviceManagement/windowsDriverUpdateProfiles')),  // beta
     safe('App Configs', () => withAssignments('App Configs', '/deviceAppManagement/mobileAppConfigurations')),       // beta
+    safe('Filters', () => graphGet(`${B}/deviceManagement/assignmentFilters`)),                                      // beta
   ]);
   if (fallbacks.length) console.info('[AAV] $expand=assignments not supported; loaded assignments per item for:', fallbacks.join(', '));
   DATA.assignmentFallbacks = fallbacks;
@@ -1278,6 +1291,7 @@ async function refreshData() {
   if (qu) DATA.qualityUpdates = qu;
   if (du) DATA.driverUpdates = du;
   if (ac) DATA.appConfigs = ac;
+  if (flt) DATA.assignmentFilters = flt;
   // Merge enrolled devices + Autopilot-only devices into one list
   const enrolled = dv || [];
   const autopilotOnly = apDev || [];
@@ -2236,7 +2250,9 @@ function groupFindings({ groups, usage, countOf, devices }) {
       detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
   }
   Object.values(BUILTIN_TARGETS).forEach(b => {
-    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !x.filterId).map(x => x.name).sort(ciCmp);
+    // A reference to a filter that no longer exists counts as no filter (when the filter list is available)
+    const filtered = x => x.filterId && (!DATA.assignmentFilters.length || filterById(x.filterId));
+    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !filtered(x)).map(x => x.name).sort(ciCmp);
     if (!names.length) return;
     amber.push({ severity: 'amber', key: 'nofilter:' + b.id, title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
       detail: names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : ''), groupId: b.id });
@@ -2256,7 +2272,7 @@ function groupFindings({ groups, usage, countOf, devices }) {
 }
 
 // ── Tenant-wide findings: one model for the Overview card, the Groups tab and the nav badge ──
-const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Data quality'];
+const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Filters', 'Data quality'];
 const FINDING_SEVERITY = { red: 0, amber: 1, info: 2 };
 const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', upn: '', dept: '', jobTitle: '' };
 
@@ -2411,6 +2427,38 @@ function buildFindings() {
       ids.forEach(id => add({ id: 'deleted-group:' + id, severity: 'amber', category: 'Assignments', title: `Assigned to a group that no longer exists`,
         detail: `Group id ${id}. These assignments do nothing.`, items: missing.get(id).map(itemRef) }));
     }
+  }
+  if (loaded(['Filters'])) {   // assignment filters: missing references, unused filters, rules the simulation can't evaluate
+    const refs = new Map();      // filterId → [assignable]
+    assignable.forEach(x => resolveAssignmentsRaw(x.item).forEach(a => {
+      const t = a.raw.target || a.raw, id = t.deviceAndAppManagementAssignmentFilterId;
+      if (!id || t.deviceAndAppManagementAssignmentFilterType === 'none') return;
+      if (!refs.has(id)) refs.set(id, []);
+      if (!refs.get(id).includes(x)) refs.get(id).push(x);
+    }));
+    const missingF = [...refs.keys()].filter(id => !filterById(id)).sort();
+    if (missingF.length > MAX) {
+      add({ id: 'missing-filter:many', severity: 'red', category: 'Assignments', title: `Assignments use ${missingF.length} filters that don't exist`,
+        detail: 'Intune can\'t evaluate these assignments as intended. Pick an existing filter or remove it.',
+        items: missingF.flatMap(id => refs.get(id).map(x => ({ label: `${id}: ${x.name} (${x.kind})`, link: x.link }))) });
+    } else {
+      missingF.forEach(id => add({ id: 'missing-filter:' + id, severity: 'red', category: 'Assignments', title: 'Assignment uses a filter that doesn\'t exist',
+        detail: `Filter id ${id}. Pick an existing filter or remove it.`, items: refs.get(id).map(itemRef) }));
+    }
+    const filters = [...DATA.assignmentFilters].sort((a, b) => ciCmp(a.displayName, b.displayName));
+    const unused = filters.filter(f => !refs.has(f.id));
+    if (unused.length) add({ id: 'unused-filters', severity: 'info', category: 'Assignments', title: `${plural(unused.length, 'filter')} not used by any assignment`,
+      detail: 'Not referenced by any profile, policy or app assignment.', items: unused.map(f => ({ label: f.displayName, link: null })) });
+    const blind = filters.filter(f => f.assignmentFilterManagementType !== 'apps')
+      .map(f => ({ f, u: evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).unsupported })).filter(x => x.u.length);
+    const mixed = filters.filter(f => evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).ambiguous);
+    if (mixed.length) add({ id: 'filters-ambiguous', severity: 'info', category: 'Filters',
+      title: `${mixed.length} ${mixed.length === 1 ? 'filter mixes' : 'filters mix'} and/or without parentheses`,
+      detail: 'Intune\'s precedence isn\'t verified here. Add parentheses to make the intent explicit.',
+      items: mixed.map(f => ({ label: `${f.displayName}: ${f.rule}`, link: null })) });
+    if (blind.length) add({ id: 'filters-unevaluable', severity: 'info', category: 'Filters', title: `${plural(blind.length, 'filter')} can't be evaluated in the simulation`,
+      detail: 'Their rules use properties or operators the simulation doesn\'t have, so items behind them show as "Depends on filter".',
+      items: blind.map(x => ({ label: `${x.f.displayName}: ${x.u.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] + ' (property)' : `${u.reason} in ${u.leaf}`).join(', ')}`, link: null })) });
   }
   const unassignedByKind = new Map();
   assignable.forEach(x => { if (!(x.item.assignments || []).length) { if (!unassignedByKind.has(x.kind)) unassignedByKind.set(x.kind, []); unassignedByKind.get(x.kind).push(x); } });
@@ -2628,7 +2676,9 @@ function renderGroupDetailHtml() {
     .sort((a, b) => ciCmp(a.name, b.name))
     .map(u => `<div class="tr-row">
       <div class="tr-main"><div class="tr-name" title="${htmlAttr(u.name)}">${esc(u.name)}</div>${g.builtin
-        ? `<div class="tr-sub">${u.filterId ? `filter: ${esc(u.filterId.slice(0, 8))}… (${esc(u.filterType)})` : '<span class="gp-muted">No filter</span>'}</div>` : ''}</div>
+        ? `<div class="tr-sub">${u.filterId ? (filterById(u.filterId)
+            ? `filter: <span class="tr-filter" title="${htmlAttr(filterById(u.filterId).rule)}">${esc(filterById(u.filterId).displayName)}</span> (${esc(u.filterType)})`
+            : `filter: ${esc(u.filterId.slice(0, 8))}… (not found)`) : '<span class="gp-muted">No filter</span>'}</div>` : ''}</div>
       <div class="tr-pill-col"><span class="tr-pill ${u.mode === 'exclude' ? 'tr-pill-red' : 'tr-pill-green'}">${u.mode === 'exclude' ? 'Exclude' : 'Include'}</span></div>
       <div class="tr-via">${u.intent ? esc(u.intent) : ''}</div>
     </div>`).join('')}`).join('') : '<div class="tr-empty empty-note">Not assigned to anything.</div>';
@@ -2955,6 +3005,7 @@ async function runSim() {
 
   // Rule-based eval as fallback (for devices not enrolled / no azureDeviceId)
   const props = buildSimProps(SIM);
+  const filterProps = buildFilterProps(SIM);   // assignment filters see Intune device properties
 
   // Union: actual membership + rule evaluation
   const ruleMatched = DATA.groups.filter(g => isDyn(g) && g.membershipRule && evalRule(g.membershipRule, props));
@@ -2981,8 +3032,14 @@ async function runSim() {
   const pickVia = list => list.find(x => !isBroad(x)) || list[0] || null;
   function matchItem(item, isApp = false) {
     const asn = resolveAssignmentsRaw(item);
-    const incl = asn.filter(x => x.kind !== 'exclude' && hitsInclude(x));
-    if (!incl.length) return null;
+    const hit = asn.filter(x => x.kind !== 'exclude' && hitsInclude(x));
+    if (!hit.length) return null;
+    // Assignment filters: an include counts only if its filter allows this device. Filtered-out includes are
+    // skipped, so another include can still win; if none is allowed, the item is 'depends' or 'filtered'.
+    hit.forEach(x => { x.fv = filterVerdict(x.raw.target || x.raw, filterProps); });
+    const allowed = hit.filter(x => x.fv.allowed === true), unsure = hit.filter(x => x.fv.allowed === null);
+    const incl = allowed.length ? allowed : unsure.length ? unsure : hit;
+    const filterStatus = allowed.length ? null : unsure.length ? 'depends' : 'filtered';
     let via = pickVia(incl), status = 'applies', conflictWith = null, partialExcl = [];
     let exclVia = isApp ? null : (asn.find(hitsExclude) || null);
     if (isApp) {
@@ -3012,14 +3069,20 @@ async function runSim() {
         else if (avail) via = avail;
       }
     }
-    const t = via.raw.target || via.raw;
+    const fv = via.fv;
     return {
       item,
-      status: exclVia ? 'excluded' : status,
+      status: exclVia ? 'excluded' : filterStatus || status,   // exclusion wins over everything
       via, exclVia, conflictWith, partialExcl,
       scope: isBroad(via) ? 'Broad' : 'Targeted',
-      filterId: t.deviceAndAppManagementAssignmentFilterId || null,
-      filterType: t.deviceAndAppManagementAssignmentFilterType || null,
+      filterId: fv.id || null,
+      filterType: fv.id ? fv.type : null,
+      filterName: fv.filter ? fv.filter.displayName : null,
+      filterRule: fv.filter ? fv.filter.rule : null,
+      filterMatches: fv.id ? fv.matches : null,
+      filterAllowed: fv.allowed,
+      filterReason: fv.reason || '',
+      filterAmbiguous: !!fv.ambiguous,
       intent: via.intent,
     };
   }
@@ -3040,7 +3103,7 @@ async function runSim() {
 
   // Filter + scope info per applied item, taken from its match (no index lookup)
   function describeApplied(m) {
-    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType };
+    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType, filterName: m.filterName, filterAllowed: m.filterAllowed };
   }
 
   // Enrich matched items with their filter + scope info
@@ -3214,11 +3277,12 @@ async function runSim() {
     svgNodes += node(col3, py, NW, p.name || p.displayName || '', p._t || 'App', fill, stroke);
 
     // Filter node (if any)
-    const filterStroke = '#8a5f0c';
-    const filterFill = 'rgba(138,95,12,.08)';
+    // green = filter allows the device, gray = filtered out, amber = can't evaluate (hex: the SVG appends alpha)
+    const filterStroke = p.filterAllowed === true ? '#2e7550' : p.filterAllowed === false ? '#66635c' : '#8a5f0c';
+    const filterFill = filterStroke + '14';
     if (p.filterId) {
       svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, filterStroke);
-      svgNodes += node(col4, py, FW, p.filterId.slice(0, 8) + '…', p.filterType || 'filter', filterFill, filterStroke);
+      svgNodes += node(col4, py, FW, p.filterName || p.filterId.slice(0, 8) + '…', `${p.filterType || 'filter'}${p.filterName ? '' : ' · not found'}`, filterFill, filterStroke);
     } else {
       // Dim placeholder for "no filter"
       svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(35,34,31,.15)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" style="font-family:var(--font-sans)" opacity=".5">No filter</text>`;
@@ -3254,14 +3318,16 @@ async function runSim() {
     const [pc, pl] = ex ? ['red', 'Excluded']
                    : m.status === 'uninstall' ? ['red', 'Uninstall']
                    : m.status === 'conflict' ? ['amber', 'Conflict']
+                   : m.status === 'filtered' ? ['gray', 'Filtered']
+                   : m.status === 'depends' ? ['amber', 'Depends on filter']
                    : m.scope === 'Broad' ? ['amber', 'Broad'] : ['green', 'Targeted'];
     let s = sub || '';
-    if (m.filterId) s += ` · filter: ${m.filterId.slice(0, 8)}… (${m.filterType || 'filter'})`;
     (m.partialExcl || []).forEach(p => { s += ` · excluded from ${p.intent} via ${p.label}`; });
+    const parts = [s.replace(/^ · /, '') && esc(s.replace(/^ · /, '')), filterHtml(m)].filter(Boolean);
     const subHtml = ex
       ? `<div class="tr-sub tr-sub-red">Excluded via ${esc(m.exclVia.label)}</div>`
       : m.status === 'conflict' ? `<div class="tr-sub">Available + Uninstall — result depends on user vs device targeting</div>`
-      : s ? `<div class="tr-sub">${esc(s.replace(/^ · /, ''))}</div>` : '';
+      : parts.length ? `<div class="tr-sub">${parts.join(' · ')}</div>` : '';
     return `<div class="tr-row${ex ? ' tr-excluded' : ''}">
       <div class="tr-main"><div class="tr-name" title="${attr(name)}">${esc(name)}</div>${subHtml}</div>
       <div class="tr-pill-col"><span class="tr-pill tr-pill-${pc}">${pl}</span></div>
@@ -3291,18 +3357,21 @@ async function runSim() {
     </div>`;
   }).join('');
 
+  // Filtered / depends rows go after the applying rows of their section (stable sort)
+  const later = m => m.status === 'filtered' || m.status === 'depends' ? 1 : 0;
+  const ordered = list => [...list].sort((a, b) => later(a) - later(b));
   const enrollRows = [
-    ...profM.map(m => trRow(m.item.displayName, (m.item.deploymentMode || '') + (m.item.preprovisioningAllowed ? ' · pre-provisioning' : ''), m)),
-    ...espM.map(m => trRow(m.item.displayName, 'Enrollment Status Page', m)),
+    ...ordered(profM).map(m => trRow(m.item.displayName, (m.item.deploymentMode || '') + (m.item.preprovisioningAllowed ? ' · pre-provisioning' : ''), m)),
+    ...ordered(espM).map(m => trRow(m.item.displayName, 'Enrollment Status Page', m)),
   ];
 
   const polByType = {};
-  polM.forEach(m => { (polByType[m.item._t] = polByType[m.item._t] || []).push(m); });
+  ordered(polM).forEach(m => { (polByType[m.item._t] = polByType[m.item._t] || []).push(m); });
   const configBody = Object.entries(polByType).map(([t, ms]) =>
     `<div class="tr-subhead">${esc(t)} (${ms.length})</div>${ms.map(m => trRow(m.item.name || m.item.displayName || '', '', m)).join('')}`
   ).join('');
 
-  const appRows = appM.map(m => {
+  const appRows = ordered(appM).map(m => {
     const type = (m.item['@odata.type'] || '').replace('#microsoft.graph.', '');
     return trRow(m.item.displayName, [type, m.intent].filter(Boolean).join(' · '), m);
   });
@@ -3310,12 +3379,13 @@ async function runSim() {
   const nBroad = [...polM, ...appM].filter(m => applies(m) && m.scope === 'Broad').length;
   const nConflict = appM.filter(m => m.status === 'conflict').length;
   const nBlocked = [...polM, ...appM].filter(m => m.status === 'excluded' || m.status === 'uninstall').length;
-  const trStat = (n, label, color) => `<div class="tr-stat"><div class="tr-stat-n" style="color:${color};">${n}</div><div class="tr-stat-l">${label}</div></div>`;
+  const trStat = (n, label, color, hint = '') => `<div class="tr-stat"><div class="tr-stat-n" style="color:${color};">${n}</div><div class="tr-stat-l">${label}</div>${hint ? `<div class="tr-stat-hint">${hint}</div>` : ''}</div>`;
+  const dependsHint = list => { const d = list.filter(m => m.status === 'depends').length; return d ? `+${d} depends on filter` : ''; };   // not added to the number
 
   const traceHtml = `
     <div class="tr-stats">
-      ${trStat(mPol.length, 'Policies apply', 'var(--accent)')}
-      ${trStat(mA.length, 'Apps targeted', 'var(--accent)')}
+      ${trStat(mPol.length, 'Policies apply', 'var(--accent)', dependsHint(polM))}
+      ${trStat(mA.length, 'Apps targeted', 'var(--accent)', dependsHint(appM))}
       ${trStat(nBroad, 'Via broad scope', 'var(--amber)')}
       ${trStat(nBlocked, 'Excluded', 'var(--red)')}
     </div>
@@ -3420,12 +3490,13 @@ function reportRow(m) {
   if (m.status === 'conflict') notes.push(`Available + Uninstall (uninstall via ${viaText(m.conflictWith)})`);
   if (m.intent) notes.push(`intent: ${m.intent}`);
   if (m.item.deploymentMode) notes.push(m.item.deploymentMode + (m.item.preprovisioningAllowed ? ', pre-provisioning' : ''));
-  if (m.filterId) notes.push(`filter: ${m.filterId.slice(0, 8)}… (${m.filterType || 'filter'})`);
+  if (m.filterId) notes.push(filterText(m));
   (m.partialExcl || []).forEach(p => notes.push(`excluded from ${p.intent} via ${p.label}`));
   return {
     name: matchName(m),
     type: m.type || '',
-    scope: m.status === 'excluded' ? 'Excluded' : m.status === 'uninstall' ? 'Uninstall' : m.status === 'conflict' ? 'Conflict' : m.scope,
+    scope: m.status === 'excluded' ? 'Excluded' : m.status === 'uninstall' ? 'Uninstall' : m.status === 'conflict' ? 'Conflict'
+      : m.status === 'filtered' ? 'Filtered' : m.status === 'depends' ? 'Depends on filter' : m.scope,
     status: m.status,
     via: viaText(m.via),
     viaKind: m.via.kind === 'allDevices' || m.via.kind === 'allUsers' ? 'broad' : 'group',
@@ -3473,6 +3544,9 @@ function buildReport(model, now = new Date()) {
     severity: 'amber', title: `${plural(broad.length, 'assignment', 'assignments')} via All devices / All users without a filter`,
     detail: broad.slice(0, 5).map(matchName).join(', ') + (broad.length > 5 ? `, and ${broad.length - 5} more` : '') + '.',
   });
+  const depends = sortM([...model.enrollment, ...pa].filter(m => m.status === 'depends'));
+  if (depends.length) findings.push({ severity: 'info', title: `${plural(depends.length, 'item depends', 'items depend')} on filters that can't be evaluated`,
+    detail: depends.map(m => `${matchName(m)} (${m.filterName || m.filterId?.slice(0, 8) + '…'})`).join(', ') + '.' });
   if (model.membershipMode === 'rules-only') findings.push({ severity: 'info', title: 'Rules-only membership', detail: 'Group membership predicted from dynamic rules. Select an enrolled device for actual membership.' });
   if (profiles.length === 1) findings.push({ severity: 'info', title: 'Autopilot profile resolved', detail: `${matchName(profiles[0])} (${profiles[0].item.deploymentMode || 'unknown mode'})` });
 
@@ -3581,7 +3655,7 @@ function toMermaid(r) {
         cls.excl.push(id);
       } else {
         edges.push(`  ${(x.viaKind === 'broad' ? bid.get(x.via) : gid.get(x.via)) || 'd0'} --> ${id}`);
-        (x.status === 'uninstall' ? cls.excl : x.status === 'conflict' ? cls.broad : cls.ok).push(id);
+        if (x.status !== 'filtered') (x.status === 'uninstall' ? cls.excl : x.status === 'conflict' || x.status === 'depends' ? cls.broad : cls.ok).push(id);
       }
     });
     if (sec.rows.length > shown[si].length) L.push(`    m${more++}[${label(`+${sec.rows.length - shown[si].length} more`)}]`);
@@ -3707,7 +3781,7 @@ function toReportSvg(r) {
 function toPrintView(r) {
   const TONE = { accent: 'var(--accent)', amber: 'var(--amber)', red: 'var(--red)' };
   const SEV = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
-  const PILL = { Targeted: 'green', Broad: 'amber', Conflict: 'amber', Excluded: 'red', Uninstall: 'red' };
+  const PILL = { Targeted: 'green', Broad: 'amber', Conflict: 'amber', Excluded: 'red', Uninstall: 'red', Filtered: 'gray', 'Depends on filter': 'amber' };
   const dash = v => v ? esc(v) : '—';
   const logo = `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/></svg>`;
   const table = sec => {
@@ -3865,6 +3939,120 @@ function ruleSupport(rule) {
   };
   if (rule && rule.trim()) walk(rule);
   return { supported: !unsupported.length, unsupported };
+}
+
+// ── Assignment filters: own syntax (and/or without dash, Intune property names, -in arrays) and own evaluator ──
+// Device properties a filter can see for the simulated device
+function buildFilterProps(sim) {
+  return {
+    device: {
+      deviceName: sim.deviceName, manufacturer: sim.mfg, model: sim.model, osVersion: sim.osVer,
+      deviceOwnership: 'Corporate',   // Autopilot devices are corporate ("Corporate"/"Personal" in filters)
+      enrollmentProfileName: sim.enrollmentProfileName, operatingSystemVersion: sim.osVer,
+    },
+  };
+}
+// Property paths filters can use here ('device.model', …), derived from buildFilterProps
+const FILTER_PROPS = new Set(Object.entries(buildFilterProps({ deviceName: 'x', mfg: 'x', model: 'x', osVer: 'x', enrollmentProfileName: 'x' }))
+  .flatMap(([obj, fields]) => Object.keys(fields).map(k => `${obj}.${k}`.toLowerCase())));
+const FILTER_OPS = {
+  '-eq': (v, t) => v === t, '-ne': (v, t) => v !== t,
+  '-contains': (v, t) => v.includes(t), '-notcontains': (v, t) => !v.includes(t),
+  '-startswith': (v, t) => v.startsWith(t), '-endswith': (v, t) => v.endsWith(t),
+  '-in': (v, list) => list.includes(v), '-notin': (v, list) => !list.includes(v),
+};
+// Quote-aware: index of the ")" closing the "(" at i, or -1
+function filterClose(e, i) {
+  let d = 0, q = false;
+  for (; i < e.length; i++) {
+    const c = e[i];
+    if (c === '"') q = !q;
+    else if (!q && c === '(') d++;
+    else if (!q && c === ')' && --d === 0) return i;
+  }
+  return -1;
+}
+// Split on a whole-word logical operator ("and"/"or") outside quotes and parentheses
+function filterSplit(e, word) {
+  const parts = [], w = word.length;
+  let d = 0, q = false, last = 0;
+  for (let i = 0; i < e.length; i++) {
+    const c = e[i];
+    if (c === '"') { q = !q; continue; }
+    if (q) continue;
+    if (c === '(') d++;
+    else if (c === ')') d--;
+    else if (d === 0 && e.slice(i, i + w).toLowerCase() === word
+      && (i === 0 || /[\s)]/.test(e[i - 1])) && /[\s(]/.test(e[i + w] || '')) {
+      parts.push(e.slice(last, i).trim()); i += w - 1; last = i + 1;
+    }
+  }
+  parts.push(e.slice(last).trim());
+  return parts.filter(Boolean);
+}
+// → { result: true | false | null, unsupported: [{ leaf, reason: 'property'|'operator'|'syntax' }], ambiguous }; null = can't decide
+function evalFilter(rule, props) {
+  const unsupported = [];
+  let ambiguous = false;
+  const lookup = path => {   // case-insensitive property path
+    const [obj, key] = path.split('.');
+    const o = props[Object.keys(props).find(k => k.toLowerCase() === (obj || '').toLowerCase())] || {};
+    const k = Object.keys(o).find(x => x.toLowerCase() === (key || '').toLowerCase());
+    return k === undefined ? '' : String(o[k] ?? '');
+  };
+  const ev = e => {
+    e = e.trim();
+    while (e.startsWith('(') && filterClose(e, 0) === e.length - 1) e = e.slice(1, -1).trim();
+    const or = filterSplit(e, 'or');
+    // "A or B and C" on one level: evaluated as and > or, but flagged so the intent can be made explicit
+    if (or.length > 1 && or.some(part => filterSplit(part, 'and').length > 1)) ambiguous = true;
+    if (or.length > 1) { const r = or.map(ev); return r.includes(true) ? true : r.includes(null) ? null : false; }
+    const and = filterSplit(e, 'and');
+    if (and.length > 1) { const r = and.map(ev); return r.includes(false) ? false : r.includes(null) ? null : true; }
+    const not = e.match(/^-not\s*(.*)$/is);
+    if (not) { const r = ev(not[1]); return r === null ? null : !r; }
+    const m = e.match(/^([\w.]+)\s+(-\w+)\s+(.+)$/s);
+    if (!m) { unsupported.push({ leaf: e, reason: 'syntax' }); return null; }
+    const [, path, opRaw, valRaw] = m, op = opRaw.toLowerCase();
+    if (!FILTER_OPS[op]) { unsupported.push({ leaf: e, reason: 'operator' }); return null; }
+    if (!FILTER_PROPS.has(path.toLowerCase())) { unsupported.push({ leaf: e, reason: 'property' }); return null; }
+    const v = valRaw.trim();
+    const values = v.startsWith('[') ? [...v.matchAll(/"([^"]*)"/g)].map(x => x[1].toLowerCase())
+      : [v.replace(/^"([\s\S]*)"$/, '$1').toLowerCase()];
+    const actual = lookup(path).toLowerCase();
+    return op === '-in' || op === '-notin' ? FILTER_OPS[op](actual, values) : FILTER_OPS[op](actual, values[0]);
+  };
+  const result = rule && rule.trim() ? ev(rule) : null;
+  return { result, unsupported, ambiguous };
+}
+// Filter by id; the map follows DATA.assignmentFilters
+let FILTER_BY_ID = new Map(), FILTER_SRC = null;
+function filterById(id) {
+  if (FILTER_SRC !== DATA.assignmentFilters) { FILTER_SRC = DATA.assignmentFilters; FILTER_BY_ID = new Map((FILTER_SRC || []).map(f => [f.id, f])); }
+  return id ? FILTER_BY_ID.get(id) || null : null;
+}
+// What an assignment's filter means for one device: allowed true/false/null (null = can't decide)
+function filterVerdict(target, filterProps) {
+  const id = target.deviceAndAppManagementAssignmentFilterId, type = target.deviceAndAppManagementAssignmentFilterType || 'include';
+  if (!id || type === 'none') return { allowed: true, id: null };
+  const f = filterById(id);
+  if (!f) return { allowed: null, id, type, filter: null, matches: null, reason: 'not found' };
+  if (f.assignmentFilterManagementType === 'apps') return { allowed: null, id, type, filter: f, matches: null, reason: 'app filter' };
+  const r = evalFilter(f.rule, filterProps);
+  const reason = r.unsupported.length ? r.unsupported.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] : `${u.reason} in "${u.leaf}"`).join(', ') : '';
+  return { allowed: r.result === null ? null : type === 'exclude' ? !r.result : r.result, id, type, filter: f, matches: r.result, reason, ambiguous: r.ambiguous };
+}
+// "filter: Corp-only (include) ✓ matches" — plain text (report) and HTML with the rule as tooltip (Trace)
+function filterText(m) {
+  if (!m.filterId) return '';
+  if (!m.filterName) return `filter: ${m.filterId.slice(0, 8)}… (not found)`;
+  const verdict = m.filterMatches === true ? '✓ matches' : m.filterMatches === false ? '✗ doesn\'t match' : `? can't evaluate: ${m.filterReason}`;
+  return `filter: ${m.filterName} (${m.filterType}) ${verdict}`;
+}
+function filterHtml(m) {
+  if (!m.filterId) return '';
+  if (!m.filterName) return `filter: ${esc(m.filterId.slice(0, 8))}… (not found)`;
+  return `filter: <span class="tr-filter" title="${esc(m.filterRule).replace(/"/g, '&quot;')}">${esc(m.filterName)}</span> (${esc(m.filterType)}) ${esc(filterText(m).replace(/^filter: .*? \((include|exclude)\) /, ''))}${m.filterAmbiguous ? ' · <span class="gp-muted">mixed and/or without parentheses</span>' : ''}`;
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { restoreFromUrl(); initMsal(); renderCurrentTab(); });
