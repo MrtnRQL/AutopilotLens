@@ -3302,7 +3302,8 @@ function tagPreviewHtml(items, newTag) {
       <dl class="dv-props">
         <dt>Autopilot profile</dt><dd>${repState === 'loading' ? '<span class="gp-muted">Checking…</span>'
           : [...transitions.entries()].map(([k, c]) => `<div>${k}${c < n ? ` <span class="gp-muted">(${c})</span>` : ''}</div>`).join('')
-            + (rulesOnly ? '<div class="gp-muted">(based on rules; static group memberships not included)</div>' : '')}</dd>
+            + (rulesOnly ? '<div class="gp-muted">(based on rules; static group memberships not included)</div>' : '')
+            + (repState === 'ok' ? `<div class="gp-muted">Based on ${esc(rep.deviceName || rep.serialNumber)} as sample. Devices with different static group memberships may differ.</div>` : '')}</dd>
         <dt>Joins</dt><dd>${joined.size ? counted(joined, n) : '<span class="gp-muted">—</span>'}</dd>
         <dt>Leaves</dt><dd>${left.size ? counted(left, n) : '<span class="gp-muted">—</span>'}</dd>
       </dl></div>`;
