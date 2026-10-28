@@ -3222,11 +3222,13 @@ const TAG_JOB_KEY = 'apl-tag-job';   // sessionStorage only: survives a reload, 
 let TAG_UI = { tag: '', shown: new Set(), ackAt: '', showNotice: false };   // shown: batch numbers with "Show request" open; ackAt: notice acknowledged before the job exists
 let TAG_VERIFYING = false;
 
-// Graph Explorer share links carry requestBody as base64 of a JSON *string literal* holding the body text (what its own
-// Share produces). The body text is ASCII (non-ASCII escaped as \uXXXX) so atob() gets it back exactly.
+// requestBody is base64 of the raw JSON body. Graph Explorer puts atob()'s result in its editor and JSON.parses it on Run, so
+// the body must decode to an object: a JSON string literal (what its own Share produces) is sent as a string and Graph answers
+// 400 "Invalid batch payload format". The body text is ASCII (non-ASCII escaped as \uXXXX) so atob() gets it back exactly.
+// Hypothesis (unverified): the empty editor seen in earlier manual tests came from the /en-us/ redirect, not from the raw body.
 const jsonAscii = obj => JSON.stringify(obj).replace(/[\u007f-\uffff]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
 // '+' and '/' are percent-encoded, nothing else: a raw '+' would become a space in URLSearchParams
-const geRequestBody = bodyText => btoa(JSON.stringify(bodyText)).replace(/[+/]/g, c => encodeURIComponent(c));
+const geRequestBody = bodyText => btoa(bodyText).replace(/[+/]/g, c => encodeURIComponent(c));
 function tagBatchBody(items, tag) {
   return { requests: items.map((it, i) => ({ id: String(i + 1), method: 'POST',
     url: `/deviceManagement/windowsAutopilotDeviceIdentities/${encodeURIComponent(it.autopilotId)}/updateDeviceProperties`,
@@ -3419,8 +3421,8 @@ function renderTagDialogBody() {
         <button type="button" class="ov-link gt-show" aria-expanded="${open}" onclick="toggleTagRequest(${b.n})">${open ? 'Hide request' : 'Show request'}</button></span>${batchStatusHtml(jobLike, b)}</div>
       ${open ? `<div class="gt-req"><pre class="gt-pre">${esc(JSON.stringify(tagBatchBody(tagRowItems(b.n), tag), null, 2))}</pre>
         <button type="button" class="btn btn-ghost" onclick="copyTagRequest(${b.n})">Copy request body</button></div>` : ''}`;
-  }).join('') + `<div class="gp-muted">In Graph Explorer, the request body appears as a quoted string with escaped characters (\\" and \\\\u00c6 for Æ). This is how Graph Explorer stores shared requests. It's sent correctly when you press Run query.</div>
-    <div class="gp-muted">If the Request body in Graph Explorer is empty: set method POST, URL https://graph.microsoft.com/v1.0/$batch, paste the copied body, and Run.</div>
+  }).join('') + (/[^\x00-\x7f]/.test(tag) ? '<div class="gp-muted">Special characters appear as \\uXXXX codes in Graph Explorer (e.g. Æ = \\u00c6). The tag is set correctly.</div>' : '')
+    + `<div class="gp-muted">If the Request body in Graph Explorer is empty: set method POST, URL https://graph.microsoft.com/v1.0/$batch, paste the copied body, and Run.</div>
     <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div>`;
   const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. Then come back and press Verify.
       <div>Make sure you're signed in to Graph Explorer (top right) before Run query. Otherwise it runs against a sample tenant and nothing changes in yours. The first time, Graph Explorer may ask you to consent to the permission.</div>
