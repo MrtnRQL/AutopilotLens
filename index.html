@@ -367,10 +367,52 @@
     .tr-row.gp-pinned { background: var(--wash); }
     .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
     .gp-muted { color: var(--text3); }
-    /* Overview findings */
-    .ov-findings { margin-bottom: 16px; }
-    .ov-counts { display: inline-flex; gap: 6px; margin-left: auto; }
-    .ov-chips { padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+    /* Findings strip (Overview, Groups) */
+    .fd-strip {
+      display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 10px; padding: 8px 14px;
+      border: 0; border-left: 4px solid; border-radius: var(--radius); font: inherit; text-align: left; color: var(--text); cursor: pointer;
+    }
+    .fd-strip-red { border-left-color: var(--red); background: #f4e3e1; }
+    .fd-strip-amber { border-left-color: var(--amber); background: #f3ebdc; }
+    .fd-strip-none { border-left-color: var(--accent); background: var(--accent-wash); }
+    .fd-strip:hover .fd-view { text-decoration: underline; }
+    .fd-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .fd-icon { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 13px; font-weight: 700; color: #fff; }
+    .fd-strip-red .fd-icon { background: var(--red); }
+    .fd-strip-amber .fd-icon { background: var(--amber); }
+    .fd-strip-none .fd-icon { background: var(--accent); }
+    .fd-text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.35; }
+    .fd-stitle { font-size: 13px; font-weight: 600; }
+    .fd-ssub { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fd-view { flex: none; font-size: 12.5px; font-weight: 500; color: var(--accent); }
+    /* Findings drawer */
+    .fd-scrim { position: fixed; inset: 0; z-index: 140; background: rgba(35,34,31,.35); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
+    .fd-scrim.fd-open { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+    .fd {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 150; width: min(420px, 100vw);
+      display: flex; flex-direction: column; background: var(--bg2); box-shadow: var(--shadow-md);
+      transform: translateX(100%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s;
+    }
+    .fd.fd-open { transform: none; visibility: visible; transition: transform .22s ease; }
+    @media (prefers-reduced-motion: reduce) {
+      .fd, .fd.fd-open, .fd-scrim, .fd-scrim.fd-open { transition: none; }
+    }
+    .fd-head { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); }
+    .fd-htext { flex: 1; min-width: 0; }
+    .fd-head h2 { font-size: 16px; font-weight: 600; color: var(--text); }
+    .fd-sub { margin-top: 2px; font-size: 12px; color: var(--text2); }
+    .fd-close { flex: none; width: 32px; height: 32px; font: inherit; font-size: 20px; line-height: 1; color: var(--text2); background: transparent; border: 1px solid var(--border2); border-radius: 6px; cursor: pointer; }
+    .fd-close:hover { color: var(--text); background: var(--wash); }
+    .fd-close:focus-visible, .fd-ghead-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .fd-chips { padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+    .fd-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+    .fd-ghead {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 16px; font: inherit; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; text-align: left; color: var(--text2); background: var(--bg3); border: 0; border-bottom: 1px solid var(--hairline);
+    }
+    .fd-ghead-btn { cursor: pointer; }
+    .fd-caret { margin-left: auto; }
+    .sb .nav-badge:not([hidden]) { cursor: pointer; }
     .ov-frow { display: grid; grid-template-columns: 7px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
     .ov-frow > .tr-sq { margin-top: 6px; }
     .ov-ftitle { font-size: 13px; font-weight: 500; color: var(--text); }
@@ -393,10 +435,6 @@
     .gp-sort { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
     .gp-sort:hover, .gp-sort.on { color: var(--text); }
     .gp-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .gp-findings { margin-bottom: 14px; }
-    .tr-row.gp-frow { grid-template-columns: 7px minmax(0, 1fr); gap: 10px; }
-    .gp-flink { cursor: pointer; }
-    .gp-flink:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tr-row.gp-mrow { grid-template-columns: minmax(0, 1.4fr) 84px minmax(0, 1fr) 92px 86px; }
     .tr-row.gp-headrow {
       background: var(--bg3); cursor: default; padding-top: 7px; padding-bottom: 7px;
@@ -408,6 +446,9 @@
     .gp-cell { font-size: 12px; color: var(--text2); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gp-tag { margin-left: 6px; padding: 0 6px; vertical-align: 1px; }
     .tr-pill-gray { color: var(--text2); border-color: var(--border2); background: var(--wash); }
+    .tr-pill-col .tr-pill { white-space: normal; text-align: center; }   /* "Depends on filter" wraps inside the pill column */
+    .tr-filter { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; }
+    .tr-stat-hint { margin-top: 2px; font-size: 11px; color: var(--text3); }
     .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
     .gp-dmeta { display: flex; flex-wrap: wrap; gap: 6px; }
     .gp-body { padding: 12px 16px; }
@@ -428,8 +469,6 @@
       .gp-row .tr-main, .gp-mrow .tr-main { grid-area: auto; }
       .tr-row.gp-row { grid-template-columns: minmax(0, 1fr) auto auto auto; }
       .gp-row > :nth-child(2), .gp-row > :nth-child(4), .gp-mrow > :nth-child(2), .gp-mrow > :nth-child(3) { display: none; }
-      .tr-row.gp-frow { grid-template-areas: none; grid-template-columns: 7px minmax(0, 1fr); }
-      .gp-frow .tr-main { grid-area: auto; }
     }
 
     /* ── Layout: ink sidebar + main column ── */
@@ -502,7 +541,7 @@
       /* Page numbers: Chromium supports @page margin boxes; Firefox ignores them (enable page numbers via the print dialog's headers/footers) */
       @page { size: A4; margin: 14mm 14mm 16mm; @bottom-right { content: counter(page) " / " counter(pages); font: 8pt ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: #66635c; } }
       * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      body.pr-active #app, body.pr-active .aav-toast, body.pr-active #tweaks-panel, body.pr-active .modal-bg { display: none !important; }
+      body.pr-active #app, body.pr-active .aav-toast, body.pr-active #tweaks-panel, body.pr-active .modal-bg, body.pr-active .fd, body.pr-active .fd-scrim { display: none !important; }
       body.pr-active #print-root { display: block !important; }
       html:has(> body.pr-active), body.pr-active { background: #fff !important; height: auto !important; }
       #print-root { font-family: var(--font-sans); font-size: 10pt; line-height: 1.45; color: var(--text); }
@@ -559,7 +598,7 @@
       <span>Autopilotlens</span>
     </div>
     <nav class="sb-nav" aria-label="Main">
-      <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span><span class="nav-badge" id="nav-badge-overview" hidden></span></a>
+      <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span><span class="nav-badge" id="nav-badge-overview" hidden onclick="event.preventDefault(); event.stopPropagation(); openFindingsDrawer('badge')"></span></a>
       <a class="sb-link" id="tab-simulate" href="?tab=simulate" onclick="navClick(event, 'simulate')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg><span>What applies?</span></a>
       <a class="sb-link" id="tab-matrix" href="?tab=matrix" onclick="navClick(event, 'matrix')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.75" cy="4" r="1" fill="currentColor"/><circle cx="2.75" cy="8" r="1" fill="currentColor"/><circle cx="2.75" cy="12" r="1" fill="currentColor"/></svg><span>Assignments</span></a>
       <div class="sb-label">Inventory</div>
@@ -612,6 +651,7 @@ const EMPTY = {
   qualityUpdates: [],
   driverUpdates: [],
   appConfigs: [],
+  assignmentFilters: [],
   groupTags: [],
   managedDevices: [],
   loading: false, loaded: false, errors: [],
@@ -681,7 +721,7 @@ const DEMO_DATA = {
     {
       id:'sc-edge', name:'Edge security settings', platforms:'windows10',
       assignments:[
-        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } },
+        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-corp', deviceAndAppManagementAssignmentFilterType:'include' } },
         { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-deleted-0001' } }   // demo: deleted group
       ]
     }
@@ -702,7 +742,7 @@ const DEMO_DATA = {
     },
     {
       id:'app-company', displayName:'Company Portal', '@odata.type':'#microsoft.graph.winGetApp',
-      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }]
+      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-lenovo', deviceAndAppManagementAssignmentFilterType:'exclude' } }]
     }
   ],
   endpointSecurity: [
@@ -719,11 +759,19 @@ const DEMO_DATA = {
   remediations: [],
   featureUpdates: [
     { id:'fu-24h2', displayName:'Windows 11 24H2', '@odata.type':'#microsoft.graph.windowsFeatureUpdateProfile', featureUpdateVersion:'Windows 11, version 24H2',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }] }
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-sku', deviceAndAppManagementAssignmentFilterType:'include' } }] }
   ],
   qualityUpdates: [],
   driverUpdates: [],
   appConfigs: [],
+  assignmentFilters: [
+    { id:'flt-corp', displayName:'Corp-only', description:'Corporate-owned devices', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.deviceOwnership -eq "Corporate")' },
+    { id:'flt-lenovo', displayName:'Lenovo only', description:'Lenovo hardware', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.manufacturer -eq "Lenovo")' },
+    { id:'flt-sku', displayName:'Enterprise SKU', description:'Windows Enterprise edition', platform:'windows10AndLater', assignmentFilterManagementType:'devices',
+      rule:'(device.operatingSystemSKU -eq "Enterprise")' },
+  ],
   groupTags: ['KIOSK','LAB','SALES','SALES2'],
   autopilotIdentities: [],
   managedDevices: [
@@ -770,7 +818,7 @@ let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
 const APP_VERSION = '0.3.0';
 // Groups tab: list filters + selection; members are fetched lazily and cached per group
-let GROUPS = { search:'', kind:'dynamic', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name', findingsAll:false };
+let GROUPS = { search:'', kind:'dynamic', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name' };
 const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
 const MEMBER_COUNTS = {};   // groupId -> number | { error }
 const COUNTS_PENDING = new Set();   // groupIds with a $count request in flight
@@ -817,6 +865,10 @@ function simToUrl() {
     if (simView === 'graph') params.set('view', 'graph');
   }
   if (currentTab === 'groups' && GROUPS.selected) params.set('group', GROUPS.selected);
+  if (FD.open) {
+    params.set('findings', 'open');
+    if (FD.cats.size) params.set('findingsCat', [...FD.cats].join(','));
+  }
   const query = params.toString();
   const url = window.location.pathname + (query ? '?' + query : '');
   history.replaceState(null, '', url);
@@ -829,6 +881,8 @@ function restoreFromUrl() {
   SIM_URL_FIELDS.forEach(k => { if (params.has(k)) SIM[k] = params.get(k); });
   simView = params.get('view') === 'graph' ? 'graph' : 'trace';
   if (currentTab === 'groups' && params.get('group')) GROUPS.selected = params.get('group');
+  if (params.get('findings') === 'open') FD.pendingOpen = true;
+  if (params.get('findingsCat')) FD.cats = new Set(params.get('findingsCat').split(',').filter(c => FINDING_CATEGORIES.includes(c)));
   // Reflect nav state
   markActiveTab(currentTab);
 }
@@ -1191,7 +1245,7 @@ async function refreshData() {
     }
   };
 
-  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac] = await Promise.all([
+  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac, flt] = await Promise.all([
     safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
     safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
     safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule,membershipRuleProcessingState`)),
@@ -1212,6 +1266,7 @@ async function refreshData() {
     safe('Quality Updates', () => withAssignments('Quality Updates', '/deviceManagement/windowsQualityUpdateProfiles')), // beta
     safe('Driver Updates', () => withAssignments('Driver Updates', '/deviceManagement/windowsDriverUpdateProfiles')),  // beta
     safe('App Configs', () => withAssignments('App Configs', '/deviceAppManagement/mobileAppConfigurations')),       // beta
+    safe('Filters', () => graphGet(`${B}/deviceManagement/assignmentFilters`)),                                      // beta
   ]);
   if (fallbacks.length) console.info('[AAV] $expand=assignments not supported; loaded assignments per item for:', fallbacks.join(', '));
   DATA.assignmentFallbacks = fallbacks;
@@ -1236,6 +1291,7 @@ async function refreshData() {
   if (qu) DATA.qualityUpdates = qu;
   if (du) DATA.driverUpdates = du;
   if (ac) DATA.appConfigs = ac;
+  if (flt) DATA.assignmentFilters = flt;
   // Merge enrolled devices + Autopilot-only devices into one list
   const enrolled = dv || [];
   const autopilotOnly = apDev || [];
@@ -1456,7 +1512,7 @@ function renderOverview(mount) {
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
-      <section class="card tr-section ov-findings" id="ov-findings">${overviewFindingsInner(buildFindings())}</section>
+      <div id="ov-findings">${findingsStripHtml(buildFindings())}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
         <div class="stat"><div class="stat-n">${DATA.autopilotProfiles.length}</div><div class="stat-l">Autopilot Profiles</div></div>
         <div class="stat"><div class="stat-n">${dynG.length}</div><div class="stat-l">Dynamic Groups</div></div>
@@ -2058,11 +2114,13 @@ function scheduleFindingsRefresh() {
   findingsTimer = setTimeout(() => { findingsTimer = 0; refreshFindingsUI(); }, 250);
 }
 function refreshFindingsUI() {
-  if (!isAuthed || DATA.loading || !DATA.loaded) { updateNavBadge([]); return; }
+  if (!isAuthed || DATA.loading || !DATA.loaded) { updateNavBadge([]); closeFindingsDrawer(false); return; }
   const findings = buildFindings();
   updateNavBadge(findings);
-  if (currentTab === 'overview' && el('ov-findings')) el('ov-findings').innerHTML = overviewFindingsInner(findings);
+  if (currentTab === 'overview' && el('ov-findings')) el('ov-findings').innerHTML = findingsStripHtml(findings);
   if (currentTab === 'groups' && el('gp-findings')) el('gp-findings').innerHTML = groupFindingsHtml(findings);
+  if (FD.open) renderFindingsDrawer(findings);
+  if (FD.pendingOpen) { FD.pendingOpen = false; openFindingsDrawer('url'); }   // ?findings=open, once data is there
 }
 function updateNavBadge(findings) {
   const b = el('nav-badge-overview');
@@ -2071,7 +2129,9 @@ function updateNavBadge(findings) {
   b.hidden = !n;
   b.textContent = n;
   b.className = 'nav-badge ' + (red ? 'nav-badge-red' : 'nav-badge-amber');
-  b.title = `${red} red, ${n - red} amber findings`;
+  b.title = `${n} ${n === 1 ? 'finding' : 'findings'} to look at: ${red} red, ${n - red} amber`;
+  // Screen readers get the count on the link itself (the badge is decorative text inside it)
+  el('tab-overview')?.setAttribute('aria-label', n ? `Overview, ${n} ${n === 1 ? 'finding' : 'findings'} to look at` : 'Overview');
 }
 
 const parseCount = body => {
@@ -2190,7 +2250,9 @@ function groupFindings({ groups, usage, countOf, devices }) {
       detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
   }
   Object.values(BUILTIN_TARGETS).forEach(b => {
-    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !x.filterId).map(x => x.name).sort(ciCmp);
+    // A reference to a filter that no longer exists counts as no filter (when the filter list is available)
+    const filtered = x => x.filterId && (!DATA.assignmentFilters.length || filterById(x.filterId));
+    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !filtered(x)).map(x => x.name).sort(ciCmp);
     if (!names.length) return;
     amber.push({ severity: 'amber', key: 'nofilter:' + b.id, title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
       detail: names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : ''), groupId: b.id });
@@ -2210,7 +2272,7 @@ function groupFindings({ groups, usage, countOf, devices }) {
 }
 
 // ── Tenant-wide findings: one model for the Overview card, the Groups tab and the nav badge ──
-const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Data quality'];
+const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Filters', 'Data quality'];
 const FINDING_SEVERITY = { red: 0, amber: 1, info: 2 };
 const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', upn: '', dept: '', jobTitle: '' };
 
@@ -2366,6 +2428,38 @@ function buildFindings() {
         detail: `Group id ${id}. These assignments do nothing.`, items: missing.get(id).map(itemRef) }));
     }
   }
+  if (loaded(['Filters'])) {   // assignment filters: missing references, unused filters, rules the simulation can't evaluate
+    const refs = new Map();      // filterId → [assignable]
+    assignable.forEach(x => resolveAssignmentsRaw(x.item).forEach(a => {
+      const t = a.raw.target || a.raw, id = t.deviceAndAppManagementAssignmentFilterId;
+      if (!id || t.deviceAndAppManagementAssignmentFilterType === 'none') return;
+      if (!refs.has(id)) refs.set(id, []);
+      if (!refs.get(id).includes(x)) refs.get(id).push(x);
+    }));
+    const missingF = [...refs.keys()].filter(id => !filterById(id)).sort();
+    if (missingF.length > MAX) {
+      add({ id: 'missing-filter:many', severity: 'red', category: 'Assignments', title: `Assignments use ${missingF.length} filters that don't exist`,
+        detail: 'Intune can\'t evaluate these assignments as intended. Pick an existing filter or remove it.',
+        items: missingF.flatMap(id => refs.get(id).map(x => ({ label: `${id}: ${x.name} (${x.kind})`, link: x.link }))) });
+    } else {
+      missingF.forEach(id => add({ id: 'missing-filter:' + id, severity: 'red', category: 'Assignments', title: 'Assignment uses a filter that doesn\'t exist',
+        detail: `Filter id ${id}. Pick an existing filter or remove it.`, items: refs.get(id).map(itemRef) }));
+    }
+    const filters = [...DATA.assignmentFilters].sort((a, b) => ciCmp(a.displayName, b.displayName));
+    const unused = filters.filter(f => !refs.has(f.id));
+    if (unused.length) add({ id: 'unused-filters', severity: 'info', category: 'Assignments', title: `${plural(unused.length, 'filter')} not used by any assignment`,
+      detail: 'Not referenced by any profile, policy or app assignment.', items: unused.map(f => ({ label: f.displayName, link: null })) });
+    const blind = filters.filter(f => f.assignmentFilterManagementType !== 'apps')
+      .map(f => ({ f, u: evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).unsupported })).filter(x => x.u.length);
+    const mixed = filters.filter(f => evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).ambiguous);
+    if (mixed.length) add({ id: 'filters-ambiguous', severity: 'info', category: 'Filters',
+      title: `${mixed.length} ${mixed.length === 1 ? 'filter mixes' : 'filters mix'} and/or without parentheses`,
+      detail: 'Intune\'s precedence isn\'t verified here. Add parentheses to make the intent explicit.',
+      items: mixed.map(f => ({ label: `${f.displayName}: ${f.rule}`, link: null })) });
+    if (blind.length) add({ id: 'filters-unevaluable', severity: 'info', category: 'Filters', title: `${plural(blind.length, 'filter')} can't be evaluated in the simulation`,
+      detail: 'Their rules use properties or operators the simulation doesn\'t have, so items behind them show as "Depends on filter".',
+      items: blind.map(x => ({ label: `${x.f.displayName}: ${x.u.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] + ' (property)' : `${u.reason} in ${u.leaf}`).join(', ')}`, link: null })) });
+  }
   const unassignedByKind = new Map();
   assignable.forEach(x => { if (!(x.item.assignments || []).length) { if (!unassignedByKind.has(x.kind)) unassignedByKind.set(x.kind, []); unassignedByKind.get(x.kind).push(x); } });
   unassignedByKind.forEach((list, kind) => add({ id: 'unassigned:' + kind, severity: 'info', category: 'Assignments',
@@ -2391,57 +2485,154 @@ function buildFindings() {
     || ciCmp(a.title, b.title) || ciCmp(a.id, b.id));
 }
 
-// ── Overview findings card ──
-const FINDINGS_UI = { cats: new Set(), showInfo: false, open: new Set() };
-let FINDINGS_SHOWN = [];   // the list the card rendered last; links resolve against it
+// ── Findings: compact strip (Overview, Groups) + right-side drawer ──
+const FD = { open: false, cats: new Set(), showInfo: false, expanded: new Set(), openerSel: '', pendingOpen: false, prevOverflow: '', list: [] };
+const FD_GROUP_CATS = ['Groups', 'Broad scope'];
+const FD_SEV_COLOR = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
+const fdPlural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
-function overviewFindingsInner(findings) {
-  FINDINGS_SHOWN = findings;
-  const count = sev => findings.filter(f => f.severity === sev).length;
-  const cats = FINDING_CATEGORIES.filter(c => findings.some(f => f.category === c));
-  const filtered = findings.filter(f => !FINDINGS_UI.cats.size || FINDINGS_UI.cats.has(f.category));
-  const main = filtered.filter(f => f.severity !== 'info'), info = filtered.filter(f => f.severity === 'info');
-  const color = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
-  const row = f => {
-    const i = findings.indexOf(f), open = FINDINGS_UI.open.has(f.id);
-    return `<div class="ov-frow">
-      <span class="tr-sq" style="background:${color[f.severity]};" role="img" aria-label="${f.severity}"></span>
+// Counts and wording shared by the strips, the drawer header and the nav badge.
+// "To look at" = red + amber (the badge count); info is mentioned but never counted as an issue.
+function findingsSummary(findings, scope = 'all') {
+  const r = findings.filter(f => f.severity === 'red').length, a = findings.filter(f => f.severity === 'amber').length, i = findings.length - r - a;
+  const n = r + a;
+  const parts = [r && `${r} ${r === 1 ? 'needs' : 'need'} attention`, a && `${a} to review`, i && `${i} info`].filter(Boolean);
+  if (DATA.errors.length) parts.push('some data couldn\'t be loaded');
+  const noun = scope === 'groups' ? 'group finding' : 'finding';
+  const title = n ? `${fdPlural(n, noun)} to look at`
+    : i ? 'No issues found'
+    : scope === 'groups' ? 'No group findings' : 'No findings in your deployment';
+  return { r, a, i, n, title, sub: parts.join(' · '), worst: r ? 'red' : a ? 'amber' : i ? 'info' : 'none' };
+}
+
+// One-line strip; scope 'groups' shows only Groups + Broad scope and opens the drawer filtered to them
+function findingsStripHtml(findings, scope = 'all') {
+  const list = scope === 'groups' ? findings.filter(f => FD_GROUP_CATS.includes(f.category)) : findings;
+  const s = findingsSummary(list, scope);
+  const tone = s.worst === 'red' || s.worst === 'amber' ? s.worst : 'none';
+  const title = s.title;
+  const icon = tone !== 'none' ? '!' : list.length ? 'i'
+    : '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return `<button type="button" class="fd-strip fd-strip-${tone}" data-fd-opener="${scope}" aria-haspopup="dialog" onclick="openFindingsDrawer('${scope}')">
+    <span class="fd-icon" aria-hidden="true">${icon}</span>
+    <span class="fd-text"><span class="fd-stitle">${esc(title)}</span>${s.sub ? `<span class="fd-ssub">${esc(s.sub)}</span>` : ''}</span>
+    <span class="fd-view">View ›</span>
+  </button>`;
+}
+
+// The finding row (title, detail, expandable items, "View →"); index i points into FD.list
+function findingRowHtml(f, i) {
+  const open = FD.expanded.has(f.id), key = htmlAttr(f.id);
+  return `<div class="ov-frow">
+      <span class="tr-sq" style="background:${FD_SEV_COLOR[f.severity]};" role="img" aria-label="${f.severity}"></span>
       <div class="ov-fmain">
         <div class="ov-ftitle">${esc(f.title)}</div>
         ${f.detail ? `<div class="ov-fdetail">${esc(f.detail)}</div>` : ''}
-        ${f.items.length ? `<button type="button" class="ov-itoggle" aria-expanded="${open}" onclick="toggleFindingItems(${i})">${plural(f.items.length)} ${open ? '▾' : '▸'}</button>` : ''}
-        ${open ? `<ul class="ov-items">${f.items.map((it, j) => `<li><span>${esc(it.label)}</span>${it.link ? `<button type="button" class="ov-link" onclick="openFindingLink(FINDINGS_SHOWN[${i}].items[${j}].link)">View →</button>` : ''}</li>`).join('')}</ul>` : ''}
+        ${f.items.length ? `<button type="button" class="ov-itoggle" data-fd-key="items:${key}" aria-expanded="${open}" onclick="toggleFindingItems(${i})">${fdPlural(f.items.length, 'item')} ${open ? '▾' : '▸'}</button>` : ''}
+        ${open ? `<ul class="ov-items">${f.items.map((it, j) => `<li><span>${esc(it.label)}</span>${it.link ? `<button type="button" class="ov-link" data-fd-key="item:${key}:${j}" onclick="fdOpenLink(${i}, ${j})">View →</button>` : ''}</li>`).join('')}</ul>` : ''}
       </div>
-      ${f.link ? `<button type="button" class="ov-link" onclick="openFindingLink(FINDINGS_SHOWN[${i}].link)">View →</button>` : '<span></span>'}
+      ${f.link ? `<button type="button" class="ov-link" data-fd-key="view:${key}" onclick="fdOpenLink(${i})">View →</button>` : '<span></span>'}
     </div>`;
+}
+
+// (Re)render the drawer content; keeps scroll position, expanded items and keyboard focus
+function renderFindingsDrawer(findings = buildFindings()) {
+  const d = el('findings-drawer');
+  if (!d) return;
+  const scroll = d.querySelector('.fd-body')?.scrollTop || 0;
+  const focusKey = d.contains(document.activeElement) ? document.activeElement.dataset.fdKey : null;
+  FD.list = findings;
+  const s = findingsSummary(findings);
+  const cats = FINDING_CATEGORIES.filter(c => findings.some(f => f.category === c));
+  const filtered = findings.filter(f => !FD.cats.size || FD.cats.has(f.category));
+  const group = (sev, label) => {
+    const rows = filtered.filter(f => f.severity === sev);
+    if (!rows.length) return '';
+    const head = sev === 'info'
+      ? `<button type="button" class="fd-ghead fd-ghead-btn" data-fd-key="info" aria-expanded="${FD.showInfo}" onclick="FD.showInfo=!FD.showInfo;renderFindingsDrawer()"><span class="tr-sq" style="background:${FD_SEV_COLOR[sev]};"></span>${label} · ${rows.length}<span class="fd-caret">${FD.showInfo ? '▾' : '▸'}</span></button>`
+      : `<div class="fd-ghead"><span class="tr-sq" style="background:${FD_SEV_COLOR[sev]};"></span>${label} · ${rows.length}</div>`;
+    return `<section class="fd-group">${head}${sev !== 'info' || FD.showInfo ? rows.map(f => findingRowHtml(f, findings.indexOf(f))).join('') : ''}</section>`;
   };
-  const plural = n => `${n} item${n === 1 ? '' : 's'}`;
-  const failedAny = DATA.errors.length > 0;
-  return `
-    <div class="tr-head">
-      <span class="tr-sq" style="background:var(--amber);"></span><span class="tr-title">Findings</span>
-      <span class="ov-counts"><span class="tr-pill tr-pill-red">${count('red')} red</span><span class="tr-pill tr-pill-amber">${count('amber')} amber</span><span class="tr-pill tr-pill-gray">${count('info')} info</span></span>
+  d.innerHTML = `
+    <div class="fd-head">
+      <div class="fd-htext"><h2 id="fd-title">Findings</h2>
+        <div class="fd-sub">${esc(s.title + (s.sub ? ' · ' + s.sub : ''))}</div></div>
+      <button type="button" class="fd-close" id="fd-close" data-fd-key="close" aria-label="Close findings" onclick="closeFindingsDrawer()">×</button>
     </div>
-    ${cats.length ? `<div class="gp-chiprow ov-chips">${cats.map(c => filterChip(`onclick="toggleFindingCategory('${c}')" aria-pressed="${FINDINGS_UI.cats.has(c)}"`, `${c} (${findings.filter(f => f.category === c).length})`, FINDINGS_UI.cats.has(c))).join('')}</div>` : ''}
-    ${!findings.length ? `<div class="tr-empty empty-note">${failedAny ? 'No findings in the data that loaded.' : 'No findings.'}</div>` : ''}
-    ${main.map(row).join('')}
-    ${info.length ? (FINDINGS_UI.showInfo ? info.map(row).join('') + `<div class="gp-body"><button type="button" class="btn btn-ghost" onclick="FINDINGS_UI.showInfo=false;rerenderOverviewFindings()">Hide info</button></div>`
-      : `<div class="gp-body"><button type="button" class="btn btn-ghost" onclick="FINDINGS_UI.showInfo=true;rerenderOverviewFindings()">Show ${info.length} info</button></div>`) : ''}
-    ${findings.length && !filtered.length ? '<div class="tr-empty empty-note">No findings in the selected categories.</div>' : ''}`;
+    ${cats.length ? `<div class="gp-chiprow fd-chips">${filterChip(`onclick="setFindingsCats([])" data-fd-key="cat:All" aria-pressed="${!FD.cats.size}"`, 'All', !FD.cats.size)}${cats.map(c =>
+      filterChip(`onclick="toggleFindingsCat('${c}')" data-fd-key="cat:${c}" aria-pressed="${FD.cats.has(c)}"`, `${c} (${findings.filter(f => f.category === c).length})`, FD.cats.has(c))).join('')}</div>` : ''}
+    <div class="fd-body">
+      ${!findings.length ? `<div class="tr-empty empty-note">${DATA.errors.length ? 'No findings in the data that loaded.' : 'No findings.'}</div>`
+        : !filtered.length ? '<div class="tr-empty empty-note">No findings in the selected categories.</div>'
+        : group('red', 'Needs attention') + group('amber', 'To review') + group('info', 'Info')}
+    </div>`;
+  d.querySelector('.fd-body').scrollTop = scroll;
+  if (focusKey) [...d.querySelectorAll('[data-fd-key]')].find(x => x.dataset.fdKey === focusKey)?.focus();
 }
-function rerenderOverviewFindings() {
-  const host = el('ov-findings');
-  if (host) host.innerHTML = overviewFindingsInner(buildFindings());
+
+function openFindingsDrawer(source = 'all') {
+  if (source === 'groups') FD.cats = new Set(FD_GROUP_CATS);
+  else if (source !== 'url') FD.cats = new Set();
+  FD.openerSel = { all: '[data-fd-opener="all"]', groups: '[data-fd-opener="groups"]', badge: '#tab-overview' }[source] || '';
+  const wasOpen = FD.open;
+  if (!wasOpen) { FD.showInfo = false; FD.expanded = new Set(); }   // each opening starts collapsed
+  FD.open = true;
+  renderFindingsDrawer();
+  el('findings-drawer').classList.add('fd-open');
+  el('fd-scrim').classList.add('fd-open');
+  if (!wasOpen) {
+    FD.prevOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';   // lock page scroll behind the drawer
+    document.addEventListener('keydown', fdKeydown);
+    track('findings-open', 'Findings drawer opened');
+  }
+  el('fd-close').focus();
+  simToUrl();
 }
-function toggleFindingCategory(c) {
-  if (FINDINGS_UI.cats.has(c)) FINDINGS_UI.cats.delete(c); else FINDINGS_UI.cats.add(c);
-  rerenderOverviewFindings();
+
+function closeFindingsDrawer(restoreFocus = true) {
+  if (!FD.open) return;
+  FD.open = false;
+  el('findings-drawer').classList.remove('fd-open');
+  el('fd-scrim').classList.remove('fd-open');
+  document.documentElement.style.overflow = FD.prevOverflow;
+  document.removeEventListener('keydown', fdKeydown);
+  if (restoreFocus && FD.openerSel) document.querySelector(FD.openerSel)?.focus();
+  simToUrl();
 }
+
+// Esc closes; Tab / Shift+Tab stay inside the drawer
+function fdKeydown(e) {
+  if (!FD.open) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeFindingsDrawer(); return; }
+  if (e.key !== 'Tab') return;
+  const d = el('findings-drawer');
+  const items = [...d.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.getClientRects().length);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (!d.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 function toggleFindingItems(i) {
-  const f = FINDINGS_SHOWN[i];
+  const f = FD.list[i];
   if (!f) return;
-  if (FINDINGS_UI.open.has(f.id)) FINDINGS_UI.open.delete(f.id); else FINDINGS_UI.open.add(f.id);
-  rerenderOverviewFindings();
+  if (FD.expanded.has(f.id)) FD.expanded.delete(f.id); else FD.expanded.add(f.id);
+  renderFindingsDrawer();
+}
+function setFindingsCats(list) { FD.cats = new Set(list); renderFindingsDrawer(); simToUrl(); }
+function toggleFindingsCat(c) {
+  if (FD.cats.has(c)) FD.cats.delete(c); else FD.cats.add(c);
+  renderFindingsDrawer();
+  simToUrl();
+}
+// Links inside the drawer close it first, then navigate
+function fdOpenLink(i, j) {
+  const f = FD.list[i];
+  const link = j === undefined ? f?.link : f?.items[j]?.link;
+  closeFindingsDrawer(false);
+  openFindingLink(link);
 }
 
 // Navigate to where a finding can be looked at
@@ -2467,18 +2658,7 @@ function openFindingLink(link) {
 }
 
 function groupFindingsHtml(all = buildFindings()) {
-  const findings = all.filter(f => f.category === 'Groups' || f.category === 'Broad scope').map(f => ({ ...f, groupId: f.link?.group }));
-  if (!findings.length) return '';
-  const shown = GROUPS.findingsAll ? findings : findings.slice(0, 5);
-  const color = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
-  return `<section class="card tr-section gp-findings">
-    <div class="tr-head"><span class="tr-sq" style="background:var(--amber);"></span><span class="tr-title">Findings</span><span class="tr-count">${findings.length}</span></div>
-    ${shown.map(f => `<div class="tr-row gp-frow${f.groupId ? ' gp-flink' : ''}"${f.groupId ? ` role="button" tabindex="0" onclick="selectGroup('${jsArg(f.groupId)}', false)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectGroup('${jsArg(f.groupId)}', false)}"` : ''}>
-      <span class="tr-sq" style="background:${color[f.severity]};" aria-label="${f.severity}"></span>
-      <div class="tr-main"><div class="tr-name" title="${htmlAttr(f.title)}">${esc(f.title)}</div><div class="tr-sub" title="${htmlAttr(f.detail)}">${esc(f.detail)}</div></div>
-    </div>`).join('')}
-    ${findings.length > shown.length ? `<div class="gp-body"><button class="btn btn-ghost" onclick="GROUPS.findingsAll=true;el('gp-findings').innerHTML=groupFindingsHtml()">Show all ${findings.length}</button></div>` : ''}
-  </section>`;
+  return findingsStripHtml(all, 'groups');
 }
 
 function renderGroupDetailHtml() {
@@ -2496,7 +2676,9 @@ function renderGroupDetailHtml() {
     .sort((a, b) => ciCmp(a.name, b.name))
     .map(u => `<div class="tr-row">
       <div class="tr-main"><div class="tr-name" title="${htmlAttr(u.name)}">${esc(u.name)}</div>${g.builtin
-        ? `<div class="tr-sub">${u.filterId ? `filter: ${esc(u.filterId.slice(0, 8))}… (${esc(u.filterType)})` : '<span class="gp-muted">No filter</span>'}</div>` : ''}</div>
+        ? `<div class="tr-sub">${u.filterId ? (filterById(u.filterId)
+            ? `filter: <span class="tr-filter" title="${htmlAttr(filterById(u.filterId).rule)}">${esc(filterById(u.filterId).displayName)}</span> (${esc(u.filterType)})`
+            : `filter: ${esc(u.filterId.slice(0, 8))}… (not found)`) : '<span class="gp-muted">No filter</span>'}</div>` : ''}</div>
       <div class="tr-pill-col"><span class="tr-pill ${u.mode === 'exclude' ? 'tr-pill-red' : 'tr-pill-green'}">${u.mode === 'exclude' ? 'Exclude' : 'Include'}</span></div>
       <div class="tr-via">${u.intent ? esc(u.intent) : ''}</div>
     </div>`).join('')}`).join('') : '<div class="tr-empty empty-note">Not assigned to anything.</div>';
@@ -2823,6 +3005,7 @@ async function runSim() {
 
   // Rule-based eval as fallback (for devices not enrolled / no azureDeviceId)
   const props = buildSimProps(SIM);
+  const filterProps = buildFilterProps(SIM);   // assignment filters see Intune device properties
 
   // Union: actual membership + rule evaluation
   const ruleMatched = DATA.groups.filter(g => isDyn(g) && g.membershipRule && evalRule(g.membershipRule, props));
@@ -2849,8 +3032,14 @@ async function runSim() {
   const pickVia = list => list.find(x => !isBroad(x)) || list[0] || null;
   function matchItem(item, isApp = false) {
     const asn = resolveAssignmentsRaw(item);
-    const incl = asn.filter(x => x.kind !== 'exclude' && hitsInclude(x));
-    if (!incl.length) return null;
+    const hit = asn.filter(x => x.kind !== 'exclude' && hitsInclude(x));
+    if (!hit.length) return null;
+    // Assignment filters: an include counts only if its filter allows this device. Filtered-out includes are
+    // skipped, so another include can still win; if none is allowed, the item is 'depends' or 'filtered'.
+    hit.forEach(x => { x.fv = filterVerdict(x.raw.target || x.raw, filterProps); });
+    const allowed = hit.filter(x => x.fv.allowed === true), unsure = hit.filter(x => x.fv.allowed === null);
+    const incl = allowed.length ? allowed : unsure.length ? unsure : hit;
+    const filterStatus = allowed.length ? null : unsure.length ? 'depends' : 'filtered';
     let via = pickVia(incl), status = 'applies', conflictWith = null, partialExcl = [];
     let exclVia = isApp ? null : (asn.find(hitsExclude) || null);
     if (isApp) {
@@ -2880,14 +3069,20 @@ async function runSim() {
         else if (avail) via = avail;
       }
     }
-    const t = via.raw.target || via.raw;
+    const fv = via.fv;
     return {
       item,
-      status: exclVia ? 'excluded' : status,
+      status: exclVia ? 'excluded' : filterStatus || status,   // exclusion wins over everything
       via, exclVia, conflictWith, partialExcl,
       scope: isBroad(via) ? 'Broad' : 'Targeted',
-      filterId: t.deviceAndAppManagementAssignmentFilterId || null,
-      filterType: t.deviceAndAppManagementAssignmentFilterType || null,
+      filterId: fv.id || null,
+      filterType: fv.id ? fv.type : null,
+      filterName: fv.filter ? fv.filter.displayName : null,
+      filterRule: fv.filter ? fv.filter.rule : null,
+      filterMatches: fv.id ? fv.matches : null,
+      filterAllowed: fv.allowed,
+      filterReason: fv.reason || '',
+      filterAmbiguous: !!fv.ambiguous,
       intent: via.intent,
     };
   }
@@ -2908,7 +3103,7 @@ async function runSim() {
 
   // Filter + scope info per applied item, taken from its match (no index lookup)
   function describeApplied(m) {
-    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType };
+    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType, filterName: m.filterName, filterAllowed: m.filterAllowed };
   }
 
   // Enrich matched items with their filter + scope info
@@ -3082,11 +3277,12 @@ async function runSim() {
     svgNodes += node(col3, py, NW, p.name || p.displayName || '', p._t || 'App', fill, stroke);
 
     // Filter node (if any)
-    const filterStroke = '#8a5f0c';
-    const filterFill = 'rgba(138,95,12,.08)';
+    // green = filter allows the device, gray = filtered out, amber = can't evaluate (hex: the SVG appends alpha)
+    const filterStroke = p.filterAllowed === true ? '#2e7550' : p.filterAllowed === false ? '#66635c' : '#8a5f0c';
+    const filterFill = filterStroke + '14';
     if (p.filterId) {
       svgEdges += curve(col3 + NW, py + NH / 2, col4, py + NH / 2, filterStroke);
-      svgNodes += node(col4, py, FW, p.filterId.slice(0, 8) + '…', p.filterType || 'filter', filterFill, filterStroke);
+      svgNodes += node(col4, py, FW, p.filterName || p.filterId.slice(0, 8) + '…', `${p.filterType || 'filter'}${p.filterName ? '' : ' · not found'}`, filterFill, filterStroke);
     } else {
       // Dim placeholder for "no filter"
       svgNodes += `<rect x="${col4}" y="${py}" width="${FW}" height="${NH}" rx="6" fill="none" stroke="rgba(35,34,31,.15)" stroke-width="1" stroke-dasharray="3 3"/><text x="${col4+12}" y="${py+26}" font-size="11" fill="var(--text3)" style="font-family:var(--font-sans)" opacity=".5">No filter</text>`;
@@ -3122,14 +3318,16 @@ async function runSim() {
     const [pc, pl] = ex ? ['red', 'Excluded']
                    : m.status === 'uninstall' ? ['red', 'Uninstall']
                    : m.status === 'conflict' ? ['amber', 'Conflict']
+                   : m.status === 'filtered' ? ['gray', 'Filtered']
+                   : m.status === 'depends' ? ['amber', 'Depends on filter']
                    : m.scope === 'Broad' ? ['amber', 'Broad'] : ['green', 'Targeted'];
     let s = sub || '';
-    if (m.filterId) s += ` · filter: ${m.filterId.slice(0, 8)}… (${m.filterType || 'filter'})`;
     (m.partialExcl || []).forEach(p => { s += ` · excluded from ${p.intent} via ${p.label}`; });
+    const parts = [s.replace(/^ · /, '') && esc(s.replace(/^ · /, '')), filterHtml(m)].filter(Boolean);
     const subHtml = ex
       ? `<div class="tr-sub tr-sub-red">Excluded via ${esc(m.exclVia.label)}</div>`
       : m.status === 'conflict' ? `<div class="tr-sub">Available + Uninstall — result depends on user vs device targeting</div>`
-      : s ? `<div class="tr-sub">${esc(s.replace(/^ · /, ''))}</div>` : '';
+      : parts.length ? `<div class="tr-sub">${parts.join(' · ')}</div>` : '';
     return `<div class="tr-row${ex ? ' tr-excluded' : ''}">
       <div class="tr-main"><div class="tr-name" title="${attr(name)}">${esc(name)}</div>${subHtml}</div>
       <div class="tr-pill-col"><span class="tr-pill tr-pill-${pc}">${pl}</span></div>
@@ -3159,18 +3357,21 @@ async function runSim() {
     </div>`;
   }).join('');
 
+  // Filtered / depends rows go after the applying rows of their section (stable sort)
+  const later = m => m.status === 'filtered' || m.status === 'depends' ? 1 : 0;
+  const ordered = list => [...list].sort((a, b) => later(a) - later(b));
   const enrollRows = [
-    ...profM.map(m => trRow(m.item.displayName, (m.item.deploymentMode || '') + (m.item.preprovisioningAllowed ? ' · pre-provisioning' : ''), m)),
-    ...espM.map(m => trRow(m.item.displayName, 'Enrollment Status Page', m)),
+    ...ordered(profM).map(m => trRow(m.item.displayName, (m.item.deploymentMode || '') + (m.item.preprovisioningAllowed ? ' · pre-provisioning' : ''), m)),
+    ...ordered(espM).map(m => trRow(m.item.displayName, 'Enrollment Status Page', m)),
   ];
 
   const polByType = {};
-  polM.forEach(m => { (polByType[m.item._t] = polByType[m.item._t] || []).push(m); });
+  ordered(polM).forEach(m => { (polByType[m.item._t] = polByType[m.item._t] || []).push(m); });
   const configBody = Object.entries(polByType).map(([t, ms]) =>
     `<div class="tr-subhead">${esc(t)} (${ms.length})</div>${ms.map(m => trRow(m.item.name || m.item.displayName || '', '', m)).join('')}`
   ).join('');
 
-  const appRows = appM.map(m => {
+  const appRows = ordered(appM).map(m => {
     const type = (m.item['@odata.type'] || '').replace('#microsoft.graph.', '');
     return trRow(m.item.displayName, [type, m.intent].filter(Boolean).join(' · '), m);
   });
@@ -3178,12 +3379,13 @@ async function runSim() {
   const nBroad = [...polM, ...appM].filter(m => applies(m) && m.scope === 'Broad').length;
   const nConflict = appM.filter(m => m.status === 'conflict').length;
   const nBlocked = [...polM, ...appM].filter(m => m.status === 'excluded' || m.status === 'uninstall').length;
-  const trStat = (n, label, color) => `<div class="tr-stat"><div class="tr-stat-n" style="color:${color};">${n}</div><div class="tr-stat-l">${label}</div></div>`;
+  const trStat = (n, label, color, hint = '') => `<div class="tr-stat"><div class="tr-stat-n" style="color:${color};">${n}</div><div class="tr-stat-l">${label}</div>${hint ? `<div class="tr-stat-hint">${hint}</div>` : ''}</div>`;
+  const dependsHint = list => { const d = list.filter(m => m.status === 'depends').length; return d ? `+${d} depends on filter` : ''; };   // not added to the number
 
   const traceHtml = `
     <div class="tr-stats">
-      ${trStat(mPol.length, 'Policies apply', 'var(--accent)')}
-      ${trStat(mA.length, 'Apps targeted', 'var(--accent)')}
+      ${trStat(mPol.length, 'Policies apply', 'var(--accent)', dependsHint(polM))}
+      ${trStat(mA.length, 'Apps targeted', 'var(--accent)', dependsHint(appM))}
       ${trStat(nBroad, 'Via broad scope', 'var(--amber)')}
       ${trStat(nBlocked, 'Excluded', 'var(--red)')}
     </div>
@@ -3288,12 +3490,13 @@ function reportRow(m) {
   if (m.status === 'conflict') notes.push(`Available + Uninstall (uninstall via ${viaText(m.conflictWith)})`);
   if (m.intent) notes.push(`intent: ${m.intent}`);
   if (m.item.deploymentMode) notes.push(m.item.deploymentMode + (m.item.preprovisioningAllowed ? ', pre-provisioning' : ''));
-  if (m.filterId) notes.push(`filter: ${m.filterId.slice(0, 8)}… (${m.filterType || 'filter'})`);
+  if (m.filterId) notes.push(filterText(m));
   (m.partialExcl || []).forEach(p => notes.push(`excluded from ${p.intent} via ${p.label}`));
   return {
     name: matchName(m),
     type: m.type || '',
-    scope: m.status === 'excluded' ? 'Excluded' : m.status === 'uninstall' ? 'Uninstall' : m.status === 'conflict' ? 'Conflict' : m.scope,
+    scope: m.status === 'excluded' ? 'Excluded' : m.status === 'uninstall' ? 'Uninstall' : m.status === 'conflict' ? 'Conflict'
+      : m.status === 'filtered' ? 'Filtered' : m.status === 'depends' ? 'Depends on filter' : m.scope,
     status: m.status,
     via: viaText(m.via),
     viaKind: m.via.kind === 'allDevices' || m.via.kind === 'allUsers' ? 'broad' : 'group',
@@ -3341,6 +3544,9 @@ function buildReport(model, now = new Date()) {
     severity: 'amber', title: `${plural(broad.length, 'assignment', 'assignments')} via All devices / All users without a filter`,
     detail: broad.slice(0, 5).map(matchName).join(', ') + (broad.length > 5 ? `, and ${broad.length - 5} more` : '') + '.',
   });
+  const depends = sortM([...model.enrollment, ...pa].filter(m => m.status === 'depends'));
+  if (depends.length) findings.push({ severity: 'info', title: `${plural(depends.length, 'item depends', 'items depend')} on filters that can't be evaluated`,
+    detail: depends.map(m => `${matchName(m)} (${m.filterName || m.filterId?.slice(0, 8) + '…'})`).join(', ') + '.' });
   if (model.membershipMode === 'rules-only') findings.push({ severity: 'info', title: 'Rules-only membership', detail: 'Group membership predicted from dynamic rules. Select an enrolled device for actual membership.' });
   if (profiles.length === 1) findings.push({ severity: 'info', title: 'Autopilot profile resolved', detail: `${matchName(profiles[0])} (${profiles[0].item.deploymentMode || 'unknown mode'})` });
 
@@ -3449,7 +3655,7 @@ function toMermaid(r) {
         cls.excl.push(id);
       } else {
         edges.push(`  ${(x.viaKind === 'broad' ? bid.get(x.via) : gid.get(x.via)) || 'd0'} --> ${id}`);
-        (x.status === 'uninstall' ? cls.excl : x.status === 'conflict' ? cls.broad : cls.ok).push(id);
+        if (x.status !== 'filtered') (x.status === 'uninstall' ? cls.excl : x.status === 'conflict' || x.status === 'depends' ? cls.broad : cls.ok).push(id);
       }
     });
     if (sec.rows.length > shown[si].length) L.push(`    m${more++}[${label(`+${sec.rows.length - shown[si].length} more`)}]`);
@@ -3575,7 +3781,7 @@ function toReportSvg(r) {
 function toPrintView(r) {
   const TONE = { accent: 'var(--accent)', amber: 'var(--amber)', red: 'var(--red)' };
   const SEV = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
-  const PILL = { Targeted: 'green', Broad: 'amber', Conflict: 'amber', Excluded: 'red', Uninstall: 'red' };
+  const PILL = { Targeted: 'green', Broad: 'amber', Conflict: 'amber', Excluded: 'red', Uninstall: 'red', Filtered: 'gray', 'Depends on filter': 'amber' };
   const dash = v => v ? esc(v) : '—';
   const logo = `<svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#0f766e"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#0f766e" opacity=".45"/></svg>`;
   const table = sec => {
@@ -3735,6 +3941,120 @@ function ruleSupport(rule) {
   return { supported: !unsupported.length, unsupported };
 }
 
+// ── Assignment filters: own syntax (and/or without dash, Intune property names, -in arrays) and own evaluator ──
+// Device properties a filter can see for the simulated device
+function buildFilterProps(sim) {
+  return {
+    device: {
+      deviceName: sim.deviceName, manufacturer: sim.mfg, model: sim.model, osVersion: sim.osVer,
+      deviceOwnership: 'Corporate',   // Autopilot devices are corporate ("Corporate"/"Personal" in filters)
+      enrollmentProfileName: sim.enrollmentProfileName, operatingSystemVersion: sim.osVer,
+    },
+  };
+}
+// Property paths filters can use here ('device.model', …), derived from buildFilterProps
+const FILTER_PROPS = new Set(Object.entries(buildFilterProps({ deviceName: 'x', mfg: 'x', model: 'x', osVer: 'x', enrollmentProfileName: 'x' }))
+  .flatMap(([obj, fields]) => Object.keys(fields).map(k => `${obj}.${k}`.toLowerCase())));
+const FILTER_OPS = {
+  '-eq': (v, t) => v === t, '-ne': (v, t) => v !== t,
+  '-contains': (v, t) => v.includes(t), '-notcontains': (v, t) => !v.includes(t),
+  '-startswith': (v, t) => v.startsWith(t), '-endswith': (v, t) => v.endsWith(t),
+  '-in': (v, list) => list.includes(v), '-notin': (v, list) => !list.includes(v),
+};
+// Quote-aware: index of the ")" closing the "(" at i, or -1
+function filterClose(e, i) {
+  let d = 0, q = false;
+  for (; i < e.length; i++) {
+    const c = e[i];
+    if (c === '"') q = !q;
+    else if (!q && c === '(') d++;
+    else if (!q && c === ')' && --d === 0) return i;
+  }
+  return -1;
+}
+// Split on a whole-word logical operator ("and"/"or") outside quotes and parentheses
+function filterSplit(e, word) {
+  const parts = [], w = word.length;
+  let d = 0, q = false, last = 0;
+  for (let i = 0; i < e.length; i++) {
+    const c = e[i];
+    if (c === '"') { q = !q; continue; }
+    if (q) continue;
+    if (c === '(') d++;
+    else if (c === ')') d--;
+    else if (d === 0 && e.slice(i, i + w).toLowerCase() === word
+      && (i === 0 || /[\s)]/.test(e[i - 1])) && /[\s(]/.test(e[i + w] || '')) {
+      parts.push(e.slice(last, i).trim()); i += w - 1; last = i + 1;
+    }
+  }
+  parts.push(e.slice(last).trim());
+  return parts.filter(Boolean);
+}
+// → { result: true | false | null, unsupported: [{ leaf, reason: 'property'|'operator'|'syntax' }], ambiguous }; null = can't decide
+function evalFilter(rule, props) {
+  const unsupported = [];
+  let ambiguous = false;
+  const lookup = path => {   // case-insensitive property path
+    const [obj, key] = path.split('.');
+    const o = props[Object.keys(props).find(k => k.toLowerCase() === (obj || '').toLowerCase())] || {};
+    const k = Object.keys(o).find(x => x.toLowerCase() === (key || '').toLowerCase());
+    return k === undefined ? '' : String(o[k] ?? '');
+  };
+  const ev = e => {
+    e = e.trim();
+    while (e.startsWith('(') && filterClose(e, 0) === e.length - 1) e = e.slice(1, -1).trim();
+    const or = filterSplit(e, 'or');
+    // "A or B and C" on one level: evaluated as and > or, but flagged so the intent can be made explicit
+    if (or.length > 1 && or.some(part => filterSplit(part, 'and').length > 1)) ambiguous = true;
+    if (or.length > 1) { const r = or.map(ev); return r.includes(true) ? true : r.includes(null) ? null : false; }
+    const and = filterSplit(e, 'and');
+    if (and.length > 1) { const r = and.map(ev); return r.includes(false) ? false : r.includes(null) ? null : true; }
+    const not = e.match(/^-not\s*(.*)$/is);
+    if (not) { const r = ev(not[1]); return r === null ? null : !r; }
+    const m = e.match(/^([\w.]+)\s+(-\w+)\s+(.+)$/s);
+    if (!m) { unsupported.push({ leaf: e, reason: 'syntax' }); return null; }
+    const [, path, opRaw, valRaw] = m, op = opRaw.toLowerCase();
+    if (!FILTER_OPS[op]) { unsupported.push({ leaf: e, reason: 'operator' }); return null; }
+    if (!FILTER_PROPS.has(path.toLowerCase())) { unsupported.push({ leaf: e, reason: 'property' }); return null; }
+    const v = valRaw.trim();
+    const values = v.startsWith('[') ? [...v.matchAll(/"([^"]*)"/g)].map(x => x[1].toLowerCase())
+      : [v.replace(/^"([\s\S]*)"$/, '$1').toLowerCase()];
+    const actual = lookup(path).toLowerCase();
+    return op === '-in' || op === '-notin' ? FILTER_OPS[op](actual, values) : FILTER_OPS[op](actual, values[0]);
+  };
+  const result = rule && rule.trim() ? ev(rule) : null;
+  return { result, unsupported, ambiguous };
+}
+// Filter by id; the map follows DATA.assignmentFilters
+let FILTER_BY_ID = new Map(), FILTER_SRC = null;
+function filterById(id) {
+  if (FILTER_SRC !== DATA.assignmentFilters) { FILTER_SRC = DATA.assignmentFilters; FILTER_BY_ID = new Map((FILTER_SRC || []).map(f => [f.id, f])); }
+  return id ? FILTER_BY_ID.get(id) || null : null;
+}
+// What an assignment's filter means for one device: allowed true/false/null (null = can't decide)
+function filterVerdict(target, filterProps) {
+  const id = target.deviceAndAppManagementAssignmentFilterId, type = target.deviceAndAppManagementAssignmentFilterType || 'include';
+  if (!id || type === 'none') return { allowed: true, id: null };
+  const f = filterById(id);
+  if (!f) return { allowed: null, id, type, filter: null, matches: null, reason: 'not found' };
+  if (f.assignmentFilterManagementType === 'apps') return { allowed: null, id, type, filter: f, matches: null, reason: 'app filter' };
+  const r = evalFilter(f.rule, filterProps);
+  const reason = r.unsupported.length ? r.unsupported.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] : `${u.reason} in "${u.leaf}"`).join(', ') : '';
+  return { allowed: r.result === null ? null : type === 'exclude' ? !r.result : r.result, id, type, filter: f, matches: r.result, reason, ambiguous: r.ambiguous };
+}
+// "filter: Corp-only (include) ✓ matches" — plain text (report) and HTML with the rule as tooltip (Trace)
+function filterText(m) {
+  if (!m.filterId) return '';
+  if (!m.filterName) return `filter: ${m.filterId.slice(0, 8)}… (not found)`;
+  const verdict = m.filterMatches === true ? '✓ matches' : m.filterMatches === false ? '✗ doesn\'t match' : `? can't evaluate: ${m.filterReason}`;
+  return `filter: ${m.filterName} (${m.filterType}) ${verdict}`;
+}
+function filterHtml(m) {
+  if (!m.filterId) return '';
+  if (!m.filterName) return `filter: ${esc(m.filterId.slice(0, 8))}… (not found)`;
+  return `filter: <span class="tr-filter" title="${esc(m.filterRule).replace(/"/g, '&quot;')}">${esc(m.filterName)}</span> (${esc(m.filterType)}) ${esc(filterText(m).replace(/^filter: .*? \((include|exclude)\) /, ''))}${m.filterAmbiguous ? ' · <span class="gp-muted">mixed and/or without parentheses</span>' : ''}`;
+}
+
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { restoreFromUrl(); initMsal(); renderCurrentTab(); });
 else { restoreFromUrl(); initMsal(); renderCurrentTab(); }
 </script>
@@ -3810,6 +4130,8 @@ applyTweaks();
   window.parent.postMessage({type:'__edit_mode_available'},'*');
 })();
 </script>
+<div id="fd-scrim" class="fd-scrim" onclick="closeFindingsDrawer()"></div>
+<aside id="findings-drawer" class="fd" role="dialog" aria-modal="true" aria-labelledby="fd-title"><h2 id="fd-title">Findings</h2></aside>
 <div id="print-root" hidden></div>
 </body>
 </html>
