@@ -488,6 +488,9 @@
     .gt-btitle { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .gt-batch { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; min-height: 30px; }
     .gt-bstatus { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+    .gt-show { margin-left: 8px; font-size: 12px; }
+    .gt-req { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .gt-pre { width: 100%; max-height: 220px; overflow: auto; margin: 0; padding: 8px 10px; font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
     .gt-note { padding: 12px 18px; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
     .gt-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
     .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
@@ -3212,7 +3215,7 @@ function selectAllMatching() { filteredDevices().filter(r => r.d.autopilotId).fo
 const GE_BASE = 'https://developer.microsoft.com/graph/graph-explorer';
 const GE_MAX_URL = 7500, GE_MAX_BATCH = 20;
 const TAG_JOB_KEY = 'apl-tag-job';   // sessionStorage only: survives a reload, gone when the tab closes
-let TAG_UI = { tag: '' };
+let TAG_UI = { tag: '', shown: new Set() };   // shown: batch numbers with "Show request" open
 let TAG_VERIFYING = false;
 
 // Graph Explorer share links carry requestBody as base64 of a JSON *string literal* holding the body text (what its own
@@ -3385,16 +3388,23 @@ function renderTagDialogBody() {
   const mount = el('gt-body');
   if (!mount) return;
   const job = activeTagJob();
-  // The link body escapes non-ASCII (see jsonAscii), so Graph Explorer's editor shows \uXXXX; Graph still gets the right characters
-  const escNote = t => /[^\x00-\x7f]/.test(t) ? '<div class="gp-muted">Graph Explorer shows special characters as \\uXXXX codes (e.g. Æ = \\u00c6). The tag is set correctly.</div>' : '';
+  // One row per batch, with the readable request behind "Show request" (fallback when Graph Explorer's editor stays empty)
+  const batchList = (jobLike, batches, tag) => batches.map(b => {
+    const open = TAG_UI.shown.has(b.n);
+    return `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}
+        <button type="button" class="ov-link gt-show" aria-expanded="${open}" onclick="toggleTagRequest(${b.n})">${open ? 'Hide request' : 'Show request'}</button></span>${batchStatusHtml(jobLike, b)}</div>
+      ${open ? `<div class="gt-req"><pre class="gt-pre">${esc(JSON.stringify(tagBatchBody(tagRowItems(b.n), tag), null, 2))}</pre>
+        <button type="button" class="btn btn-ghost" onclick="copyTagRequest(${b.n})">Copy request body</button></div>` : ''}`;
+  }).join('') + `<div class="gp-muted">In Graph Explorer, the request body appears as a quoted string with escaped characters (\\" and \\\\u00c6 for Æ). This is how Graph Explorer stores shared requests. It's sent correctly when you press Run query.</div>
+    <div class="gp-muted">If the Request body in Graph Explorer is empty: set method POST, URL https://graph.microsoft.com/v1.0/$batch, paste the copied body, and Run.</div>
+    <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div>`;
   const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. You need permission to change Autopilot devices. Without it, Graph returns 403 and nothing changes. Then come back and press Verify.
       <div>Make sure you're signed in to Graph Explorer (top right) before Run query. Otherwise it runs against a sample tenant and nothing changes in yours. The first time, Graph Explorer may ask you to consent to the permission.</div>
       <div class="gp-muted">The link contains Autopilot device IDs and the tag (no names, no tokens) and opens on Microsoft's site.</div></div>`;
   if (job) {
     mount.innerHTML = `<div class="gt-sec gt-valid">${job.items.length} ${job.items.length === 1 ? 'device' : 'devices'} → <b>${esc(job.newTag)}</b> · started ${esc(localStamp(job.createdAt))}</div>
       <div class="gt-sec">${tagPreviewHtml(job.items, job.newTag)}</div>
-      <div class="gt-sec">${job.batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml(job, b)}</div>`).join('')}${escNote(job.newTag)}
-        <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div></div>
+      <div class="gt-sec">${batchList(job, job.batches, job.newTag)}</div>
       ${note}`;
     return;
   }
@@ -3406,9 +3416,30 @@ function renderTagDialogBody() {
   if (!batches) { mount.innerHTML = valid + '<div class="gt-sec"><div class="gp-error">The tag is too long for a Graph Explorer link.</div></div>' + note; return; }
   mount.innerHTML = valid
     + (draft.change.length ? `<div class="gt-sec">${tagPreviewHtml(draft.change, tag)}</div>
-      <div class="gt-sec">${batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml({ items: draft.change, scope: tagJobScope() }, b)}</div>`).join('')}${escNote(tag)}
-        <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div></div>` : '')
+      <div class="gt-sec">${batchList({ items: draft.change, scope: tagJobScope() }, batches, tag)}</div>` : '')
     + note;
+}
+// Items in the link a batch row opens: the last link for a job (a retry link holds fewer), else the planned batch
+function tagRowItems(n) {
+  const job = activeTagJob();
+  if (job) {
+    const b = job.batches.find(x => x.n === n), ids = b?.lastIds && new Set(b.lastIds);
+    return job.items.filter(it => ids ? ids.has(it.autopilotId) : it.batch === n);
+  }
+  const tag = (TAG_UI.tag || '').trim(), items = tagDraft(tag).change;
+  planTagBatches(items, tag);
+  return items.filter(it => it.batch === n);
+}
+function toggleTagRequest(n) {
+  if (TAG_UI.shown.has(n)) TAG_UI.shown.delete(n); else TAG_UI.shown.add(n);
+  renderTagDialogBody();
+}
+// Copies the exact body text the link encodes (ASCII JSON), not Graph Explorer's quoted string form
+function copyTagRequest(n) {
+  const tag = activeTagJob()?.newTag ?? (TAG_UI.tag || '').trim();
+  navigator.clipboard.writeText(jsonAscii(tagBatchBody(tagRowItems(n), tag)))
+    .then(() => showToast('Request body copied', 'success'))
+    .catch(() => showToast('Could not copy the request body', 'error'));
 }
 // First open creates the job (fixed selection + tag); later opens reuse it
 function openTagBatch(n) {
@@ -3516,7 +3547,7 @@ function downloadTagLog() {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 function finishTagJob() {
-  if (activeTagJob()) { clearTagJob(); DEVICE_SEL.clear(); TAG_UI.tag = ''; }
+  if (activeTagJob()) { clearTagJob(); DEVICE_SEL.clear(); TAG_UI.tag = ''; TAG_UI.shown.clear(); }
   closeTagDialog();
 }
 
