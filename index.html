@@ -493,6 +493,10 @@
     .gt-notice p { margin: 0; }
     .gt-notice-title { font-weight: 600; color: var(--amber); }
     .gt-notice .tr-mono { overflow-wrap: anywhere; }
+    .gt-help { font-size: 12px; color: var(--text2); }
+    .gt-help summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+    .gt-help p { margin: 6px 0 0; line-height: 1.5; }
+    .gt-help .tr-mono { overflow-wrap: anywhere; }
     .gt-req { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .gt-pre { width: 100%; max-height: 220px; overflow: auto; margin: 0; padding: 8px 10px; font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text); background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; white-space: pre; }
     .gt-note { padding: 12px 18px; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
@@ -3423,7 +3427,11 @@ function renderTagDialogBody() {
         <button type="button" class="btn btn-ghost" onclick="copyTagRequest(${b.n})">Copy request body</button></div>` : ''}`;
   }).join('') + (/[^\x00-\x7f]/.test(tag) ? '<div class="gp-muted">Special characters appear as \\uXXXX codes in Graph Explorer (e.g. Æ = \\u00c6). The tag is set correctly.</div>' : '')
     + `<div class="gp-muted">If the Request body in Graph Explorer is empty: set method POST, URL https://graph.microsoft.com/v1.0/$batch, paste the copied body, and Run.</div>
-    <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div>`;
+    <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div>
+    <details class="gt-help"${TAG_UI.helpOpen ? ' open' : ''} ontoggle="TAG_UI.helpOpen = this.open"><summary>Got 403 in Graph Explorer?</summary>
+      <p>'Application is not authorized … must have one of the following scopes': Graph Explorer lacks consent. In Graph Explorer: profile icon → Consent to permissions → search <code class="tr-mono">DeviceManagementServiceConfig.ReadWrite.All</code> → Consent. Your organization may require an admin to approve it. Sign out and in again, then use Open again.</p>
+      <p>Other 403 messages: your Intune role doesn't allow changing Autopilot devices. Ask your Intune admin.</p>
+    </details>`;
   const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. Then come back and press Verify.
       <div>Make sure you're signed in to Graph Explorer (top right) before Run query. Otherwise it runs against a sample tenant and nothing changes in yours. The first time, Graph Explorer may ask you to consent to the permission.</div>
       <div class="gp-muted">The link contains Autopilot device IDs and the tag (no names, no tokens) and opens on Microsoft's site.</div></div>`;
