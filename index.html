@@ -471,6 +471,24 @@
     .dv-props dt { color: var(--text3); }
     .dv-props dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
     .dv-glink { font-size: 13px; font-weight: 500; text-align: left; white-space: normal; }
+    .dv-tbl .dv-cb { width: 34px; padding-right: 0; cursor: default; }
+    .dv-cb input { accent-color: var(--accent); cursor: pointer; }
+    .dv-cb input:disabled { cursor: not-allowed; }
+    /* GroupTagger */
+    .gt-selbar, .gt-jobbar, .gt-allbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 16px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+    .gt-selbar { color: var(--accent); background: var(--accent-wash); font-weight: 500; }
+    .gt-jobbar { color: var(--amber); background: var(--wash); }
+    .gt-allbar { color: var(--text2); background: var(--bg3); }
+    .gt-box { width: min(760px, 100%); max-height: 86vh; }
+    .gt-scroll { overflow-y: auto; flex: 1; }
+    .gt-sec { padding: 12px 18px; border-bottom: 1px solid var(--hairline); display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+    .gt-valid { color: var(--text2); }
+    .gt-block { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+    .gt-block + .gt-block { border-top: 1px solid var(--hairline); padding-top: 8px; }
+    .gt-btitle { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .gt-batch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+    .gt-note { padding: 12px 18px; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+    .gt-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
     .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
     .gp-dmeta { display: flex; flex-wrap: wrap; gap: 6px; }
     .gp-body { padding: 12px 16px; }
@@ -798,11 +816,11 @@ const DEMO_DATA = {
   groupTags: ['KIOSK','LAB','SALES','SALES2'],
   autopilotIdentities: [],
   managedDevices: [
-    { id:'dev-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', operatingSystem:'Windows', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', azureADDeviceId:'d3m0-0000-4000-8000-000000000001', complianceState:'compliant', lastSyncDateTime:new Date(Date.now() - 2 * 36e5).toISOString(), enrolledDateTime:new Date(Date.now() - 120 * 864e5).toISOString(), _source:'demo' },
-    { id:'dev-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000004', complianceState:'noncompliant', lastSyncDateTime:new Date(Date.now() - 3 * 864e5).toISOString(), enrolledDateTime:new Date(Date.now() - 200 * 864e5).toISOString(), _source:'demo' },   // demo: noncompliant
-    { id:'dev-003', deviceName:'DEMO-LAB-001', serialNumber:'LAB001SER', groupTag:'LAB', manufacturer:'HP', model:'EliteBook 840', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000006', complianceState:'compliant', lastSyncDateTime:new Date(Date.now() - 45 * 864e5).toISOString(), enrolledDateTime:new Date(Date.now() - 300 * 864e5).toISOString(), _source:'demo' },   // demo: stale
-    { id:'dev-004', deviceName:'DEMO-SALES2-001', serialNumber:'SAL2001SER', groupTag:'SALES2', manufacturer:'Dell', model:'Latitude 7440', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000007', complianceState:'inGracePeriod', lastSyncDateTime:new Date(Date.now() - 20 * 60e3).toISOString(), enrolledDateTime:new Date(Date.now() - 30 * 864e5).toISOString(), _source:'demo' },
-    { id:'ap-005', deviceName:'Autopilot device', serialNumber:'NOTAG005SER', groupTag:'', manufacturer:'Microsoft Corporation', model:'Surface Laptop 6', osVersion:'', azureADDeviceId:'', enrollmentState:'notContacted', lastContactedDateTime:'0001-01-01T00:00:00Z', _source:'autopilot-only' }   // demo: Autopilot only, no tag
+    { id:'dev-001', autopilotId:'apid-001', deviceName:'DEMO-SALES-001', serialNumber:'ABC123SALES', groupTag:'SALES', manufacturer:'Lenovo', model:'ThinkPad T14', operatingSystem:'Windows', osVersion:'10.0.26100', userPrincipalName:'alex@contoso.com', azureADDeviceId:'d3m0-0000-4000-8000-000000000001', complianceState:'compliant', lastSyncDateTime:new Date(Date.now() - 2 * 36e5).toISOString(), enrolledDateTime:new Date(Date.now() - 120 * 864e5).toISOString(), _source:'demo' },
+    { id:'dev-002', autopilotId:'apid-002', deviceName:'DEMO-KIOSK-001', serialNumber:'XYZ789KIOSK', groupTag:'KIOSK', manufacturer:'Dell', model:'OptiPlex 7010', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000004', complianceState:'noncompliant', lastSyncDateTime:new Date(Date.now() - 3 * 864e5).toISOString(), enrolledDateTime:new Date(Date.now() - 200 * 864e5).toISOString(), _source:'demo' },   // demo: noncompliant
+    { id:'dev-003', autopilotId:'apid-003', deviceName:'DEMO-LAB-001', serialNumber:'LAB001SER', groupTag:'LAB', manufacturer:'HP', model:'EliteBook 840', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000006', complianceState:'compliant', lastSyncDateTime:new Date(Date.now() - 45 * 864e5).toISOString(), enrolledDateTime:new Date(Date.now() - 300 * 864e5).toISOString(), _source:'demo' },   // demo: stale
+    { id:'dev-004', autopilotId:'apid-004', deviceName:'DEMO-SALES2-001', serialNumber:'SAL2001SER', groupTag:'SALES2', manufacturer:'Dell', model:'Latitude 7440', operatingSystem:'Windows', osVersion:'10.0.26100', azureADDeviceId:'d3m0-0000-4000-8000-000000000007', complianceState:'inGracePeriod', lastSyncDateTime:new Date(Date.now() - 20 * 60e3).toISOString(), enrolledDateTime:new Date(Date.now() - 30 * 864e5).toISOString(), _source:'demo' },
+    { id:'ap-005', autopilotId:'ap-005', deviceName:'Autopilot device', serialNumber:'NOTAG005SER', groupTag:'', manufacturer:'Microsoft Corporation', model:'Surface Laptop 6', osVersion:'', azureADDeviceId:'', enrollmentState:'notContacted', lastContactedDateTime:'0001-01-01T00:00:00Z', _source:'autopilot-only' }   // demo: Autopilot only, no tag
   ],
   loading:false, loaded:true, errors:[]
 };
@@ -1032,6 +1050,8 @@ function startDemo() {
 
 function signOut() {
   TENANT_NAME = '';
+  clearTagJob();
+  DEVICE_SEL.clear();
   resetCountsAbort();
   resetAssignAbort();
   if (demoMode) {
@@ -1347,11 +1367,13 @@ async function refreshData() {
       // Already enrolled — just merge the groupTag
       deviceMap[key].groupTag = a.groupTag || deviceMap[key].groupTag || '';
       deviceMap[key]._source = 'enrolled+autopilot';
+      deviceMap[key].autopilotId = a.id;
       Object.assign(deviceMap[key], apFields);
     } else {
       // Autopilot-only (not yet enrolled)
       deviceMap[key] = {
         id: a.id,
+        autopilotId: a.id,
         deviceName: a.displayName || a.azureAdDeviceId || a.serialNumber || 'Autopilot device',
         serialNumber: a.serialNumber || '',
         groupTag: a.groupTag || '',
@@ -2240,6 +2262,9 @@ function ensureAllUsersCount() {
 
 // ── Group findings: pure, same shape as report findings ──
 const ORDER_TAG_RE = /\[OrderID\]:([^"'\s)]+)/gi;
+// Tags a rule tests with -contains "[OrderID]:X" (a substring match)
+const orderContainsTags = rule => [...(rule || '').matchAll(/-contains\s+"\[OrderID\]:([^"]+)"/gi)].map(m => m[1]);
+
 function groupFindings({ groups, usage, countOf, devices }) {
   const listed = groups.filter(g => isListedGroup(g, usage)).sort((a, b) => ciCmp(a.displayName, b.displayName));
   const red = [], amber = [], info = [];
@@ -2263,7 +2288,7 @@ function groupFindings({ groups, usage, countOf, devices }) {
       tags.filter(t => !deviceTags.has(t.toLowerCase())).forEach(t => tagIssues.push({ tag: t, group: g }));
     }
     // -contains "[OrderID]:X" is a substring match: tag X also catches X2, XLAB, …
-    const containsTags = [...(g.membershipRule || '').matchAll(/-contains\s+"\[OrderID\]:([^"]+)"/gi)].map(m => m[1]);
+    const containsTags = orderContainsTags(g.membershipRule);
     if (containsTags.length && deviceTagList.length) {
       const own = new Set(containsTags.map(t => t.toLowerCase()));
       const extra = deviceTagList.filter(t => !own.has(t.toLowerCase())
@@ -3011,9 +3036,17 @@ function renderDevices(mount) {
     : `<span class="tr-pill tr-pill-${{ compliant: 'green', noncompliant: 'red', inGracePeriod: 'amber' }[r.comp] || 'gray'}">${esc({ compliant: 'Compliant', noncompliant: 'Noncompliant', inGracePeriod: 'In grace period' }[r.comp] || r.compState || 'Unknown')}</span>`;
   const syncCell = r => !r.lastSync ? '<span class="gp-muted">—</span>'
     : `<span class="${r.stale ? 'dv-stale' : ''}" title="${r.stale ? 'Stale · ' : ''}${htmlAttr(localStamp(r.lastSync))}">${fmtAgo(r.lastSync)}</span>`;
-  const body = shown.map(r => `<tr class="${D.selected === r.id ? 'dv-sel' : ''}" tabindex="0" onclick="selectDeviceRow('${jsArg(r.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDeviceRow('${jsArg(r.id)}')}">
+  const pickable = shown.filter(r => r.d.autopilotId), pageAll = pickable.length > 0 && pickable.every(r => DEVICE_SEL.has(r.id));
+  const pageSome = pickable.some(r => DEVICE_SEL.has(r.id));
+  const matchPickable = list.filter(r => r.d.autopilotId), matchUnselected = matchPickable.filter(r => !DEVICE_SEL.has(r.id)).length;
+  const job = activeTagJob();
+  const pendingTip = 'Tag set. Can take minutes to hours to sync to Entra and dynamic groups.';
+  const body = shown.map(r => `<tr class="${D.selected === r.id ? 'dv-sel' : ''}" tabindex="0" onclick="selectDeviceRow('${jsArg(r.id)}')" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();selectDeviceRow('${jsArg(r.id)}')}">
+      <td class="dv-cb" onclick="event.stopPropagation()">${r.d.autopilotId
+        ? `<input type="checkbox" aria-label="Select ${htmlAttr(r.name)}" ${DEVICE_SEL.has(r.id) ? 'checked' : ''} onchange="toggleDeviceSel('${jsArg(r.id)}', this.checked)" />`
+        : '<input type="checkbox" disabled title="Not an Autopilot device" aria-label="Not an Autopilot device" />'}</td>
       <td><div class="dv-name">${esc(r.name)}</div><div class="dv-sub">${esc(r.serial)}</div></td>
-      <td>${r.tag ? `<span class="tr-pill tr-pill-accent">${esc(r.tag)}</span>` : '<span class="gp-muted">—</span>'}</td>
+      <td>${r.tag ? `<span class="tr-pill tr-pill-accent">${esc(r.tag)}</span>` : '<span class="gp-muted">—</span>'}${r.d._tagPending ? ` <span class="tr-pill tr-pill-amber" title="${pendingTip}">pending sync</span>` : ''}</td>
       <td><div>${esc(r.model) || '<span class="gp-muted">—</span>'}</div><div class="dv-sub">${esc(r.mfg)}</div></td>
       <td>${esc(r.os) || '<span class="gp-muted">—</span>'}</td>
       <td>${esc(r.upn) || '<span class="gp-muted">—</span>'}</td>
@@ -3045,9 +3078,12 @@ function renderDevices(mount) {
               ${filterChip(`onclick="setDevicesField('stale', !DEVICES.stale)" aria-pressed="${D.stale}"`, 'Stale (30+ days)', D.stale)}
             </div>
           </div>
+          ${job ? `<div class="gt-jobbar">Tag job in progress (${job.items.filter(i => i.status === 'verified').length}/${job.items.length}) · <button type="button" class="ov-link" onclick="openTagDialog()">Open</button></div>` : ''}
+          ${DEVICE_SEL.size ? `<div class="gt-selbar"><span>${fmt(DEVICE_SEL.size)} selected</span> · <button type="button" class="ov-link" onclick="clearDeviceSel()">Clear</button> · <button type="button" class="ov-link" onclick="openTagDialog()"${job ? ' disabled title="Finish the current tag job first"' : ''}>Set group tag…</button></div>` : ''}
+          ${pageAll && matchUnselected ? `<div class="gt-allbar">All ${fmt(pickable.length)} Autopilot devices on this page are selected. <button type="button" class="ov-link" onclick="selectAllMatching()">Select all ${fmt(matchPickable.length)} matching the current filter</button></div>` : ''}
           <div class="dv-wrap"><table class="dv-tbl">
-            <thead><tr>${th('name', 'Name')}${th('tag', 'Group tag')}${th('model', 'Model')}${th('os', 'OS')}${th('upn', 'Primary user')}${th('comp', 'Compliance')}${th('lastSync', 'Last sync')}${th('source', 'Source')}</tr></thead>
-            <tbody>${body || `<tr><td colspan="8" class="empty-note">${rows.length ? 'No devices match the filters.' : 'No devices found.'}</td></tr>`}</tbody>
+            <thead><tr><th class="dv-cb"><input type="checkbox" id="dv-selpage" aria-label="Select this page" ${pageAll ? 'checked' : ''} ${pickable.length ? '' : 'disabled'} onchange="selectDevicePage(this.checked)" /></th>${th('name', 'Name')}${th('tag', 'Group tag')}${th('model', 'Model')}${th('os', 'OS')}${th('upn', 'Primary user')}${th('comp', 'Compliance')}${th('lastSync', 'Last sync')}${th('source', 'Source')}</tr></thead>
+            <tbody>${body || `<tr><td colspan="9" class="empty-note">${rows.length ? 'No devices match the filters.' : 'No devices found.'}</td></tr>`}</tbody>
           </table></div>
           <div class="dv-pager">
             <span>${list.length ? `${fmt(start + 1)}–${fmt(start + shown.length)} of ${fmt(list.length)}` : '0 of 0'}</span>
@@ -3058,6 +3094,8 @@ function renderDevices(mount) {
         <div id="dv-detail">${deviceDetailHtml()}</div>
       </div>
     </div>`;
+  const pageBox = el('dv-selpage');
+  if (pageBox) pageBox.indeterminate = pageSome && !pageAll;
   const sel = DATA.managedDevices.find(d => d.id === DEVICES.selected);
   if (sel) loadDeviceGroups(sel);
 }
@@ -3091,6 +3129,7 @@ async function loadDeviceGroups(d) {
   if (gen !== COUNTS_GEN || signal.aborted) return;
   DEVICE_GROUPS_CACHE[d.id] = next;
   if (currentTab === 'devices' && DEVICES.selected === d.id && el('dv-detail')) el('dv-detail').innerHTML = deviceDetailHtml();
+  if (el('gt-dialog')?.style.display === 'flex') renderTagDialogBody();   // tag preview waits on this for its profile result
 }
 // Autopilot profile(s) this device would get, from its groups + All devices (exclusions and filters respected)
 function deviceProfiles(d, groupIds) {
@@ -3156,6 +3195,288 @@ function deviceDetailHtml() {
       <div class="tr-head"><span class="tr-sq" style="background:var(--accent);"></span><span class="tr-title">Autopilot profile</span></div>
       <div class="gp-body">${profileHtml} <span class="dv-sub">(informational)</span></div>
     </section>`;
+}
+
+// ── GroupTagger: the change runs in Graph Explorer with the user's own access; AutopilotLens only reads ──
+const DEVICE_SEL = new Set();   // selected device ids (Devices list), kept across pages and filters
+function toggleDeviceSel(id, on) { if (on) DEVICE_SEL.add(id); else DEVICE_SEL.delete(id); rerenderDevices(); }
+function clearDeviceSel() { DEVICE_SEL.clear(); rerenderDevices(); }
+function selectDevicePage(on) {
+  const list = filteredDevices(), start = (DEVICES.page - 1) * 100;
+  list.slice(start, start + 100).filter(r => r.d.autopilotId).forEach(r => on ? DEVICE_SEL.add(r.id) : DEVICE_SEL.delete(r.id));
+  rerenderDevices();
+}
+function selectAllMatching() { filteredDevices().filter(r => r.d.autopilotId).forEach(r => DEVICE_SEL.add(r.id)); rerenderDevices(); }
+
+const GE_BASE = 'https://developer.microsoft.com/graph/graph-explorer';
+const GE_MAX_URL = 7500, GE_MAX_BATCH = 20;
+const TAG_JOB_KEY = 'apl-tag-job';   // sessionStorage only: survives a reload, gone when the tab closes
+let TAG_UI = { tag: '' };
+let TAG_VERIFYING = false;
+
+// Graph Explorer's share-link parser (App.tsx) reads requestBody with URLSearchParams + plain atob(), so the body must be
+// ASCII (non-ASCII escaped as \uXXXX inside the JSON) and the base64 URL-encoded ('+' would otherwise turn into a space).
+const jsonAscii = obj => JSON.stringify(obj).replace(/[\u007f-\uffff]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+function tagBatchBody(items, tag) {
+  return { requests: items.map((it, i) => ({ id: String(i + 1), method: 'POST',
+    url: `/deviceManagement/windowsAutopilotDeviceIdentities/${encodeURIComponent(it.autopilotId)}/updateDeviceProperties`,
+    headers: { 'Content-Type': 'application/json' }, body: { groupTag: tag } })) };
+}
+function geBatchLink(items, tag) {
+  return `${GE_BASE}?request=${encodeURIComponent('$batch')}&method=POST&version=v1.0&GraphUrl=https://graph.microsoft.com`
+    + `&requestBody=${encodeURIComponent(btoa(jsonAscii(tagBatchBody(items, tag))))}`;
+}
+// Up to 20 per batch; smaller when the link would pass GE_MAX_URL characters
+function planTagBatches(items, tag) {
+  const batches = [];
+  for (let i = 0; i < items.length;) {
+    let size = Math.min(GE_MAX_BATCH, items.length - i), url = geBatchLink(items.slice(i, i + size), tag);
+    while (url.length > GE_MAX_URL && size > 1) { size--; url = geBatchLink(items.slice(i, i + size), tag); }
+    if (url.length > GE_MAX_URL) return null;   // even one device doesn't fit: the tag is too long
+    batches.push({ n: batches.length + 1, size, url, status: 'pending' });
+    items.slice(i, i + size).forEach(it => { it.batch = batches.length; });
+    i += size;
+  }
+  return batches;
+}
+
+function loadTagJob() { try { return JSON.parse(sessionStorage.getItem(TAG_JOB_KEY) || 'null'); } catch { return null; } }
+function saveTagJob(job) { try { sessionStorage.setItem(TAG_JOB_KEY, JSON.stringify(job)); } catch { /* the job just won't survive a reload */ } }
+function clearTagJob() { try { sessionStorage.removeItem(TAG_JOB_KEY); } catch { /* nothing stored */ } }
+const tagJobScope = () => demoMode ? 'demo' : (currentAccount?.tenantId || '');
+// The stored job, only when it belongs to this tenant (or to the demo)
+function activeTagJob() { const j = loadTagJob(); return j && j.scope === tagJobScope() ? j : null; }
+
+// What the selection would do with this tag
+function tagDraft(tag) {
+  const devs = [...DEVICE_SEL].map(id => DATA.managedDevices.find(d => d.id === id));
+  const notAp = devs.filter(d => !d?.autopilotId).length;
+  const ap = devs.filter(d => d?.autopilotId);
+  const same = ap.filter(d => (d.groupTag || '') === tag);
+  const change = ap.filter(d => (d.groupTag || '') !== tag)
+    .map(d => ({ autopilotId: d.autopilotId, deviceId: d.id, serial: d.serialNumber || '', deviceName: d.deviceName || '', oldTag: d.groupTag || '', batch: 0, status: 'pending', verifiedAt: '' }));
+  return { change, same: same.length, notAp };
+}
+// Groups a device would be in with a given tag: dynamic rule matches + known static memberships
+function tagGroupIds(d, tag) {
+  const props = buildSimProps(simFromDevice({ ...d, groupTag: tag }));
+  const ids = new Set(DATA.groups.filter(g => isDyn(g) && g.membershipRule && evalRule(g.membershipRule, props)).map(g => g.id));
+  const known = deviceGroupsState(d);
+  if (known.status === 'ok') known.groups.filter(g => !isDyn(g)).forEach(g => ids.add(g.id));
+  return ids;
+}
+function tagPreviewHtml(items, newTag) {
+  const byOld = new Map();
+  items.forEach(it => { const l = byOld.get(it.oldTag) || []; l.push(it); byOld.set(it.oldTag, l); });
+  const gName = id => DATA.groups.find(g => g.id === id)?.displayName || id;
+  const profLabel = ps => !ps.length ? '<span class="tr-pill tr-pill-red">No profile</span>'
+    : ps.length > 1 ? `<span class="tr-pill tr-pill-amber" title="${htmlAttr(ps.map(p => p.displayName).join(', '))}">Multiple profiles</span>`
+    : `<span class="tr-pill tr-pill-gray">${esc(ps[0].displayName)}</span>`;
+  const counted = (map, n) => [...map.entries()].sort((a, b) => ciCmp(gName(a[0]), gName(b[0])))
+    .map(([id, c]) => `${esc(gName(id))}${c < n ? ` <span class="gp-muted">(${c} of ${n})</span>` : ''}`).join(', ');
+  const newL = newTag.toLowerCase();
+  const collisions = DATA.groups.filter(g => isDyn(g) && g.membershipRule) .filter(g => {
+    const tags = orderContainsTags(g.membershipRule);
+    return tags.length && !tags.some(t => t.toLowerCase() === newL) && evalRule(g.membershipRule, buildSimProps({ ...SIM_DEFAULTS, groupTag: newTag }));
+  });
+  const blocks = [...byOld.entries()].sort((a, b) => ciCmp(a[0], b[0])).map(([oldTag, list]) => {
+    const transitions = new Map(), joined = new Map(), left = new Map();
+    const devOf = it => DATA.managedDevices.find(x => x.id === it.deviceId) || { deviceName: it.deviceName, serialNumber: it.serial, groupTag: oldTag };
+    // One representative live device per group: its actual memberOf (static groups) backs the profile result
+    const rep = demoMode ? null : list.map(devOf).find(d => d.azureADDeviceId);
+    if (rep) loadDeviceGroups(rep);
+    const repState = rep ? (DEVICE_GROUPS_CACHE[rep.id]?.status || 'loading') : 'none';
+    const rulesOnly = repState !== 'ok' && repState !== 'loading';   // autopilot-only, error or demo
+    const label = ps => rulesOnly && !ps.length ? '<span class="tr-pill tr-pill-amber">No profile</span>' : profLabel(ps);
+    list.forEach(it => {
+      const d = devOf(it);
+      const before = tagGroupIds(d, oldTag), after = tagGroupIds(d, newTag);
+      const key = label(deviceProfiles({ ...d, groupTag: oldTag }, before)) + ' → ' + label(deviceProfiles({ ...d, groupTag: newTag }, after));
+      transitions.set(key, (transitions.get(key) || 0) + 1);
+      after.forEach(id => { if (!before.has(id)) joined.set(id, (joined.get(id) || 0) + 1); });
+      before.forEach(id => { if (!after.has(id)) left.set(id, (left.get(id) || 0) + 1); });
+    });
+    const n = list.length;
+    return `<div class="gt-block">
+      <div class="gt-btitle">${oldTag ? `<span class="tr-pill tr-pill-accent">${esc(oldTag)}</span>` : '<span class="gp-muted">No tag</span>'} → <span class="tr-pill tr-pill-accent">${esc(newTag)}</span> <span class="gp-muted">${n} ${n === 1 ? 'device' : 'devices'}</span></div>
+      <dl class="dv-props">
+        <dt>Autopilot profile</dt><dd>${repState === 'loading' ? '<span class="gp-muted">Checking…</span>'
+          : [...transitions.entries()].map(([k, c]) => `<div>${k}${c < n ? ` <span class="gp-muted">(${c})</span>` : ''}</div>`).join('')
+            + (rulesOnly ? '<div class="gp-muted">(based on rules; static group memberships not included)</div>' : '')}</dd>
+        <dt>Joins</dt><dd>${joined.size ? counted(joined, n) : '<span class="gp-muted">—</span>'}</dd>
+        <dt>Leaves</dt><dd>${left.size ? counted(left, n) : '<span class="gp-muted">—</span>'}</dd>
+      </dl></div>`;
+  }).join('');
+  return blocks + collisions.map(g => `<div class="gp-warn">⚠ Also matches ${esc(g.displayName)} (rule uses -contains)</div>`).join('');
+}
+
+function batchStatusHtml(job, b) {
+  const items = job.items.filter(it => it.batch === b.n);
+  const ok = items.filter(it => it.status === 'verified').length, checked = items.filter(it => it.status !== 'pending').length;
+  if (checked) {
+    if (ok === items.length) return `<span class="tr-pill tr-pill-green">✓ ${ok} verified</span>`;
+    const parts = [['not changed', 'not changed', 'not changed'], ['not found', 'not found', 'not found'], ['error', 'error', 'errors']]
+      .map(([st, one, many]) => { const c = items.filter(it => it.status === st).length; return c ? `${c} ${c === 1 ? one : many}` : ''; }).filter(Boolean);
+    return `<span class="tr-pill tr-pill-amber">${ok} of ${items.length}${parts.length ? ' · ' + parts.join(' · ') : ''}</span>`;
+  }
+  if (b.status === 'opened') return `<span class="gp-muted">${job.scope === 'demo' ? 'Simulated run · press Verify' : 'Opened · press Run query in Graph Explorer'}</span>`;
+  return job.scope === 'demo'
+    ? `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Demo: simulate run</button>`
+    : `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Open in Graph Explorer ↗</button>`;
+}
+
+function openTagDialog() {
+  let box = el('gt-dialog');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'gt-dialog';
+    box.className = 'modal-bg';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-labelledby', 'gt-title');
+    box.addEventListener('keydown', e => { if (e.key === 'Escape') closeTagDialog(); });
+    box.addEventListener('click', e => { if (e.target === box) closeTagDialog(); });
+    document.body.appendChild(box);
+  }
+  const job = activeTagJob();
+  if (!job) TAG_UI.tag = TAG_UI.tag || '';
+  const tags = [...new Set(DATA.managedDevices.map(d => d.groupTag).filter(Boolean))].sort(ciCmp);
+  const exportTip = 'Contains tenant configuration data. Generated locally, nothing is uploaded.';
+  box.innerHTML = `<div class="modal-box gt-box">
+      <div class="modal-head"><div class="panel-title"><div class="eyebrow">Devices</div><div class="title" id="gt-title">Set group tag</div></div>
+        <button type="button" class="btn btn-ghost" onclick="closeTagDialog()">Close</button></div>
+      <div class="gt-scroll">
+        <div class="gt-sec"><label class="gp-lbl" for="gt-tag">New group tag</label>
+          <input class="inp" id="gt-tag" list="gt-tags" autocomplete="off" value="${htmlAttr(job ? job.newTag : TAG_UI.tag)}" ${job ? 'disabled' : ''} oninput="TAG_UI.tag = this.value; renderTagDialogBody()" />
+          <datalist id="gt-tags">${tags.map(t => `<option value="${htmlAttr(t)}"></option>`).join('')}</datalist></div>
+        <div id="gt-body"></div>
+      </div>
+      <div class="gt-foot">
+        <button type="button" class="btn btn-ghost" onclick="downloadTagLog()" title="${exportTip}" ${job ? '' : 'disabled'}>Download log</button>
+        <button type="button" class="btn btn-ghost" id="gt-verify" onclick="verifyTagJob()" ${job ? '' : 'disabled'}>Verify</button>
+        <button type="button" class="btn btn-accent" onclick="finishTagJob()">Done</button>
+      </div>
+    </div>`;
+  box.style.display = 'flex';
+  renderTagDialogBody();
+  (job ? box.querySelector('.gt-foot .btn-accent') : el('gt-tag'))?.focus();
+}
+function closeTagDialog() {
+  const box = el('gt-dialog');
+  if (box) box.style.display = 'none';
+  if (currentTab === 'devices') rerenderDevices();
+}
+function renderTagDialogBody() {
+  const mount = el('gt-body');
+  if (!mount) return;
+  const job = activeTagJob();
+  // The link body escapes non-ASCII (see jsonAscii), so Graph Explorer's editor shows \uXXXX; Graph still gets the right characters
+  const escNote = t => /[^\x00-\x7f]/.test(t) ? '<div class="gp-muted">Graph Explorer shows special characters as \\uXXXX codes (e.g. Æ = \\u00c6). The tag is set correctly.</div>' : '';
+  const note = `<div class="gt-note">Graph Explorer opens with the request filled in. Sign in with your own account and press Run query. You need permission to change Autopilot devices. Without it, Graph returns 403 and nothing changes. Then come back and press Verify.
+      <div>Make sure you're signed in to Graph Explorer (top right) before Run query. Otherwise it runs against a sample tenant and nothing changes in yours. The first time, Graph Explorer may ask you to consent to the permission.</div>
+      <div class="gp-muted">The link contains Autopilot device IDs and the tag (no names, no tokens) and opens on Microsoft's site.</div></div>`;
+  if (job) {
+    mount.innerHTML = `<div class="gt-sec gt-valid">${job.items.length} ${job.items.length === 1 ? 'device' : 'devices'} → <b>${esc(job.newTag)}</b> · started ${esc(localStamp(job.createdAt))}</div>
+      <div class="gt-sec">${tagPreviewHtml(job.items, job.newTag)}</div>
+      <div class="gt-sec">${job.batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml(job, b)}</div>`).join('')}${escNote(job.newTag)}</div>
+      ${note}`;
+    return;
+  }
+  const tag = (TAG_UI.tag || '').trim();
+  if (!tag) { mount.innerHTML = `<div class="gt-sec gp-muted">Enter a tag. Removing a tag isn't supported here.</div>${note}`; return; }
+  const draft = tagDraft(tag);
+  const batches = draft.change.length ? planTagBatches(draft.change, tag) : [];
+  const valid = `<div class="gt-sec gt-valid">${draft.change.length} will change · ${draft.same} already have ${esc(tag)} (skipped) · ${draft.notAp} not Autopilot (skipped)</div>`;
+  if (!batches) { mount.innerHTML = valid + '<div class="gt-sec"><div class="gp-error">The tag is too long for a Graph Explorer link.</div></div>' + note; return; }
+  mount.innerHTML = valid
+    + (draft.change.length ? `<div class="gt-sec">${tagPreviewHtml(draft.change, tag)}</div>
+      <div class="gt-sec">${batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml({ items: draft.change, scope: tagJobScope() }, b)}</div>`).join('')}${escNote(tag)}</div>` : '')
+    + note;
+}
+// First open creates the job (fixed selection + tag); later opens reuse it
+function openTagBatch(n) {
+  let job = activeTagJob();
+  if (!job) {
+    const tag = (TAG_UI.tag || '').trim();
+    if (!tag) return;
+    const items = tagDraft(tag).change;
+    const batches = planTagBatches(items, tag);
+    if (!items.length || !batches) return;
+    job = { id: 'job-' + Date.now().toString(36), createdAt: new Date().toISOString(), scope: tagJobScope(), newTag: tag, items, batches };
+    track('grouptagger-links', `${items.length} devices, ${batches.length} batches`);
+  }
+  const b = job.batches.find(x => x.n === n);
+  if (!b) return;
+  if (job.scope !== 'demo') window.open(b.url, '_blank', 'noopener');
+  b.status = 'opened';
+  saveTagJob(job);
+  const input = el('gt-tag');
+  if (input) input.disabled = true;
+  el('gt-verify')?.removeAttribute('disabled');
+  document.querySelector('#gt-dialog .gt-foot .btn-ghost')?.removeAttribute('disabled');
+  renderTagDialogBody();
+}
+
+// Read-only check: GET each identity's groupTag ($batch of GETs) and compare with the new tag (case-sensitive)
+async function verifyTagJob() {
+  const job = activeTagJob();
+  if (!job || TAG_VERIFYING) return;
+  const todo = job.items.filter(it => it.status !== 'verified');
+  const now = new Date().toISOString();
+  const apply = (it, status) => {
+    it.status = status;
+    if (status !== 'verified') return;
+    it.verifiedAt = now;
+    const d = DATA.managedDevices.find(x => x.id === it.deviceId);
+    if (d) { d.groupTag = job.newTag; d._tagPending = true; }
+  };
+  if (job.scope === 'demo') {
+    // Demo: no network. Opened batches take effect, except DEMO-KIOSK-001, which shows the "not changed" state
+    todo.forEach(it => apply(it, job.batches.find(b => b.n === it.batch)?.status === 'opened' && it.autopilotId !== 'apid-002' ? 'verified' : 'not changed'));
+  } else {
+    TAG_VERIFYING = true;
+    const btn = el('gt-verify');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+    const gen = COUNTS_GEN, signal = COUNTS_ABORT.signal;
+    try {
+      const results = await graphBatch(todo.map((it, i) => ({ id: String(i), url: `/deviceManagement/windowsAutopilotDeviceIdentities/${encodeURIComponent(it.autopilotId)}?$select=id,groupTag` })), () => {}, signal);
+      if (gen !== COUNTS_GEN || signal.aborted) return;
+      todo.forEach((it, i) => {
+        const r = results.get(String(i));
+        apply(it, !r ? 'error' : r.status === 200 ? (r.body?.groupTag === job.newTag ? 'verified' : 'not changed') : r.status === 404 ? 'not found' : 'error');
+      });
+    } catch (e) {
+      if (!signal.aborted) showToast(`Verify failed: ${e.message}`, 'error');
+      return;
+    } finally {
+      TAG_VERIFYING = false;
+      const b2 = el('gt-verify');
+      if (b2) { b2.disabled = false; b2.textContent = 'Verify'; }
+    }
+  }
+  saveTagJob(job);
+  const count = st => job.items.filter(it => it.status === st).length;
+  track('grouptagger-verify', `${count('verified')} verified, ${count('not changed')} not changed, ${count('not found')} not found, ${count('error')} errors`);
+  renderTagDialogBody();
+  if (currentTab === 'devices') rerenderDevices();
+}
+function downloadTagLog() {
+  const job = activeTagJob();
+  if (!job) return;
+  const head = ['serial', 'deviceName', 'autopilotId', 'oldTag', 'newTag', 'batch', 'status', 'verifiedAt'];
+  const lines = job.items.map(it => [it.serial, it.deviceName, it.autopilotId, it.oldTag, job.newTag, it.batch, it.status, it.verifiedAt].map(csvField).join(','));
+  const url = URL.createObjectURL(new Blob(['﻿' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `autopilotlens-grouptag-log-${fileStamp()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+function finishTagJob() {
+  if (activeTagJob()) { clearTagJob(); DEVICE_SEL.clear(); TAG_UI.tag = ''; }
+  closeTagDialog();
 }
 
 function simulateDevice(id) {   // prefill like selectDevice, then switch to What applies?
