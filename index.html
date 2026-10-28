@@ -858,7 +858,7 @@ let SIM = { deviceName:'', enrollmentProfileName:'', groupTag:'', serial:'', mfg
 let simView = 'trace';   // 'trace' | 'graph'
 let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim()
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.6.0';
 // Groups tab: list filters + selection; members are fetched lazily and cached per group
 let GROUPS = { search:'', kind:'dynamic', type:'', usage:'', state:'', selected:'', memberSearch:'', showAll:false, sort:'name' };
 const MEMBERS_CACHE = {};   // groupId -> { status:'loading'|'ok'|'error', rows, error, forbidden }
