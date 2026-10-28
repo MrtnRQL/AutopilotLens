@@ -486,7 +486,8 @@
     .gt-block { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
     .gt-block + .gt-block { border-top: 1px solid var(--hairline); padding-top: 8px; }
     .gt-btitle { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-    .gt-batch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+    .gt-batch { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; min-height: 30px; }
+    .gt-bstatus { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
     .gt-note { padding: 12px 18px; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
     .gt-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
     .gp-dhead { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
@@ -3214,9 +3215,11 @@ const TAG_JOB_KEY = 'apl-tag-job';   // sessionStorage only: survives a reload, 
 let TAG_UI = { tag: '' };
 let TAG_VERIFYING = false;
 
-// Graph Explorer's share-link parser (App.tsx) reads requestBody with URLSearchParams + plain atob(), so the body must be
-// ASCII (non-ASCII escaped as \uXXXX inside the JSON) and the base64 URL-encoded ('+' would otherwise turn into a space).
+// Graph Explorer share links carry requestBody as base64 of a JSON *string literal* holding the body text (what its own
+// Share produces). The body text is ASCII (non-ASCII escaped as \uXXXX) so atob() gets it back exactly.
 const jsonAscii = obj => JSON.stringify(obj).replace(/[\u007f-\uffff]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+// '+' and '/' are percent-encoded, nothing else: a raw '+' would become a space in URLSearchParams
+const geRequestBody = bodyText => btoa(JSON.stringify(bodyText)).replace(/[+/]/g, c => encodeURIComponent(c));
 function tagBatchBody(items, tag) {
   return { requests: items.map((it, i) => ({ id: String(i + 1), method: 'POST',
     url: `/deviceManagement/windowsAutopilotDeviceIdentities/${encodeURIComponent(it.autopilotId)}/updateDeviceProperties`,
@@ -3224,7 +3227,7 @@ function tagBatchBody(items, tag) {
 }
 function geBatchLink(items, tag) {
   return `${GE_BASE}?request=${encodeURIComponent('$batch')}&method=POST&version=v1.0&GraphUrl=https://graph.microsoft.com`
-    + `&requestBody=${encodeURIComponent(btoa(jsonAscii(tagBatchBody(items, tag))))}`;
+    + `&requestBody=${geRequestBody(jsonAscii(tagBatchBody(items, tag)))}`;
 }
 // Up to 20 per batch; smaller when the link would pass GE_MAX_URL characters
 function planTagBatches(items, tag) {
@@ -3254,7 +3257,7 @@ function tagDraft(tag) {
   const ap = devs.filter(d => d?.autopilotId);
   const same = ap.filter(d => (d.groupTag || '') === tag);
   const change = ap.filter(d => (d.groupTag || '') !== tag)
-    .map(d => ({ autopilotId: d.autopilotId, deviceId: d.id, serial: d.serialNumber || '', deviceName: d.deviceName || '', oldTag: d.groupTag || '', batch: 0, status: 'pending', verifiedAt: '' }));
+    .map(d => ({ autopilotId: d.autopilotId, deviceId: d.id, serial: d.serialNumber || '', deviceName: d.deviceName || '', oldTag: d.groupTag || '', batch: 0, status: 'pending', verifiedAt: '', attempts: 0, lastOpenedAt: '' }));
   return { change, same: same.length, notAp };
 }
 // Groups a device would be in with a given tag: dynamic rule matches + known static memberships
@@ -3311,19 +3314,30 @@ function tagPreviewHtml(items, newTag) {
   return blocks + collisions.map(g => `<div class="gp-warn">⚠ Also matches ${esc(g.displayName)} (rule uses -contains)</div>`).join('');
 }
 
+const tagRetryable = it => it.status === 'not changed' || it.status === 'error';   // 'not found' can't succeed
 function batchStatusHtml(job, b) {
   const items = job.items.filter(it => it.batch === b.n);
+  const demo = job.scope === 'demo';
   const ok = items.filter(it => it.status === 'verified').length, checked = items.filter(it => it.status !== 'pending').length;
-  if (checked) {
-    if (ok === items.length) return `<span class="tr-pill tr-pill-green">✓ ${ok} verified</span>`;
-    const parts = [['not changed', 'not changed', 'not changed'], ['not found', 'not found', 'not found'], ['error', 'error', 'errors']]
-      .map(([st, one, many]) => { const c = items.filter(it => it.status === st).length; return c ? `${c} ${c === 1 ? one : many}` : ''; }).filter(Boolean);
-    return `<span class="tr-pill tr-pill-amber">${ok} of ${items.length}${parts.length ? ' · ' + parts.join(' · ') : ''}</span>`;
-  }
-  if (b.status === 'opened') return `<span class="gp-muted">${job.scope === 'demo' ? 'Simulated run · press Verify' : 'Opened · press Run query in Graph Explorer'}</span>`;
-  return job.scope === 'demo'
+  if (b.status !== 'opened' && !checked) return demo
     ? `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Demo: simulate run</button>`
     : `<button type="button" class="btn btn-ghost" onclick="openTagBatch(${b.n})">Open in Graph Explorer ↗</button>`;
+  if (ok === items.length) return `<span class="tr-pill tr-pill-green">✓ ${ok} verified</span>`;
+  let status;
+  if (checked) {
+    const parts = [['not changed', 'not changed', 'not changed'], ['not found', 'not found', 'not found'], ['error', 'error', 'errors'], ['retry opened', 'retry opened', 'retry opened']]
+      .map(([st, one, many]) => { const c = items.filter(it => it.status === st).length; return c ? `${c} ${c === 1 ? one : many}` : ''; }).filter(Boolean);
+    status = `<span class="tr-pill tr-pill-amber">${ok} of ${items.length}${parts.length ? ' · ' + parts.join(' · ') : ''}</span>`;
+  } else {
+    status = `<span class="gp-muted">${demo ? 'Simulated run · press Verify' : 'Opened · press Run query in Graph Explorer'}</span>`;
+  }
+  const retry = items.filter(tagRetryable), notFound = items.filter(it => it.status === 'not found');
+  const nc = retry.filter(it => it.status === 'not changed').length, errs = retry.length - nc;
+  const retryTip = [`Includes ${nc} not changed${errs ? ` and ${errs} ${errs === 1 ? 'error' : 'errors'}` : ''}.`,
+    notFound.length ? `Not found (excluded): ${notFound.map(it => it.serial || it.autopilotId).join(', ')}` : ''].filter(Boolean).join(' ');
+  return `<span class="gt-bstatus">${status}
+    <button type="button" class="btn btn-ghost" onclick="reopenTagBatch(${b.n})">${demo ? 'Demo: run again' : 'Open again ↗'}</button>
+    ${retry.length ? `<button type="button" class="btn btn-ghost" title="${htmlAttr(retryTip)}" onclick="retryTagBatch(${b.n})">${demo ? 'Demo: retry' : 'Retry'} ${retry.length} not changed${demo ? '' : ' ↗'}</button>` : ''}</span>`;
 }
 
 function openTagDialog() {
@@ -3379,7 +3393,8 @@ function renderTagDialogBody() {
   if (job) {
     mount.innerHTML = `<div class="gt-sec gt-valid">${job.items.length} ${job.items.length === 1 ? 'device' : 'devices'} → <b>${esc(job.newTag)}</b> · started ${esc(localStamp(job.createdAt))}</div>
       <div class="gt-sec">${tagPreviewHtml(job.items, job.newTag)}</div>
-      <div class="gt-sec">${job.batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml(job, b)}</div>`).join('')}${escNote(job.newTag)}</div>
+      <div class="gt-sec">${job.batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml(job, b)}</div>`).join('')}${escNote(job.newTag)}
+        <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div></div>
       ${note}`;
     return;
   }
@@ -3391,7 +3406,8 @@ function renderTagDialogBody() {
   if (!batches) { mount.innerHTML = valid + '<div class="gt-sec"><div class="gp-error">The tag is too long for a Graph Explorer link.</div></div>' + note; return; }
   mount.innerHTML = valid
     + (draft.change.length ? `<div class="gt-sec">${tagPreviewHtml(draft.change, tag)}</div>
-      <div class="gt-sec">${batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml({ items: draft.change, scope: tagJobScope() }, b)}</div>`).join('')}${escNote(tag)}</div>` : '')
+      <div class="gt-sec">${batches.map(b => `<div class="gt-batch"><span>Batch ${b.n} · ${b.size} ${b.size === 1 ? 'device' : 'devices'}</span>${batchStatusHtml({ items: draft.change, scope: tagJobScope() }, b)}</div>`).join('')}${escNote(tag)}
+        <div class="gp-muted">Re-running is safe: setting the same tag again doesn't change anything.</div></div>` : '')
     + note;
 }
 // First open creates the job (fixed selection + tag); later opens reuse it
@@ -3408,14 +3424,38 @@ function openTagBatch(n) {
   }
   const b = job.batches.find(x => x.n === n);
   if (!b) return;
-  if (job.scope !== 'demo') window.open(b.url, '_blank', 'noopener');
-  b.status = 'opened';
-  saveTagJob(job);
+  launchTagLink(job, b, b.url, job.items.filter(it => it.batch === n));
   const input = el('gt-tag');
   if (input) input.disabled = true;
   el('gt-verify')?.removeAttribute('disabled');
   document.querySelector('#gt-dialog .gt-foot .btn-ghost')?.removeAttribute('disabled');
+}
+// Opens a link (not in demo), counts the attempt on the items it contains and remembers it for "Open again"
+function launchTagLink(job, b, url, items) {
+  if (job.scope !== 'demo') window.open(url, '_blank', 'noopener');
+  const now = new Date().toISOString();
+  items.forEach(it => { it.attempts = (it.attempts || 0) + 1; it.lastOpenedAt = now; });
+  b.status = 'opened';
+  b.lastUrl = url;
+  b.lastIds = items.map(it => it.autopilotId);
+  saveTagJob(job);
   renderTagDialogBody();
+}
+// Same link as last time; the status stays as it is
+function reopenTagBatch(n) {
+  const job = activeTagJob(), b = job?.batches.find(x => x.n === n);
+  if (!b) return;
+  const ids = new Set(b.lastIds || job.items.filter(it => it.batch === n).map(it => it.autopilotId));
+  launchTagLink(job, b, b.lastUrl || b.url, job.items.filter(it => ids.has(it.autopilotId)));
+}
+// New link with only the not changed / error items of this batch (same encoder, same tag)
+function retryTagBatch(n) {
+  const job = activeTagJob(), b = job?.batches.find(x => x.n === n);
+  if (!b) return;
+  const items = job.items.filter(it => it.batch === n && tagRetryable(it));
+  if (!items.length) return;
+  items.forEach(it => { it.status = 'retry opened'; });
+  launchTagLink(job, b, geBatchLink(items, job.newTag), items);
 }
 
 // Read-only check: GET each identity's groupTag ($batch of GETs) and compare with the new tag (case-sensitive)
@@ -3432,8 +3472,8 @@ async function verifyTagJob() {
     if (d) { d.groupTag = job.newTag; d._tagPending = true; }
   };
   if (job.scope === 'demo') {
-    // Demo: no network. Opened batches take effect, except DEMO-KIOSK-001, which shows the "not changed" state
-    todo.forEach(it => apply(it, job.batches.find(b => b.n === it.batch)?.status === 'opened' && it.autopilotId !== 'apid-002' ? 'verified' : 'not changed'));
+    // Demo: no network. Opened batches take effect, except DEMO-KIOSK-001 on its first attempt ("not changed"; a retry fixes it)
+    todo.forEach(it => apply(it, job.batches.find(b => b.n === it.batch)?.status === 'opened' && (it.autopilotId !== 'apid-002' || it.attempts > 1) ? 'verified' : 'not changed'));
   } else {
     TAG_VERIFYING = true;
     const btn = el('gt-verify');
@@ -3464,9 +3504,9 @@ async function verifyTagJob() {
 function downloadTagLog() {
   const job = activeTagJob();
   if (!job) return;
-  const head = ['serial', 'deviceName', 'autopilotId', 'oldTag', 'newTag', 'batch', 'status', 'verifiedAt'];
-  const lines = job.items.map(it => [it.serial, it.deviceName, it.autopilotId, it.oldTag, job.newTag, it.batch, it.status, it.verifiedAt].map(csvField).join(','));
-  const url = URL.createObjectURL(new Blob(['﻿' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+  const head = ['serial', 'deviceName', 'autopilotId', 'oldTag', 'newTag', 'batch', 'status', 'verifiedAt', 'attempts'];
+  const lines = job.items.map(it => [it.serial, it.deviceName, it.autopilotId, it.oldTag, job.newTag, it.batch, it.status, it.verifiedAt, it.attempts || 0].map(csvField).join(','));
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = `autopilotlens-grouptag-log-${fileStamp()}.csv`;
@@ -3513,7 +3553,7 @@ function devicesCsv(list = filteredDevices()) {
   const head = ['Name', 'Serial number', 'Group tag', 'Model', 'Manufacturer', 'OS', 'Primary user', 'Compliance', 'Last sync', 'Source', 'Azure AD device ID', 'Enrolled'];
   const lines = list.map(r => [r.name, r.serial, r.tag, r.model, r.mfg, r.os, r.upn, r.comp === 'none' ? '' : (r.compState || 'unknown'), iso(r.lastSync), r.source,
     r.d.azureADDeviceId || '', iso(r.d.enrolledDateTime)].map(csvField).join(','));
-  return '﻿' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n';
+  return '\uFEFF' + [head.map(csvField).join(','), ...lines].join('\r\n') + '\r\n';
 }
 function exportDevicesCsv() {
   const url = URL.createObjectURL(new Blob([devicesCsv()], { type: 'text/csv;charset=utf-8' }));
