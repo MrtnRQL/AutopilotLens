@@ -368,25 +368,7 @@
     .tr-row.gp-pinned { background: var(--wash); }
     .gp-num { text-align: right; font-variant-numeric: tabular-nums; }
     .gp-muted { color: var(--text3); }
-    /* Findings strip (Overview, Groups) */
-    .fd-strip {
-      display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 10px; padding: 8px 14px;
-      border: 0; border-left: 4px solid; border-radius: var(--radius); font: inherit; text-align: left; color: var(--text); cursor: pointer;
-    }
-    .fd-strip-red { border-left-color: var(--red); background: #f4e3e1; }
-    .fd-strip-amber { border-left-color: var(--amber); background: #f3ebdc; }
-    .fd-strip-none { border-left-color: var(--accent); background: var(--accent-wash); }
-    .fd-strip:hover .fd-view { text-decoration: underline; }
-    .fd-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .fd-icon { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 13px; font-weight: 700; color: #fff; }
-    .fd-strip-red .fd-icon { background: var(--red); }
-    .fd-strip-amber .fd-icon { background: var(--amber); }
-    .fd-strip-none .fd-icon { background: var(--accent); }
-    .fd-text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.35; }
-    .fd-stitle { font-size: 13px; font-weight: 600; }
-    .fd-ssub { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fd-view { flex: none; font-size: 12.5px; font-weight: 500; color: var(--accent); }
-    /* Findings drawer */
+    /* Side panel (scope check details) */
     .fd-scrim { position: fixed; inset: 0; z-index: 140; background: rgba(35,34,31,.35); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
     .fd-scrim.fd-open { opacity: 1; visibility: visible; transition: opacity .2s ease; }
     .fd {
@@ -404,30 +386,14 @@
     .fd-sub { margin-top: 2px; font-size: 12px; color: var(--text2); }
     .fd-close { flex: none; width: 32px; height: 32px; font: inherit; font-size: 20px; line-height: 1; color: var(--text2); background: transparent; border: 1px solid var(--border2); border-radius: 6px; cursor: pointer; }
     .fd-close:hover { color: var(--text); background: var(--wash); }
-    .fd-close:focus-visible, .fd-ghead-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .fd-chips { padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+    .fd-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .fd-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
-    .fd-ghead {
-      display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 16px; font: inherit; font-size: 11px; font-weight: 600;
-      letter-spacing: 0.06em; text-transform: uppercase; text-align: left; color: var(--text2); background: var(--bg3); border: 0; border-bottom: 1px solid var(--hairline);
-    }
-    .fd-ghead-btn { cursor: pointer; }
-    .fd-caret { margin-left: auto; }
-    .sb .nav-badge:not([hidden]) { cursor: pointer; }
-    .ov-frow { display: grid; grid-template-columns: 7px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
-    .ov-frow > .tr-sq { margin-top: 6px; }
-    .ov-ftitle { font-size: 13px; font-weight: 500; color: var(--text); }
-    .ov-fdetail { font-size: 12px; color: var(--text2); margin-top: 2px; }
-    .ov-itoggle, .ov-link { font: inherit; font-size: 12px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); white-space: nowrap; }
-    .ov-itoggle { margin-top: 4px; color: var(--text2); }
-    .ov-itoggle:hover, .ov-link:hover { text-decoration: underline; }
-    .ov-itoggle:focus-visible, .ov-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .ov-items { margin-top: 6px; border-left: 2px solid var(--hairline); padding-left: 10px; }
-    .ov-items li { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text2); padding: 3px 0; }
+    .ov-link { font: inherit; font-size: 12px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); white-space: nowrap; }
+    .ov-link:hover { text-decoration: underline; }
+    .ov-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .nav-badge { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; color: var(--bg4); vertical-align: 1px; }
     .nav-badge[hidden] { display: none; }
     .nav-badge-red { background: var(--red); }
-    .nav-badge-amber { background: var(--amber); }
     .err-banner { display: block; }   /* summary on top, list below (base .demo-banner is flex) */
     .err-banner summary { cursor: pointer; }
     .err-banner summary:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
@@ -457,13 +423,13 @@
     details.sim-hidden > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tr-row.sim-hidden-row { grid-template-columns: minmax(0, 1fr) 140px; }
     /* Findings: scope check */
-    .sc-about-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .sc-about-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
     .sc-about h3 { font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
     .sc-about p { font-size: 12.5px; line-height: 1.6; color: var(--text2); }
     .sc-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--text3); }
     details.sc-about > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); }
     details.sc-about[open] > summary { margin-bottom: 14px; }
-    details.sc-about > summary:focus-visible, details.sc-nc > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    details.sc-about > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .sc-run { max-width: 540px; margin: 16px auto 0; text-align: center; }
     .sc-run .meta-row { justify-content: center; margin: 12px 0 16px; }
     .sc-small { margin-top: 10px; font-size: 11px; color: var(--text3); }
@@ -472,8 +438,9 @@
     .sc-last { font-size: 13px; font-weight: 600; color: var(--text); }
     .sc-head .sc-progress { min-height: 0; }
     .sc-head .btn { margin-left: auto; }
-    .sc-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0 6px; }
+    .sc-counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 6px; }
     .sc-n-red { color: var(--red); }
+    .sc-n-amber { color: var(--amber); }
     .sc-n-green { color: var(--green); }
     .sc-n-muted { color: var(--text3); }
     .sc-notes { margin-bottom: 14px; }
@@ -495,17 +462,7 @@
     .sc-note { margin-top: 4px; font-size: 12px; color: var(--text3); }
     .sc-more { padding-top: 6px; font-size: 12px; color: var(--text3); }
     .sc-allok { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--accent-wash); color: var(--accent); font-size: 13px; font-weight: 500; }
-    details.sc-nc { margin-top: 20px; }
-    details.sc-nc > summary { cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); }
-    .sc-nc ul { margin-top: 8px; }
-    .sc-nc li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; color: var(--text2); }
-    .sc-nc li span:first-child { color: var(--text); font-weight: 500; }
     .sc-cell-sub { margin-top: 3px; font-size: 11px; color: var(--text3); }
-    .sc-ovline { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 10px; padding: 8px 14px; font: inherit; font-size: 13px; text-align: left; color: var(--text); background: var(--bg2); border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: var(--radius); cursor: pointer; }
-    .sc-ovline.sc-ok { border-left-color: var(--accent); }
-    .sc-ovline:hover .fd-view { text-decoration: underline; }
-    .sc-ovline:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .sc-ovline .fd-view { margin-left: auto; }
     .sc-psec { padding: 12px 16px; border-bottom: 1px solid var(--hairline); }
     .sc-psec h3 { margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
     .sc-prow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 4px 0; font-size: 12.5px; color: var(--text2); }
@@ -513,10 +470,50 @@
     .sc-pmis:last-child { border-bottom: 0; }
     .sc-pmis a { color: var(--accent); }
     .sc-ok-line { font-size: 12.5px; color: var(--green); }
+    /* Findings: result groups */
+    .fx-counter { display: flex; flex-direction: column; align-items: flex-start; width: 100%; font: inherit; text-align: left; color: inherit; cursor: pointer; }
+    .fx-counter:hover:not(:disabled) { border-color: var(--border2); background: var(--bg3); }
+    .fx-counter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .fx-counter[aria-expanded="true"] { box-shadow: inset 0 -3px 0 var(--accent); }
+    .fx-counter:disabled { cursor: default; opacity: .55; box-shadow: none; }
+    .fx-sec { margin-top: 18px; }
+    .fx-shead { display: flex; align-items: baseline; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text); }
+    .fx-shead + .sc-ghead { margin-top: 10px; }
+    .sc-card.fx-card-review { border-left-color: var(--amber); }
+    .fx-card-review .sc-icon { background: var(--amber); }
+    .fx-check { margin-top: 10px; }
+    .fx-check + .fx-check, .sc-explain + .fx-check, .sc-note + .fx-check { padding-top: 10px; border-top: 1px solid var(--hairline); }
+    .fx-ctitle { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .sc-chead + .fx-ctitle { margin-top: 10px; }
+    .fx-cdetail { margin-top: 3px; font-size: 12.5px; color: var(--text2); }
+    .fx-check .ov-link { margin-top: 4px; }
+    .fx-clist { padding: 2px 16px; margin-bottom: 10px; }
+    .fx-crow { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, 1.4fr); gap: 12px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; color: var(--text2); }
+    .fx-crow:last-child { border-bottom: 0; }
+    .fx-cname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-weight: 500; color: var(--text); }
+    .ov-link.fx-cname { font-size: 12.5px; color: var(--accent); }
+    .fx-ckind { color: var(--text3); }
+    .fx-minor { display: block; margin: 2px 0 10px; font: inherit; font-size: 12px; color: var(--text2); background: none; border: 0; padding: 0; cursor: pointer; }
+    .fx-minor::before { content: '▸ '; }
+    .fx-minor[aria-expanded="true"]::before { content: '▾ '; }
+    .fx-minor:hover { color: var(--text); text-decoration: underline; }
+    .fx-minor:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .fx-steps { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; font-size: 13px; color: var(--text3); font-variant-numeric: tabular-nums; }
+    .sc-run .fx-steps { align-items: center; }
+    .fx-step { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+    .fx-step .spin { width: 14px; height: 14px; }
+    .fx-step-run { color: var(--text); font-weight: 500; }
+    .fx-step-done { color: var(--text2); }
+    .fx-step-i { display: inline-grid; place-items: center; width: 16px; height: 16px; font-size: 11px; }
+    .fx-plan { margin: 12px auto 4px; max-width: 460px; text-align: left; font-size: 12.5px; line-height: 1.6; color: var(--text2); list-style: decimal; padding-left: 18px; }
+    .fx-gline { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px 14px; font-size: 13px; color: var(--text); background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); }
+    .fx-gline .ov-link { margin-left: auto; font-size: 12.5px; }
+    @media (max-width: 1100px) { .sc-about-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 760px) {
-      .sc-about-cols, .sc-counters { grid-template-columns: 1fr; }
-      .sc-nc li { grid-template-columns: 1fr; gap: 2px; }
+      .sc-about-cols, .sc-counters { grid-template-columns: 1fr 1fr; }
+      .fx-crow { grid-template-columns: 1fr; gap: 2px; }
     }
+    @media (max-width: 460px) { .sc-about-cols { grid-template-columns: 1fr; } }
     /* Devices */
     .tr-pill-accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-wash); }
     .dv-export { margin-left: auto; padding: 4px 10px; min-height: 28px; }
@@ -688,6 +685,8 @@
       .pr-fdetail, .pr-empty { color: var(--text2); }
       .pr-flow svg { display: block; width: 100%; height: auto; }
       .pr-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+      .pr-h3 { margin: 10px 0 4px; font-size: 10pt; font-weight: 600; }
+      .pr-notes { margin: 4px 0 8px 16px; list-style: disc; font-size: 9pt; color: var(--text2); }
       .pr-table th { padding: 4px 6px; text-align: left; font-size: 8pt; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); background: var(--bg3); border-bottom: 1px solid var(--border2); }
       .pr-table td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid var(--hairline); overflow-wrap: anywhere; }
       .pr-mono { font-family: var(--font-mono); font-size: 9pt; }
@@ -717,7 +716,7 @@
       <span>Autopilotlens</span>
     </div>
     <nav class="sb-nav" aria-label="Main">
-      <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span><span class="nav-badge" id="nav-badge-overview" hidden onclick="event.preventDefault(); event.stopPropagation(); openFindingsDrawer('badge')"></span></a>
+      <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span></a>
       <a class="sb-link" id="tab-findings" href="?tab=findings" onclick="navClick(event, 'findings')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2.75h5.5L12.25 5.5v7.75H4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.25 8.5l1.25 1.25 2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Findings</span><span class="nav-badge nav-badge-red" id="nav-badge-findings" hidden></span></a>
       <a class="sb-link" id="tab-simulate" href="?tab=simulate" onclick="navClick(event, 'simulate')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg><span>What applies?</span></a>
       <a class="sb-link" id="tab-matrix" href="?tab=matrix" onclick="navClick(event, 'matrix')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.75" cy="4" r="1" fill="currentColor"/><circle cx="2.75" cy="8" r="1" fill="currentColor"/><circle cx="2.75" cy="12" r="1" fill="currentColor"/></svg><span>Assignments</span></a>
@@ -819,6 +818,9 @@ const DEMO_DATA = {
     },
     {
       id:'grp-exclusions', displayName:'Pilot exclusions', description:'Devices excluded from strict compliance', groupTypes:[], membershipRule:''
+    },
+    {
+      id:'grp-ring-pilot', displayName:'Update ring - Pilot', description:'Static pilot ring (no members yet)', groupTypes:[], membershipRule:''
     }
   ],
   deviceConfigs: [
@@ -898,7 +900,10 @@ const DEMO_DATA = {
   remediations: [],
   featureUpdates: [
     { id:'fu-24h2', displayName:'Windows 11 24H2', '@odata.type':'#microsoft.graph.windowsFeatureUpdateProfile', featureUpdateVersion:'Windows 11, version 24H2',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-sku', deviceAndAppManagementAssignmentFilterType:'include' } }] }
+      assignments:[
+        { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-sku', deviceAndAppManagementAssignmentFilterType:'include' } },
+        { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-ring-pilot' } }   // demo: empty group → Review
+      ] }
   ],
   qualityUpdates: [],
   driverUpdates: [],
@@ -1025,10 +1030,6 @@ function simToUrl() {
   }
   if (currentTab === 'groups' && GROUPS.selected) params.set('group', GROUPS.selected);
   if (currentTab === 'devices') devicesToParams(params);
-  if (FD.open) {
-    params.set('findings', 'open');
-    if (FD.cats.size) params.set('findingsCat', [...FD.cats].join(','));
-  }
   const query = params.toString();
   const url = window.location.pathname + (query ? '?' + query : '');
   history.replaceState(null, '', url);
@@ -1043,8 +1044,8 @@ function restoreFromUrl() {
   simView = params.get('view') === 'graph' ? 'graph' : 'trace';
   if (currentTab === 'groups' && params.get('group')) GROUPS.selected = params.get('group');
   if (currentTab === 'devices') devicesFromParams(params);
-  if (params.get('findings') === 'open') FD.pendingOpen = true;
-  if (params.get('findingsCat')) FD.cats = new Set(params.get('findingsCat').split(',').filter(c => FINDING_CATEGORIES.includes(c)));
+  // Old findings-drawer links (?findings=open) go to the Findings tab
+  if (params.get('findings') === 'open') { currentTab = 'findings'; history.replaceState(null, '', window.location.pathname + '?tab=findings'); }
   // Reflect nav state
   markActiveTab(currentTab);
 }
@@ -1579,7 +1580,6 @@ function renderCurrentTab() {
   else if (currentTab === 'simulate') renderSimulate(mount);
   else if (currentTab === 'groups') renderGroups(mount);
   else if (currentTab === 'devices') renderDevices(mount);
-  scheduleFindingsRefresh();   // nav badge
 }
 
 function renderEmptyState(mount) {
@@ -1699,8 +1699,6 @@ function renderOverview(mount) {
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
-      <div id="ov-findings">${findingsStripHtml(buildFindings())}</div>
-      ${scopeOverviewLine()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
         <div class="stat"><div class="stat-n">${DATA.autopilotProfiles.length}</div><div class="stat-l">Autopilot Profiles</div></div>
         <div class="stat"><div class="stat-n">${dynG.length}</div><div class="stat-l">Dynamic Groups</div></div>
@@ -2207,11 +2205,20 @@ function renderMatrix(mount) {
     </div>`;
 }
 
-// ── Findings: scope check ──
-// Compares each assignment's target kind (users or devices) with the scope the item is built for.
+// ── Findings: "Run checks" = step 1 scope check + step 2 configuration hygiene ──
+// The scope check compares each assignment's target kind (users or devices) with the scope the item is built for.
 // Runs only on "Run checks" (never on Refresh). Results live in memory only; refreshData marks them stale.
 const STRICT_USER_ON_DEVICE = false;   // true: a user-scoped setting on a device target counts as a mismatch
-const SCOPE_DEFAULT = () => ({ result: null, running: false, step: '', stale: false, panelKey: '', panelOpener: null, prevOverflow: '' });
+// Result groups, in display order. Issues are counted in the sidebar badge.
+const FX_GROUPS = [
+  { id: 'issues', icon: '✕', title: 'Issues', cls: 'sc-n-red', label: n => n === 1 ? 'issue' : 'issues' },
+  { id: 'review', icon: '!', title: 'Review', cls: 'sc-n-amber', label: () => 'to review' },
+  { id: 'correct', icon: '✓', title: 'Correct', cls: 'sc-n-green', label: () => 'correct' },
+  { id: 'nc', icon: '–', title: 'Not checkable', cls: 'sc-n-muted', label: () => 'not checkable' },
+];
+// Expanded sections and "Show N minor" lists: in memory only, reset on each run
+const FX_UI_DEFAULT = () => ({ open: { issues: true, review: true, correct: false, nc: false }, minor: new Set() });
+const SCOPE_DEFAULT = () => ({ result: null, running: false, phase: 0, step: '', stale: false, panelKey: '', panelOpener: null, prevOverflow: '', ui: FX_UI_DEFAULT() });
 let SCOPE = SCOPE_DEFAULT();
 let SCOPE_GEN = 0;          // bumped on reset/refresh so a run still in flight drops its result
 let SCOPE_ABORT = new AbortController();
@@ -2225,9 +2232,6 @@ const SC_TEXT = {
   autopilot: 'Autopilot deployment profiles target devices. A user target doesn\'t assign the profile.',
   filter: 'The assignment filter narrows which devices, but does not change the scope.',
 };
-// refreshData labels per source, so a failed load shows up as a note on the Findings page
-const SC_SOURCE_LABELS = { 'Settings Catalog': ['SettingsCat'], 'Device configuration': ['DeviceConfig'], 'Compliance': ['Compliance'], 'Endpoint Security (legacy)': ['EPSecurity'],
-  'App protection': ['AppProtect iOS', 'AppProtect Android', 'AppProtect Windows'], 'Autopilot profiles': ['AP Profiles'], 'Apps': ['Apps'], 'Scripts': ['Scripts'], 'Remediations': ['Remediations'], 'Groups': ['Groups'] };
 const scPl = (n, noun, plural = noun + 's') => `${n} ${n === 1 ? noun : plural}`;
 const scCap = k => ({ device: 'Device', user: 'User', mixed: 'Users + devices', empty: 'Empty', unresolved: 'Unknown' })[k] || k;
 const scHHMM = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -2247,6 +2251,12 @@ function setScopeStep(text) {
   SCOPE.step = text;
   const p = el('sc-progress-text');
   if (p) p.textContent = text;
+}
+function setScopePhase(n, text) {
+  SCOPE.phase = n;
+  SCOPE.step = text;
+  const p = el('sc-progress');
+  if (p) p.outerHTML = scProgressHtml();
 }
 
 // Key shared by the Findings results and the Assignments matrix rows (allPolicies()._t, or 'App')
@@ -2273,7 +2283,7 @@ function scCollectItems() {
   add('Device Config', DATA.deviceConfigs, 'Policies', 'Device configuration', legacy('Legacy configuration profile: setting scope isn\'t exposed via Graph'));
   add('Compliance', DATA.compliancePolicies, 'Policies', 'Compliance', legacy('Compliance policy: scope isn\'t exposed via Graph'));
   add('App Protection', DATA.appProtection, 'Policies', 'App protection', () => ({ type: 'user' }));
-  add('AP Profile', DATA.autopilotProfiles, 'Policies', 'Autopilot profile', () => ({ type: 'device' }));
+  add('AP Profile', DATA.autopilotProfiles, 'Profiles', 'Autopilot profile', () => ({ type: 'device' }));
   add('App', DATA.apps, 'Apps', a => (a['@odata.type'] || '').includes('winGet') ? 'WinGet app' : 'Win32 app', scAppModel);
   add('Script', DATA.scripts, 'Scripts', 'Platform script', runAs);       // beta: /deviceManagement/deviceManagementScripts?$expand=assignments (loaded by refreshData)
   add('Remediation', DATA.remediations, 'Scripts', 'Remediation', runAs);  // beta: /deviceManagement/deviceHealthScripts?$expand=assignments (loaded by refreshData)
@@ -2351,42 +2361,63 @@ async function scLoadSettings(pols, notes, signal) {
 const scKindFromCounts = (d, u) => d && u ? { kind: 'mixed', why: 'Group contains both users and devices' }
   : d ? { kind: 'device' } : u ? { kind: 'user' } : { kind: 'empty', why: 'Group has no user or device members' };
 
-// Static groups: does the group (transitively) hold devices, users, both or neither?
-async function scResolveGroups(ids, notes, signal) {
+// Group step, one $batch for groups referenced by an assignment:
+// - kindIds (static groups in scope-checked assignments): do they (transitively) hold devices, users, both or neither?
+// - countIds: member count for the empty-group check. Written to MEMBER_COUNTS, so the Groups tab reuses it.
+async function scResolveGroups(kindIds, countIds, notes, signal) {
   const kinds = new Map();   // group id → { kind, why }
+  const ids = [...new Set([...kindIds, ...countIds])];
   if (!ids.length) return kinds;
+  const kindSet = new Set(kindIds), countSet = new Set(countIds);
   if (demoMode) {   // demo: derive from DEMO_MEMBERS, no Graph calls
     const isUser = x => /\.user$/.test(x['@odata.type'] || '');
-    ids.forEach(id => { const m = DEMO_MEMBERS[id] || []; kinds.set(id, scKindFromCounts(m.some(x => !isUser(x)), m.some(isUser))); });
-    setScopeStep(`Resolving group types… ${ids.length}/${ids.length}`);
+    kindIds.forEach(id => { const m = DEMO_MEMBERS[id] || []; kinds.set(id, scKindFromCounts(m.some(x => !isUser(x)), m.some(isUser))); });
+    countIds.forEach(id => { MEMBER_COUNTS[id] = (DEMO_MEMBERS[id] || []).length; });
+    setScopeStep(`Resolving groups… ${ids.length}/${ids.length}`);
     return kinds;
   }
   let done = 0;
-  setScopeStep(`Resolving group types… 0/${ids.length}`);
+  setScopeStep(`Resolving groups… 0/${ids.length}`);
   const h = { ConsistencyLevel: 'eventual' };   // required for $count on directory objects
   const reqs = [];
   ids.forEach((id, i) => {
     const g = encodeURIComponent(id);
-    reqs.push({ id: `${i}d`, url: `/groups/${g}/transitiveMembers/microsoft.graph.device?$count=true&$top=1&$select=id`, headers: h });
-    reqs.push({ id: `${i}u`, url: `/groups/${g}/transitiveMembers/microsoft.graph.user?$count=true&$top=1&$select=id`, headers: h });
+    if (kindSet.has(id)) {
+      reqs.push({ id: `${i}d`, url: `/groups/${g}/transitiveMembers/microsoft.graph.device?$count=true&$top=1&$select=id`, headers: h });
+      reqs.push({ id: `${i}u`, url: `/groups/${g}/transitiveMembers/microsoft.graph.user?$count=true&$top=1&$select=id`, headers: h });
+    }
+    if (countSet.has(id)) reqs.push({ id: `${i}c`, url: `/groups/${g}/members/$count`, headers: h });
   });
-  const halves = new Map();
+  const parts = new Map();
+  const expected = i => (kindSet.has(ids[i]) ? 2 : 0) + (countSet.has(ids[i]) ? 1 : 0);
   let res;
   try {
     res = await graphBatch(reqs, rid => {   // v1.0; per-response 429s are retried inside graphBatch
       const i = rid.slice(0, -1);
-      halves.set(i, (halves.get(i) || 0) + 1);
-      if (halves.get(i) === 2) setScopeStep(`Resolving group types… ${++done}/${ids.length}`);
+      parts.set(i, (parts.get(i) || 0) + 1);
+      if (parts.get(i) === expected(Number(i))) setScopeStep(`Resolving groups… ${++done}/${ids.length}`);
     }, signal);
   } catch (e) {
     if (!isAuthed || e.name === 'AbortError') throw e;
-    notes.push(`Group types couldn't be resolved (${e.message.replace(/\.$/, '')}). Assignments to static groups are listed as not checkable.`);
-    ids.forEach(id => kinds.set(id, { kind: 'unresolved', why: `Group type couldn't be resolved (${e.message})` }));
+    notes.push(`Groups couldn't be resolved (${e.message.replace(/\.$/, '')}). Assignments to static groups are listed as not checkable, and empty groups aren't detected.`);
+    kindIds.forEach(id => kinds.set(id, { kind: 'unresolved', why: `Group type couldn't be resolved (${e.message})` }));
     return kinds;
   }
-  const failed = {};
+  if (signal.aborted) throw new DOMException('Aborted', 'AbortError');   // refreshed meanwhile: don't write old counts
+  const failed = {}, failedCounts = {};
   const count = r => { const n = r.body?.['@odata.count']; return typeof n === 'number' ? n : (r.body?.value || []).length; };
   ids.forEach((id, i) => {
+    if (countSet.has(id)) {
+      const c = res.get(`${i}c`);
+      const n = c?.status === 200 ? parseCount(c.body) : null;
+      if (n !== null) MEMBER_COUNTS[id] = n;
+      else {
+        const m = c?.status === 200 ? 'Unexpected $count response' : scStatusMsg(c);
+        failedCounts[m] = (failedCounts[m] || 0) + 1;
+        MEMBER_COUNTS[id] = { error: m };
+      }
+    }
+    if (!kindSet.has(id)) return;
     const d = res.get(`${i}d`), u = res.get(`${i}u`);
     if (d?.status !== 200 || u?.status !== 200) {
       const m = scStatusMsg(d?.status !== 200 ? d : u);
@@ -2397,7 +2428,9 @@ async function scResolveGroups(ids, notes, signal) {
     kinds.set(id, scKindFromCounts(count(d) > 0, count(u) > 0));
   });
   const nFailed = Object.values(failed).reduce((a, b) => a + b, 0);
-  if (nFailed) notes.push(`Group type couldn't be resolved for ${nFailed} of ${scPl(ids.length, 'static group')} (${scCountNote(failed)}). Assignments to those groups are not checkable.`);
+  if (nFailed) notes.push(`Group type couldn't be resolved for ${nFailed} of ${scPl(kindIds.length, 'static group')} (${scCountNote(failed)}). Assignments to those groups are not checkable.`);
+  const nCounts = Object.values(failedCounts).reduce((a, b) => a + b, 0);
+  if (nCounts) notes.push(`Member count couldn't be loaded for ${nCounts} of ${scPl(countIds.length, 'group')} (${scCountNote(failedCounts)}). Those groups aren't checked for being empty.`);
   return kinds;
 }
 
@@ -2502,27 +2535,31 @@ function scEvalItem(x, ctx) {
   return r;
 }
 
-async function runScopeCheck() {
+// "Run checks": step 1 scope check (setting definitions, then one group step), step 2 configuration hygiene
+async function runChecks() {
   if (SCOPE.running || !isAuthed || DATA.loading || !DATA.loaded) return;
   track('findings-run', 'Findings checks executed');
   SCOPE_ABORT.abort(); SCOPE_ABORT = new AbortController();
   const gen = ++SCOPE_GEN, signal = SCOPE_ABORT.signal;
   SCOPE.running = true;
+  SCOPE.phase = 1;
   SCOPE.step = 'Preparing…';
   if (currentTab === 'findings') renderCurrentTab();
   const notes = [];
   try {
-    // Sources that failed to load in refreshData can't be checked
-    Object.entries(SC_SOURCE_LABELS).forEach(([src, labels]) => {
-      const errs = DATA.errors.filter(e => labels.includes(String(e).split(':')[0].trim()));
-      if (errs.length) notes.push(`${src} couldn't be loaded, so ${src === 'Groups' ? 'group assignments are' : 'these items are'} not checked (${errs.map(e => String(e).split(':').slice(1).join(':').trim().replace(/\.$/, '')).join('; ')}).`);
-    });
+    // Data quality: one note per source that failed to load in refreshData (related checks skip it)
+    const failed = [...new Set(DATA.errors.map(e => String(e).split(':')[0].trim()))].sort(ciCmp);
+    failed.forEach(src => notes.push(`${errorSource(src + ':')} couldn't be loaded. Related checks were skipped (${DATA.errors.filter(e => String(e).split(':')[0].trim() === src)
+      .map(e => String(e).split(':').slice(1).join(':').trim().replace(/\.$/, '')).join('; ')}).`));
     const items = scCollectItems();
     const hasInclude = it => resolveAssignments(it).some(a => a.kind !== 'exclude');
     const settings = await scLoadSettings(items.filter(x => x.model.type === 'settings' && hasInclude(x.item)).map(x => x.item), notes, signal);
     if (gen !== SCOPE_GEN) return;
     const staticIds = [...new Set(items.flatMap(x => resolveAssignments(x.item).filter(a => a.group && !isDyn(a.group)).map(a => a.group.id)))];
-    const groupKinds = await scResolveGroups(staticIds, notes, signal);
+    // Member counts for every existing group an assignment references, unless the Groups tab already has one
+    const groupIds = new Set(DATA.groups.map(g => g.id));
+    const countIds = Object.keys(buildGroupUsage()).filter(id => groupIds.has(id) && typeof MEMBER_COUNTS[id] !== 'number');
+    const groupKinds = await scResolveGroups(staticIds, countIds, notes, signal);
     if (gen !== SCOPE_GEN) return;
     const ctx = { settings, groupKinds, missingBaseUri: 0, missingRunAs: {} };
     const results = items.map(x => scEvalItem(x, ctx)).filter(Boolean);
@@ -2530,39 +2567,67 @@ async function runScopeCheck() {
     if (ctx.missingRunAs.app) notes.push(`installExperience.runAsAccount was missing on ${scPl(ctx.missingRunAs.app, 'Win32/WinGet app')} in the Graph response. Those apps are listed as not checkable.`);
     if (ctx.missingRunAs.script) notes.push(`runAsAccount was missing on ${scPl(ctx.missingRunAs.script, 'script')} in the Graph response. Those scripts are listed as not checkable.`);
     if (ctx.missingBaseUri) notes.push(`${scPl(ctx.missingBaseUri, 'Windows setting definition')} had neither a baseUri nor a recognised id prefix (user_, device_, vendor_). Those settings are not checked.`);
-    SCOPE.result = { at: new Date(), items: results, notes, byKey: new Map(results.map(r => [r.key, r])) };
+
+    setScopePhase(2, 'Checking profiles, ESP, assignments, groups, filters and devices…');
+    await new Promise(r => setTimeout(r, 0));   // let step 2 render before the synchronous work
+    if (gen !== SCOPE_GEN) return;
+    const hygiene = buildHygiene();
+    SCOPE.result = { at: new Date(), items: results, notes, byKey: new Map(results.map(r => [r.key, r])), groups: fxGroups(results, hygiene) };
+    SCOPE.ui = FX_UI_DEFAULT();
     SCOPE.stale = false;
   } catch (e) {
     if (gen !== SCOPE_GEN || e.name === 'AbortError') return;
-    console.warn('[AAV] Scope check failed:', e.message);
+    console.warn('[AAV] Checks failed:', e.message);
     showToast(`Checks failed: ${e.message}`, 'error');
   } finally {
     if (gen === SCOPE_GEN) {
       SCOPE.running = false;
+      SCOPE.phase = 0;
       SCOPE.step = '';
       updateScopeBadge();
-      if (['findings', 'overview', 'matrix'].includes(currentTab)) renderCurrentTab();
+      if (['findings', 'groups', 'matrix'].includes(currentTab)) renderCurrentTab();
     }
   }
+}
+
+// Rows for the four result groups: one row per item per group. An item's findings of the same severity share a row,
+// so an item can be in Issues and Review at once. Correct and Not checkable come from the scope check only.
+function fxGroups(scopeItems, hygiene) {
+  const issues = new Map(), review = new Map();
+  const row = (map, e) => {
+    if (!map.has(e.key)) map.set(e.key, { key: e.key, type: e.type, name: e.name, kind: e.kind, scope: null, checks: [] });
+    return map.get(e.key);
+  };
+  scopeItems.filter(r => r.status === 'mismatch').forEach(r => { row(issues, { key: r.key, type: r.group, name: r.name, kind: r.typeLabel }).scope = r; });
+  hygiene.forEach(h => row(h.sev === 'issue' ? issues : review, h).checks.push(h));
+  const order = list => list.sort((a, b) => FX_TYPES.indexOf(a.type) - FX_TYPES.indexOf(b.type) || ciCmp(a.name, b.name));
+  const compact = st => order(scopeItems.filter(r => r.status === st)
+    .map(r => ({ key: r.key, type: r.group, name: r.name, kind: r.typeLabel, detail: st === 'correct' ? r.scopeLabel : r.ncReason, scopeKey: r.key, checks: [] })));
+  return {
+    issues: order([...issues.values()]),
+    review: order([...review.values()].map(x => ({ ...x, minor: x.checks.every(c => c.minor) }))),
+    correct: compact('correct'),
+    nc: compact('nc'),
+  };
 }
 
 function updateScopeBadge() {
   const b = el('nav-badge-findings');
   if (!b) return;
-  const n = SCOPE.result ? SCOPE.result.items.filter(r => r.status === 'mismatch').length : 0;
+  const n = SCOPE.result ? SCOPE.result.groups.issues.length : 0;
   b.hidden = !n;
   b.textContent = n;
-  b.title = n ? scPl(n, 'scope mismatch', 'scope mismatches') : '';
-  el('tab-findings')?.setAttribute('aria-label', n ? `Findings, ${scPl(n, 'scope mismatch', 'scope mismatches')}` : 'Findings');
+  b.title = n ? scPl(n, 'issue') : '';
+  el('tab-findings')?.setAttribute('aria-label', n ? `Findings, ${scPl(n, 'issue')}` : 'Findings');
 }
 
-function scopeOverviewLine() {
+// Groups tab: one line after a run (hidden before the first run)
+function groupFindingsLineHtml() {
   const r = SCOPE.result;
   if (!r) return '';
-  const n = r.items.filter(x => x.status === 'mismatch').length;
-  return `<button type="button" class="sc-ovline${n ? '' : ' sc-ok'}" onclick="switchTab('findings')">
-    <strong>Findings</strong><span class="${n ? 'sc-n-red' : 'sc-n-green'}">${n ? '✕' : '✓'} ${scPl(n, 'mismatch', 'mismatches')}</span>
-    <span class="gp-muted">· Last run ${scHHMM(r.at)}${SCOPE.stale ? ' (outdated)' : ''}</span><span class="fd-view">→ View findings</span></button>`;
+  const n = new Set([...r.groups.issues, ...r.groups.review].filter(x => x.type === 'Groups').map(x => x.key)).size;
+  return `<div class="fx-gline"><span>${scPl(n, 'group finding')}${SCOPE.stale ? ' (outdated)' : ''}</span>
+    <button type="button" class="ov-link" onclick="switchTab('findings')">→ View in Findings</button></div>`;
 }
 
 function scopeCellHtml(item) {
@@ -2584,7 +2649,8 @@ const SC_CHECKED_TYPES = ['Settings Catalog', 'Endpoint Security', 'Win32 apps',
 function scAboutHtml(collapsed) {
   const body = `<div class="sc-about-cols">
       <div><h3>What is checked</h3><p>Each assignment target (users or devices) against the scope the item is built for: CSP scope for Settings Catalog and Endpoint Security, install context for Win32 and WinGet apps, run-as account for scripts and remediations.</p></div>
-      <div><h3>What a mismatch means</h3><p>The assignment works against how the setting or app is designed. Intune may accept it, but it applies late or not at all, for example not during the ESP device phase.</p></div>
+      <div><h3>What an issue means</h3><p>Something is wrong: the assignment contradicts the setting's scope or install context, or it references something that doesn't exist. Intune may accept it, but it applies late, not at all, or not as intended.</p></div>
+      <div><h3>What review means</h3><p>Configuration that may be unintended, such as unassigned policies or empty groups. Often deliberate – check before you change anything.</p></div>
       <div><h3>What it doesn't do</h3><p>Legacy policy types can't be verified via Graph and are listed as not checkable. Nothing is changed or stored: results are computed in your browser and cleared on refresh.</p></div>
     </div>
     <div class="sc-foot">Findings are guidance, not a verdict. Verify against Microsoft documentation before changing production assignments.</div>`;
@@ -2592,7 +2658,14 @@ function scAboutHtml(collapsed) {
     ? `<details class="card sc-about" style="margin-top:20px;"><summary>About findings</summary>${body}</details>`
     : `<section class="card sc-about"><div class="eyebrow" style="margin-bottom:12px;">About findings</div>${body}</section>`;
 }
-const scProgressHtml = () => `<div class="sc-progress" role="status"><div class="spin"></div><span id="sc-progress-text">${esc(SCOPE.step || 'Preparing…')}</span></div>`;
+// Both steps; the running one shows its progress text
+const FX_STEPS = ['Scope check', 'Configuration hygiene'];
+const scProgressHtml = () => `<ol class="fx-steps" id="sc-progress" role="status">${FX_STEPS.map((t, i) => {
+    const n = i + 1, st = SCOPE.phase > n ? 'done' : SCOPE.phase === n ? 'run' : 'wait';
+    return `<li class="fx-step fx-step-${st}">${st === 'run' ? '<div class="spin" aria-hidden="true"></div>' : `<span class="fx-step-i" aria-hidden="true">${st === 'done' ? '✓' : n}</span>`}
+      <span>Step ${n} of ${FX_STEPS.length} · ${t}${st === 'done' ? ' · done' : st === 'wait' ? ' · waiting' : ''}</span>
+      ${st === 'run' ? `<span class="gp-muted" id="sc-progress-text">${esc(SCOPE.step || 'Preparing…')}</span>` : ''}</li>`;
+  }).join('')}</ol>`;
 
 function scRowsHtml(rows) {
   return `<div class="sc-grid-wrap"><table class="sc-grid">
@@ -2604,15 +2677,75 @@ function scRowsHtml(rows) {
         <td class="${x.viaGroup ? 'tr-via-group' : 'tr-via-broad'}">${esc(x.via)}</td></tr>`).join('')}</tbody>
     </table></div>${rows.length > 3 ? `<div class="sc-more">+${rows.length - 3} more</div>` : ''}`;
 }
-function scCardHtml(r) {
-  const filtered = r.reasons.some(m => m.rows.some(x => x.filter));
-  return `<article class="card sc-card">
-    <div class="sc-chead"><span class="sc-icon" aria-hidden="true">✕</span><span class="sc-name" title="${htmlAttr(r.name)}">${esc(r.name)}</span>
-      <span class="tag tag-gray tag-plain">${esc(r.typeLabel)}</span>
-      <button type="button" class="ov-link" onclick="openScopePanel('${jsArg(r.key)}')">View details →</button></div>
-    ${r.reasons.map(m => `${scRowsHtml(m.rows)}${m.mono ? `<div class="sc-mono">${esc(m.mono)}</div>` : ''}<div class="sc-explain">${esc(m.explain)}</div>`).join('')}
-    ${filtered ? `<div class="sc-note">${esc(SC_TEXT.filter)}</div>` : ''}
+// Issues / Review card: the scope mismatch (if any) and the hygiene findings for one item
+function fxCardHtml(x, sec) {
+  const i = SCOPE.result.groups[sec].indexOf(x), review = sec === 'review', r = x.scope;
+  const filtered = r && r.reasons.some(m => m.rows.some(y => y.filter));
+  return `<article class="card sc-card${review ? ' fx-card-review' : ''}">
+    <div class="sc-chead"><span class="sc-icon" aria-hidden="true">${review ? '!' : '✕'}</span><span class="sc-name" title="${htmlAttr(x.name)}">${esc(x.name)}</span>
+      <span class="tag tag-gray tag-plain">${esc(x.kind)}</span>
+      ${r ? `<button type="button" class="ov-link" onclick="openScopePanel('${jsArg(r.key)}')">View details →</button>` : ''}</div>
+    ${r ? `${x.checks.length ? '<div class="fx-ctitle">Scope mismatch</div>' : ''}
+      ${r.reasons.map(m => `${scRowsHtml(m.rows)}${m.mono ? `<div class="sc-mono">${esc(m.mono)}</div>` : ''}<div class="sc-explain">${esc(m.explain)}</div>`).join('')}
+      ${filtered ? `<div class="sc-note">${esc(SC_TEXT.filter)}</div>` : ''}` : ''}
+    ${x.checks.map((c, j) => `<div class="fx-check"><div class="fx-ctitle">${esc(c.title)}</div>
+      ${c.detail ? `<div class="fx-cdetail">${esc(c.detail)}</div>` : ''}
+      ${c.link ? `<button type="button" class="ov-link" onclick="fxOpenLink('${sec}', ${i}, ${j})">View →</button>` : ''}</div>`).join('')}
   </article>`;
+}
+// Compact rows (Correct, Not checkable, minor review items): name, type, scope or reason
+function fxCompactHtml(rows, sec) {
+  return `<div class="card fx-clist">${rows.map(x => {
+    const i = SCOPE.result.groups[sec].indexOf(x), j = x.checks.findIndex(c => c.link);
+    const detail = x.scopeKey ? x.detail : x.checks.map(c => c.title).join(' · ');
+    const tip = x.scopeKey ? x.detail : x.checks.map(c => c.detail).join(' · ');
+    const open = x.scopeKey ? `openScopePanel('${jsArg(x.scopeKey)}')` : j >= 0 ? `fxOpenLink('${sec}', ${i}, ${j})` : '';
+    return `<div class="fx-crow">${open ? `<button type="button" class="ov-link fx-cname" title="${htmlAttr(x.name)}" onclick="${open}">${esc(x.name)}</button>`
+        : `<span class="fx-cname" title="${htmlAttr(x.name)}">${esc(x.name)}</span>`}
+      <span class="fx-ckind">${esc(x.kind)}</span><span title="${htmlAttr(tip)}">${esc(detail)}</span></div>`;
+  }).join('')}</div>`;
+}
+function fxSectionHtml(g, rows) {
+  if (!rows.length) return '';
+  const body = FX_TYPES.map(t => [t, rows.filter(x => x.type === t)]).filter(([, l]) => l.length).map(([t, l]) => {
+    const head = `<div class="sc-ghead">${t} (${l.length})</div>`;
+    if (g.id === 'correct' || g.id === 'nc') return head + fxCompactHtml(l, g.id);
+    const main = l.filter(x => !x.minor), minor = l.filter(x => x.minor), open = SCOPE.ui.minor.has(t);
+    return head + main.map(x => fxCardHtml(x, g.id)).join('') + (minor.length
+      ? `<button type="button" class="fx-minor" id="fx-minor-btn-${t}" aria-expanded="${open}" aria-controls="fx-minor-${t}" onclick="toggleFxMinor('${t}', ${minor.length})">${open ? 'Hide' : 'Show'} ${minor.length} minor</button>
+        <div id="fx-minor-${t}"${open ? '' : ' hidden'}>${fxCompactHtml(minor, g.id)}</div>` : '');
+  }).join('');
+  return `<section class="fx-sec" id="fx-sec-${g.id}" aria-labelledby="fx-h-${g.id}"${SCOPE.ui.open[g.id] ? '' : ' hidden'}>
+    <h2 class="fx-shead" id="fx-h-${g.id}"><span class="${g.cls}" aria-hidden="true">${g.icon}</span>${g.title} <span class="gp-muted">(${rows.length})</span></h2>${body}</section>`;
+}
+// Counter buttons expand/collapse their section (DOM only: keeps focus and scroll)
+function toggleFxSection(id) {
+  if (!SCOPE.result?.groups[id]?.length) return;
+  const open = SCOPE.ui.open[id] = !SCOPE.ui.open[id];
+  el('fx-sec-' + id)?.toggleAttribute('hidden', !open);
+  el('fx-btn-' + id)?.setAttribute('aria-expanded', String(open));
+}
+function toggleFxMinor(type, n) {
+  const open = !SCOPE.ui.minor.has(type);
+  if (open) SCOPE.ui.minor.add(type); else SCOPE.ui.minor.delete(type);
+  el('fx-minor-' + type)?.toggleAttribute('hidden', !open);
+  const b = el('fx-minor-btn-' + type);
+  if (b) { b.setAttribute('aria-expanded', String(open)); b.textContent = `${open ? 'Hide' : 'Show'} ${n} minor`; }
+}
+function fxOpenLink(sec, i, j) { openFindingLink(SCOPE.result?.groups[sec]?.[i]?.checks[j]?.link); }
+
+// Export: the four groups as plain rows (null before the first run)
+function fxRowText(x, sec) {
+  if (sec === 'correct' || sec === 'nc') return x.detail;
+  const scope = x.scope ? x.scope.reasons.map(m => `Scope mismatch (${m.short}): ${m.rows.map(y => `${y.setting}${y.path ? ` (${y.path})` : ''} expected ${y.expected}, assigned ${y.assigned} via ${y.via}`).join('; ')}`) : [];
+  return [...scope, ...x.checks.map(c => c.title + (c.detail ? `: ${c.detail}` : ''))].join(' · ');
+}
+function fxReportModel() {
+  const r = SCOPE.result;
+  if (!r) return null;
+  return { at: r.at.toISOString(), stale: SCOPE.stale, notes: [...r.notes],
+    groups: FX_GROUPS.map(g => ({ id: g.id, icon: g.icon, title: g.title,
+      rows: r.groups[g.id].map(x => ({ type: x.type, name: x.name, kind: x.kind, minor: !!x.minor, text: fxRowText(x, g.id) })) })) };
 }
 
 function renderFindings(mount) {
@@ -2622,34 +2755,36 @@ function renderFindings(mount) {
       ${demoBanner()}
       ${scAboutHtml(false)}
       <section class="card sc-run">
-        <div class="title" style="font-size:15px;margin-bottom:6px;">Scope check</div>
-        <div class="desc">Finds assignments that target users where the item is built for devices, or the other way round.</div>
+        <div class="title" style="font-size:15px;margin-bottom:6px;">Checks</div>
+        <div class="desc">Both steps run together:</div>
+        <ol class="fx-plan">
+          <li><strong>Scope check</strong>: assignments that target users where the item is built for devices, or the other way round</li>
+          <li><strong>Configuration hygiene</strong>: unassigned items, empty or unused groups, missing filters and ESP blocking apps</li>
+        </ol>
         <div class="meta-row">${SC_CHECKED_TYPES.map(t => `<span class="tag tag-gray tag-plain">${t}</span>`).join('')}</div>
-        ${SCOPE.running ? scProgressHtml() : `<button class="btn btn-accent" onclick="runScopeCheck()" ${DATA.loaded ? '' : 'disabled'}>Run checks</button>`}
+        ${SCOPE.running ? scProgressHtml() : `<button class="btn btn-accent" onclick="runChecks()" ${DATA.loaded ? '' : 'disabled'}>Run checks</button>`}
         <div class="sc-small">Read-only · Uses your existing permissions</div>
       </section>
     </div>`;
     return;
   }
-  const mis = r.items.filter(x => x.status === 'mismatch'), ok = r.items.filter(x => x.status === 'correct'), nc = r.items.filter(x => x.status === 'nc');
-  const groups = ['Policies', 'Apps', 'Scripts'].map(g => [g, mis.filter(x => x.group === g)]).filter(([, l]) => l.length);
+  const G = r.groups;
   mount.innerHTML = `<div class="fade">
     ${demoBanner()}
     <div class="sc-head">
       <span class="sc-last">Last run ${scHHMM(r.at)}</span>
-      ${SCOPE.running ? scProgressHtml() : ''}
-      <button class="btn btn-ghost" onclick="runScopeCheck()" ${SCOPE.running ? 'disabled' : ''}>Re-run checks</button>
+      <button class="btn btn-ghost" onclick="runChecks()" ${SCOPE.running ? 'disabled' : ''}>Re-run checks</button>
     </div>
-    ${SCOPE.stale ? `<div class="demo-banner"><span>Data refreshed since last check. Results may be outdated.</span><button class="btn btn-ghost" style="margin-left:auto;" onclick="runScopeCheck()" ${SCOPE.running ? 'disabled' : ''}>Re-run</button></div>` : ''}
+    ${SCOPE.running ? scProgressHtml() : ''}
+    ${SCOPE.stale ? `<div class="demo-banner"><span>Data refreshed since last check. Results may be outdated.</span><button class="btn btn-ghost" style="margin-left:auto;" onclick="runChecks()" ${SCOPE.running ? 'disabled' : ''}>Re-run</button></div>` : ''}
     ${r.notes.length ? `<div class="demo-banner sc-notes" style="display:block;" role="note"><strong>Some checks were limited</strong><ul>${r.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : ''}
-    <div class="sc-counters">
-      <div class="tr-stat"><div class="tr-stat-n sc-n-red">✕ ${mis.length}</div><div class="tr-stat-l">${mis.length === 1 ? 'mismatch' : 'mismatches'}</div></div>
-      <div class="tr-stat"><div class="tr-stat-n sc-n-green">✓ ${ok.length}</div><div class="tr-stat-l">correct</div></div>
-      <div class="tr-stat"><div class="tr-stat-n sc-n-muted">– ${nc.length}</div><div class="tr-stat-l">not checkable</div></div>
-    </div>
-    ${mis.length ? groups.map(([g, l]) => `<div class="sc-ghead">${g} (${l.length})</div>${l.map(scCardHtml).join('')}`).join('')
-      : `<div class="sc-allok"><span aria-hidden="true">✓</span>All checked assignments match their scope · ${ok.length} checked · ${nc.length} not checkable</div>`}
-    ${nc.length ? `<details class="sc-nc"><summary>Not checkable (${nc.length})</summary><ul>${nc.map(x => `<li><span>${esc(x.name)} <span class="gp-muted">· ${esc(x.typeLabel)}</span></span><span>${esc(x.ncReason)}</span></li>`).join('')}</ul></details>` : ''}
+    <div class="sc-counters">${FX_GROUPS.map(g => {
+      const n = G[g.id].length, open = !!n && SCOPE.ui.open[g.id];
+      return `<button type="button" class="tr-stat fx-counter" id="fx-btn-${g.id}" aria-expanded="${open}"${n ? ` aria-controls="fx-sec-${g.id}"` : ' disabled'} onclick="toggleFxSection('${g.id}')">
+        <span class="tr-stat-n ${g.cls}">${g.icon} ${n}</span><span class="tr-stat-l">${g.label(n)}</span></button>`;
+    }).join('')}</div>
+    ${!G.issues.length && !G.review.length ? `<div class="sc-allok"><span aria-hidden="true">✓</span>No issues and nothing to review · ${G.correct.length} correct · ${G.nc.length} not checkable</div>` : ''}
+    ${FX_GROUPS.map(g => fxSectionHtml(g, G[g.id])).join('')}
     ${scAboutHtml(true)}
   </div>`;
 }
@@ -2860,7 +2995,7 @@ function renderGroups(mount) {
   mount.innerHTML = `
     <div class="fade">
       ${demoBanner()}
-      <div id="gp-findings">${groupFindingsHtml()}</div>
+      ${groupFindingsLineHtml()}
       <div class="gp-layout">
         <section class="card tr-section">
           <div class="tr-head"><span class="tr-sq" style="background:var(--purple);"></span><span class="tr-title">Groups</span><span class="tr-count">${pinned.length + rows.length} / ${pinnedAll.length + all.length}</span></div>
@@ -2916,39 +3051,11 @@ function countCellHtml(id) {
   if (c && c.error) return `<span title="${htmlAttr(c.error)}">—</span>`;
   return '<span title="Loading member count">…</span>';
 }
-// Update just the count cells + findings (no full re-render: keeps search focus and scroll)
+// Update just the count cells (no full re-render: keeps search focus and scroll)
 function updateCountCells(id) {
   document.querySelectorAll(`[data-count-for="${CSS.escape(id)}"]`).forEach(c => { c.innerHTML = countCellHtml(id); });
   if (BUILTIN_TARGETS[id] && GROUPS.selected === id) refreshMembers(id);   // count lives in the built-in detail too
-  scheduleFindingsRefresh();
 }
-// Findings depend on member counts, so recompute (at most once per 250 ms) and patch only the findings UI
-let findingsTimer = 0;
-function scheduleFindingsRefresh() {
-  if (findingsTimer) return;
-  findingsTimer = setTimeout(() => { findingsTimer = 0; refreshFindingsUI(); }, 250);
-}
-function refreshFindingsUI() {
-  if (!isAuthed || DATA.loading || !DATA.loaded) { updateNavBadge([]); closeFindingsDrawer(false); return; }
-  const findings = buildFindings();
-  updateNavBadge(findings);
-  if (currentTab === 'overview' && el('ov-findings')) el('ov-findings').innerHTML = findingsStripHtml(findings);
-  if (currentTab === 'groups' && el('gp-findings')) el('gp-findings').innerHTML = groupFindingsHtml(findings);
-  if (FD.open) renderFindingsDrawer(findings);
-  if (FD.pendingOpen) { FD.pendingOpen = false; openFindingsDrawer('url'); }   // ?findings=open, once data is there
-}
-function updateNavBadge(findings) {
-  const b = el('nav-badge-overview');
-  if (!b) return;
-  const red = findings.filter(f => f.severity === 'red').length, n = red + findings.filter(f => f.severity === 'amber').length;
-  b.hidden = !n;
-  b.textContent = n;
-  b.className = 'nav-badge ' + (red ? 'nav-badge-red' : 'nav-badge-amber');
-  b.title = `${n} ${n === 1 ? 'finding' : 'findings'} to look at: ${red} red, ${n - red} amber`;
-  // Screen readers get the count on the link itself (the badge is decorative text inside it)
-  el('tab-overview')?.setAttribute('aria-label', n ? `Overview, ${n} ${n === 1 ? 'finding' : 'findings'} to look at` : 'Overview');
-}
-
 const parseCount = body => {
   const n = typeof body === 'number' ? body : parseInt(String(body ?? '').trim(), 10);
   return Number.isFinite(n) && n >= 0 ? n : null;
@@ -3015,108 +3122,44 @@ function ensureAllUsersCount() {
     });
 }
 
-// ── Group findings: pure, same shape as report findings ──
+// ── Group tags in rules ([OrderID]) ──
 const ORDER_TAG_RE = /\[OrderID\]:([^"'\s)]+)/gi;
 // Tags a rule tests with -contains "[OrderID]:X" (a substring match)
 const orderContainsTags = rule => [...(rule || '').matchAll(/-contains\s+"\[OrderID\]:([^"]+)"/gi)].map(m => m[1]);
 
-function groupFindings({ groups, usage, countOf, devices }) {
-  const listed = groups.filter(g => isListedGroup(g, usage)).sort((a, b) => ciCmp(a.displayName, b.displayName));
-  const red = [], amber = [], info = [];
-  const deviceTags = new Set(devices.map(d => (d.groupTag || '').toLowerCase()).filter(Boolean));
-  const unassigned = [], partial = [], tagIssues = [];   // tagIssues: { tag, group }
-  const deviceTagList = [...new Map(devices.filter(d => d.groupTag).map(d => [d.groupTag.toLowerCase(), d.groupTag])).values()].sort(ciCmp);
-  listed.forEach(g => {
-    const u = usage[g.id] || [];
-    const incl = u.filter(x => x.mode === 'include');
-    const n = countOf(g.id);
-    if (n === 0 && incl.length) {
-      red.push({ severity: 'red', key: 'empty:' + g.id, title: `${incl.length} item${incl.length === 1 ? '' : 's'} assigned to an empty group`,
-        detail: `${g.displayName}: ${incl.map(x => x.name).sort(ciCmp).join(', ')}`, groupId: g.id });
-    }
-    if (!isDyn(g)) return;   // the checks below are about rules; unassigned static groups are normal
-    if (groupState(g) === 'Paused') {
-      amber.push({ severity: 'amber', key: 'paused:' + g.id, title: `Rule paused: ${g.displayName}`, detail: 'Membership is not updated while rule processing is paused.', groupId: g.id });
-    }
-    if (deviceTags.size) {   // without any device data every tag would look unused
-      const tags = [...new Set([...(g.membershipRule || '').matchAll(ORDER_TAG_RE)].map(m => m[1]))];
-      tags.filter(t => !deviceTags.has(t.toLowerCase())).forEach(t => tagIssues.push({ tag: t, group: g }));
-    }
-    // -contains "[OrderID]:X" is a substring match: tag X also catches X2, XLAB, …
-    const containsTags = orderContainsTags(g.membershipRule);
-    if (containsTags.length && deviceTagList.length) {
-      const own = new Set(containsTags.map(t => t.toLowerCase()));
-      const extra = deviceTagList.filter(t => !own.has(t.toLowerCase())
-        && evalRule(g.membershipRule, buildSimProps({ ...SIM_DEFAULTS, groupTag: t })));
-      if (extra.length) {
-        const x = containsTags[0];
-        amber.push({ severity: 'amber', key: 'contains-wide:' + g.id, groupId: g.id, title: `Rule matches more group tags than intended: ${g.displayName}`,
-          detail: `Rule uses -contains, so '${containsTags.join("', '")}' also matches: ${extra.join(', ')}. Use -eq or -any (_ -eq "[OrderID]:${x}") for an exact match.` });
-      }
-    }
-    if (!u.length) unassigned.push(g);
-    if (!ruleSupport(g.membershipRule).supported) partial.push(g);
-  });
-  const distinctTags = [...new Set(tagIssues.map(x => x.tag.toLowerCase()))];
-  if (distinctTags.length > 3) {
-    amber.push({ severity: 'amber', key: 'unused-tags', title: `${distinctTags.length} group tags that no device has`,
-      detail: tagIssues.map(x => `${x.tag} (${x.group.displayName})`).join(', '),
-      items: tagIssues.map(x => ({ label: `${x.tag} (${x.group.displayName})`, groupId: x.group.id })) });
-  } else {
-    tagIssues.forEach(({ tag: t, group: g }) => amber.push({
-      severity: 'amber', key: `unused-tag:${t.toLowerCase()}:${g.id}`, title: `No device has group tag "${t}"`,
-      detail: `${g.displayName} matches [OrderID]:${t}, but no device in Intune or Autopilot has that tag.`, groupId: g.id }));
-  }
-  Object.values(BUILTIN_TARGETS).forEach(b => {
-    // A reference to a filter that no longer exists counts as no filter (when the filter list is available)
-    const filtered = x => x.filterId && (!DATA.assignmentFilters.length || filterById(x.filterId));
-    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !filtered(x)).map(x => x.name).sort(ciCmp);
-    if (!names.length) return;
-    amber.push({ severity: 'amber', key: 'nofilter:' + b.id, title: `${names.length} item${names.length === 1 ? '' : 's'} target ${b.displayName} without a filter`,
-      detail: names.slice(0, 5).join(', ') + (names.length > 5 ? `, and ${names.length - 5} more` : ''), groupId: b.id });
-  });
-  if (unassigned.length > 3) {
-    amber.push({ severity: 'amber', key: 'unassigned-groups', title: `${unassigned.length} dynamic groups not assigned to anything`, detail: unassigned.map(g => g.displayName).join(', '),
-      items: unassigned.map(g => ({ label: g.displayName, groupId: g.id })) });
-  } else {
-    unassigned.forEach(g => amber.push({ severity: 'amber', key: 'unassigned-group:' + g.id, title: `Not assigned: ${g.displayName}`, detail: 'No profile, policy or app targets this dynamic group.', groupId: g.id }));
-  }
-  if (partial.length) {
-    info.push({ severity: 'info', key: 'partial-rules', title: `${partial.length} group rule${partial.length === 1 ? '' : 's'} can't be fully simulated`,
-      detail: partial.map(g => g.displayName).join(', '), ...(partial.length === 1 ? { groupId: partial[0].id } : {}),
-      items: partial.length > 1 ? partial.map(g => ({ label: g.displayName, groupId: g.id })) : [] });
-  }
-  return [...red, ...amber, ...info];
-}
-
-// ── Tenant-wide findings: one model for the Overview card, the Groups tab and the nav badge ──
-const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Filters', 'Devices', 'Data quality'];
-const FINDING_SEVERITY = { red: 0, amber: 1, info: 2 };
 const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', platform: 'Windows', upn: '', dept: '', jobTitle: '' };
 
-// Finding: { id, severity, category, title, detail, items: [{ label, link }], link }
-// link: { tab, group?, search?, table?, sim? }. Reads DATA, MEMBER_COUNTS (via memberCountOf) and buildGroupUsage(); no DOM.
-function buildFindings() {
+// ── Findings: configuration hygiene (step 2 of "Run checks") ──
+// Computed from loaded data; member counts come from the checks' group step. One record per entity and check:
+// { key, type, name, kind, link, sev: 'issue' | 'review', minor, title, detail }. Reads DATA and MEMBER_COUNTS; no DOM.
+// Keys match the scope check's (`${_t}|${id}`), so both kinds of finding for an item land on the same row.
+const FX_TYPES = ['Profiles', 'ESP', 'Policies', 'Apps', 'Scripts', 'Groups', 'Filters', 'Devices'];
+const FX_POLICY_KIND = { 'Device Config': 'Device configuration', 'Settings Cat': 'Settings Catalog', 'Compliance': 'Compliance', 'EP Security': 'Endpoint Security (legacy)',
+  'App Protection': 'App protection', 'Script': 'Platform script', 'Remediation': 'Remediation', 'Feature Update': 'Feature update', 'Quality Update': 'Quality update',
+  'Driver Update': 'Driver update', 'App Config': 'App configuration' };
+
+function buildHygiene() {
   const failed = new Set(DATA.errors.map(e => String(e).split(':')[0].trim()));   // refreshData source labels
   const loaded = deps => deps.every(d => !failed.has(d));
   const usage = buildGroupUsage();
   const groupIds = new Set(DATA.groups.map(g => g.id));
   const groupName = id => BUILTIN_TARGETS[id]?.displayName || DATA.groups.find(g => g.id === id)?.displayName || id;
-  const out = [];
-  const add = f => out.push({ items: [], link: null, ...f });
   const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
-  const MAX = 3;   // more than 3 similar → one aggregated finding
+  const list = (names, max = 5) => names.slice(0, max).join(', ') + (names.length > max ? `, and ${names.length - max} more` : '');
+  const out = [];
+  const add = (e, sev, title, detail, minor = false) => out.push({ key: e.key, type: e.type, name: e.name, kind: e.kind, link: e.link || null, sev, minor, title, detail });
 
   // Everything that can be assigned, with a link to where it can be looked at
   const assignable = [
-    ...DATA.autopilotProfiles.map(p => ({ item: p, name: p.displayName, kind: 'Autopilot profile', link: null })),
-    ...DATA.enrollmentStatusPages.map(e => ({ item: e, name: e.displayName, kind: 'ESP', link: null })),
-    ...allPolicies().map(p => ({ item: p, name: p.name || p.displayName || '', kind: p._t, link: { tab: 'matrix', table: 'policies', search: p.name || p.displayName || '' } })),
-    ...DATA.apps.map(a => ({ item: a, name: a.displayName || '', kind: 'App', link: { tab: 'matrix', table: 'apps', search: a.displayName || '' } })),
+    ...DATA.autopilotProfiles.map(p => ({ item: p, key: `AP Profile|${p.id}`, type: 'Profiles', name: p.displayName || '', kind: 'Autopilot profile', link: null })),
+    ...DATA.enrollmentStatusPages.map(e => ({ item: e, key: `ESP|${e.id}`, type: 'ESP', name: e.displayName || '', kind: 'Enrollment Status Page', link: null })),
+    ...allPolicies().map(p => ({ item: p, key: `${p._t}|${p.id}`, type: p._t === 'Script' || p._t === 'Remediation' ? 'Scripts' : 'Policies', name: p.name || p.displayName || '',
+      kind: p._t === 'Settings Cat' && scIsEndpointSecurity(p) ? 'Endpoint Security' : FX_POLICY_KIND[p._t] || p._t,
+      link: { tab: 'matrix', table: 'policies', search: p.name || p.displayName || '' } })),
+    ...DATA.apps.map(a => ({ item: a, key: `App|${a.id}`, type: 'Apps', name: a.displayName || '', kind: 'App', link: { tab: 'matrix', table: 'apps', search: a.displayName || '' } })),
   ];
-  const itemRef = x => ({ label: `${x.name} (${x.kind})`, link: x.link });
 
-  // ── Autopilot: per group tag (evaluated per tag, not per device) ──
+  // ── Profiles: Autopilot, per group tag (evaluated per tag, not per device) ──
   if (loaded(['AP Profiles', 'Groups', 'Devices', 'APDevices'])) {
     const tags = new Map();   // lowercase → { tag, devices }
     DATA.managedDevices.forEach(d => {
@@ -3127,7 +3170,7 @@ function buildFindings() {
     });
     const dynGroups = DATA.groups.filter(g => isDyn(g) && g.membershipRule);
     const uncertain = DATA.autopilotProfiles.some(p => resolveAssignmentsRaw(p).some(x => x.kind === 'include' && x.group && !isDyn(x.group)));
-    const none = [], many = [];
+    const staticNote = uncertain ? ' Some profiles target static groups, which can\'t be evaluated per tag.' : '';
     [...tags.values()].sort((a, b) => ciCmp(a.tag, b.tag)).forEach(t => {
       const props = buildSimProps({ ...SIM_DEFAULTS, groupTag: t.tag });
       const matched = new Set(dynGroups.filter(g => evalRule(g.membershipRule, props)).map(g => g.id));
@@ -3136,339 +3179,122 @@ function buildFindings() {
         const hit = asn.some(x => x.kind === 'allDevices' || (x.kind === 'include' && x.group && matched.has(x.group.id)));
         const excluded = asn.some(x => x.kind === 'exclude' && x.group && matched.has(x.group.id));
         return hit && !excluded;
-      });
-      const simLink = { tab: 'simulate', sim: { groupTag: t.tag } };
-      if (!profiles.length) none.push({ ...t, simLink });
-      else if (profiles.length > 1) many.push({ ...t, simLink, profiles: profiles.map(p => p.displayName).sort(ciCmp) });
+      }).map(p => p.displayName).sort(ciCmp);
+      const e = { key: 'Tag|' + t.tag.toLowerCase(), type: 'Profiles', name: t.tag, kind: 'Group tag', link: { tab: 'simulate', sim: { groupTag: t.tag } } };
+      if (!profiles.length) add(e, 'issue', 'No Autopilot profile', `${plural(t.devices, 'device')} with this group tag would get no deployment profile.${staticNote}`);
+      else if (profiles.length > 1) add(e, 'review', `Matches ${profiles.length} Autopilot profiles`,
+        `${profiles.join(', ')}. Intune uses the oldest assignment. Verify which profile these devices get. (Evaluated per group tag, not per device.)`);
     });
-    const staticNote = uncertain ? ' Some profiles target static groups, which can\'t be evaluated per tag.' : '';
-    if (none.length > MAX) {
-      add({ id: 'tag-no-profile:many', severity: 'red', category: 'Autopilot', title: `${none.length} group tags have no Autopilot profile`,
-        detail: `Devices with these tags get no deployment profile.${staticNote}`,
-        items: none.map(t => ({ label: `${t.tag} (${plural(t.devices, 'device')})`, link: t.simLink })) });
-    } else {
-      none.forEach(t => add({ id: 'tag-no-profile:' + t.tag.toLowerCase(), severity: 'red', category: 'Autopilot', title: `${t.tag} has no Autopilot profile`,
-        detail: `${plural(t.devices, 'device')} with group tag ${t.tag} would get no deployment profile.${staticNote}`, link: t.simLink }));
-    }
-    const manyDetail = 'Intune uses the oldest assignment. Verify which profile these devices get. (Evaluated per group tag, not per device.)';
-    if (many.length > MAX) {
-      add({ id: 'tag-many-profiles:many', severity: 'amber', category: 'Autopilot', title: `${many.length} group tags match more than one Autopilot profile`,
-        detail: manyDetail, items: many.map(t => ({ label: `${t.tag}: ${t.profiles.join(', ')}`, link: t.simLink })) });
-    } else {
-      many.forEach(t => add({ id: 'tag-many-profiles:' + t.tag.toLowerCase(), severity: 'amber', category: 'Autopilot',
-        title: `${t.tag} matches ${t.profiles.length} Autopilot profiles`, detail: `${t.profiles.join(', ')}. ${manyDetail}`, link: t.simLink }));
-    }
   }
   // deploymentProfileAssignmentStatus may only be returned by the beta endpoint; skip silently when absent
   if (loaded(['APDevices']) && DATA.autopilotIdentities.some(a => a.deploymentProfileAssignmentStatus !== undefined)) {
-    const bad = DATA.autopilotIdentities.filter(a => /^(notAssigned|failed)/i.test(a.deploymentProfileAssignmentStatus || ''))
-      .sort((a, b) => ciCmp(a.serialNumber, b.serialNumber));
-    if (bad.length) add({ id: 'profile-status', severity: 'amber', category: 'Autopilot', title: `${plural(bad.length, 'Autopilot device')} without an assigned profile`,
-      detail: 'Profile assignment status is "not assigned" or failed.',
-      items: bad.map(a => ({ label: `${a.serialNumber || a.id} (${a.deploymentProfileAssignmentStatus}${a.groupTag ? ', tag ' + a.groupTag : ''})`,
-        link: a.groupTag ? { tab: 'simulate', sim: { groupTag: a.groupTag, serial: a.serialNumber || '' } } : null })) });
+    DATA.autopilotIdentities.filter(a => /^(notAssigned|failed)/i.test(a.deploymentProfileAssignmentStatus || ''))
+      .sort((a, b) => ciCmp(a.serialNumber, b.serialNumber)).forEach(a => add(
+        { key: 'APDevice|' + a.id, type: 'Profiles', name: a.serialNumber || a.id, kind: 'Autopilot device',
+          link: a.groupTag ? { tab: 'simulate', sim: { groupTag: a.groupTag, serial: a.serialNumber || '' } } : null },
+        'review', 'No profile assigned', `Profile assignment status is ${a.deploymentProfileAssignmentStatus}${a.groupTag ? ` (group tag ${a.groupTag})` : ''}.`));
   }
 
   // ── ESP: blocking apps ──
   if (loaded(['ESP', 'Apps'])) {
     const apps = new Map(DATA.apps.map(a => [a.id, a]));
-    const missing = [], notRequired = [], uncovered = [];
     [...DATA.enrollmentStatusPages].sort((a, b) => ciCmp(a.displayName, b.displayName)).forEach(esp => {
+      const e = { key: `ESP|${esp.id}`, type: 'ESP', name: esp.displayName || '', kind: 'Enrollment Status Page' };
       const espTargets = resolveAssignmentsRaw(esp).filter(x => x.kind !== 'exclude')
         .map(x => x.kind === 'allDevices' ? '__allDevices__' : x.kind === 'allUsers' ? '__allUsers__' : (x.raw.target || x.raw).groupId).filter(Boolean);
+      const missing = [], notRequired = [], uncovered = [];
       (esp.selectedMobileAppIds || []).forEach(appId => {
         const app = apps.get(appId);
-        if (!app) { missing.push({ esp, appId }); return; }
+        if (!app) { missing.push(appId); return; }
         const req = resolveAssignmentsRaw(app).filter(x => x.kind !== 'exclude' && x.intent === 'required');
-        if (!req.length) { notRequired.push({ esp, app }); return; }
+        if (!req.length) { notRequired.push(app.displayName || app.id); return; }
         if (req.some(x => x.kind === 'allDevices' || x.kind === 'allUsers')) return;
         const reqIds = new Set(req.map(x => (x.raw.target || x.raw).groupId));
         const gaps = espTargets.filter(t => !reqIds.has(t));
-        if (gaps.length) uncovered.push({ esp, app, gaps });
+        if (gaps.length) uncovered.push(`${app.displayName}: not ${gaps.map(groupName).join(', ')}`);
       });
+      if (missing.length) add(e, 'issue', missing.length === 1 ? 'Blocks on an app that doesn\'t exist' : `Blocks on ${missing.length} apps that don't exist`,
+        `App id ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} not in Intune. The ESP may wait until it times out.`);
+      if (notRequired.length) add(e, 'review', `${plural(notRequired.length, 'blocking app')} not assigned as Required`,
+        `${list(notRequired)}. ESP only tracks apps that are assigned as Required, so ${notRequired.length === 1 ? 'it doesn\'t' : 'they don\'t'} actually block setup.`);
+      if (uncovered.length) add(e, 'review', 'Required doesn\'t cover all ESP targets', `${uncovered.join('; ')}.`);
     });
-    const appLink = app => ({ tab: 'matrix', table: 'apps', search: app.displayName || '' });
-    if (missing.length > MAX) {
-      add({ id: 'esp-missing-app:many', severity: 'red', category: 'ESP', title: `${missing.length} ESP blocking apps don't exist`,
-        detail: 'The ESP waits for apps that are no longer in Intune.', items: missing.map(m => ({ label: `${m.appId} (${m.esp.displayName})`, link: null })) });
-    } else {
-      missing.forEach(m => add({ id: `esp-missing-app:${m.esp.id}:${m.appId}`, severity: 'red', category: 'ESP',
-        title: `${m.esp.displayName} blocks on an app that doesn't exist`, detail: `App id ${m.appId} is not in Intune. The ESP may wait until it times out.` }));
-    }
-    const nrDetail = 'ESP only tracks apps that are assigned as Required. This app won\'t actually block setup.';
-    if (notRequired.length > MAX) {
-      add({ id: 'esp-not-required:many', severity: 'amber', category: 'ESP', title: `${notRequired.length} ESP blocking apps aren't assigned as Required`,
-        detail: nrDetail, items: notRequired.map(m => ({ label: `${m.app.displayName} (${m.esp.displayName})`, link: appLink(m.app) })) });
-    } else {
-      notRequired.forEach(m => add({ id: `esp-not-required:${m.esp.id}:${m.app.id}`, severity: 'amber', category: 'ESP',
-        title: `${m.app.displayName} is an ESP blocking app but not Required`, detail: `${m.esp.displayName}. ${nrDetail}`, link: appLink(m.app) }));
-    }
-    if (uncovered.length > MAX) {
-      add({ id: 'esp-coverage:many', severity: 'info', category: 'ESP', title: `${uncovered.length} ESP blocking apps don't cover all ESP targets`,
-        detail: 'These apps are Required only to some of the groups the ESP targets.',
-        items: uncovered.map(m => ({ label: `${m.app.displayName}: not ${m.gaps.map(groupName).join(', ')}`, link: appLink(m.app) })) });
-    } else {
-      uncovered.forEach(m => add({ id: `esp-coverage:${m.esp.id}:${m.app.id}`, severity: 'info', category: 'ESP',
-        title: `${m.app.displayName} is Required only to part of what ${m.esp.displayName} targets`,
-        detail: `Not covered: ${m.gaps.map(groupName).join(', ')}.`, link: appLink(m.app) }));
-    }
   }
 
-  // ── Assignments ──
-  const both = [];
+  // ── Assignments, per item ──
+  const filterRefs = new Set();   // filter ids used by any assignment
   assignable.forEach(x => {
     const asn = resolveAssignmentsRaw(x.item);
     const inc = new Set(asn.filter(a => a.kind === 'include' && a.group).map(a => a.group.id));
     const clash = [...new Set(asn.filter(a => a.kind === 'exclude' && a.group && inc.has(a.group.id)).map(a => a.group.id))];
-    if (clash.length) both.push({ ...x, clash });
+    if (clash.length) add(x, 'issue', 'Includes and excludes the same group', `${clash.map(groupName).join(', ')}: exclusion wins, so the group gets nothing.`);
+    if (loaded(['Groups'])) {   // without the group list every group would look deleted
+      const gone = [...new Set(asn.map(a => (a.raw.target || a.raw).groupId).filter(id => id && !groupIds.has(id)))].sort();
+      if (gone.length) add(x, 'issue', 'Assigned to a group that no longer exists', `Group id ${gone.join(', ')}. ${gone.length === 1 ? 'This assignment does' : 'These assignments do'} nothing.`);
+    }
+    const fids = [...new Set(asn.map(a => a.raw.target || a.raw)
+      .filter(t => t.deviceAndAppManagementAssignmentFilterId && t.deviceAndAppManagementAssignmentFilterType !== 'none').map(t => t.deviceAndAppManagementAssignmentFilterId))];
+    fids.forEach(id => filterRefs.add(id));
+    const missingF = loaded(['Filters']) ? fids.filter(id => !filterById(id)).sort() : [];
+    if (missingF.length) add(x, 'issue', 'Uses a filter that doesn\'t exist', `Filter id ${missingF.join(', ')}. Pick an existing filter or remove it.`);
+    if (!(x.item.assignments || []).length) add(x, 'review', 'Not assigned', 'Not assigned to any group, All devices or All users.');
   });
-  both.sort((a, b) => ciCmp(a.kind, b.kind) || ciCmp(a.name, b.name));
-  if (both.length > MAX) {
-    add({ id: 'include-exclude:many', severity: 'red', category: 'Assignments', title: `${both.length} items include and exclude the same group`,
-      detail: 'Exclusion wins, so these groups get nothing from the item.', items: both.map(x => ({ label: `${x.name} (${x.clash.map(groupName).join(', ')})`, link: x.link })) });
-  } else {
-    both.forEach(x => add({ id: `include-exclude:${x.kind}:${x.item.id}`, severity: 'red', category: 'Assignments',
-      title: `${x.name} includes and excludes the same group`, detail: `${x.kind}. ${x.clash.map(groupName).join(', ')}: exclusion wins, so the group gets nothing.`, link: x.link }));
-  }
-  if (loaded(['Groups'])) {   // without the group list every group would look deleted
-    const missing = new Map();   // groupId → [assignable]
-    assignable.forEach(x => {
-      const ids = new Set(resolveAssignmentsRaw(x.item).map(a => (a.raw.target || a.raw).groupId).filter(id => id && !groupIds.has(id)));
-      ids.forEach(id => { if (!missing.has(id)) missing.set(id, []); missing.get(id).push(x); });
+
+  // ── Filters (minor) ──
+  if (loaded(['Filters'])) {
+    [...DATA.assignmentFilters].sort((a, b) => ciCmp(a.displayName, b.displayName)).forEach(f => {
+      const e = { key: 'Filter|' + f.id, type: 'Filters', name: f.displayName || f.id, kind: 'Assignment filter' };
+      const ev = evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS));
+      if (!filterRefs.has(f.id)) add(e, 'review', 'Not used by any assignment', 'Not referenced by any profile, policy or app assignment.', true);
+      if (ev.ambiguous) add(e, 'review', 'Mixes and/or without parentheses', `Intune's precedence isn't verified here. Add parentheses to make the intent explicit. Rule: ${f.rule}`, true);
+      if (f.assignmentFilterManagementType !== 'apps' && ev.unsupported.length) add(e, 'review', 'Can\'t be evaluated in the simulation',
+        `Uses ${ev.unsupported.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] + ' (property)' : `${u.reason} in ${u.leaf}`).join(', ')}, which the simulation doesn't have, so items behind it show as "Depends on filter".`, true);
     });
-    const ids = [...missing.keys()].sort();
-    if (ids.length > MAX) {
-      add({ id: 'deleted-group:many', severity: 'amber', category: 'Assignments', title: `Assignments to ${ids.length} groups that no longer exist`,
-        detail: 'These assignments do nothing. Remove them or reassign to an existing group.',
-        items: ids.flatMap(id => missing.get(id).map(x => ({ label: `${id}: ${x.name} (${x.kind})`, link: x.link }))) });
-    } else {
-      ids.forEach(id => add({ id: 'deleted-group:' + id, severity: 'amber', category: 'Assignments', title: `Assigned to a group that no longer exists`,
-        detail: `Group id ${id}. These assignments do nothing.`, items: missing.get(id).map(itemRef) }));
-    }
   }
-  if (loaded(['Filters'])) {   // assignment filters: missing references, unused filters, rules the simulation can't evaluate
-    const refs = new Map();      // filterId → [assignable]
-    assignable.forEach(x => resolveAssignmentsRaw(x.item).forEach(a => {
-      const t = a.raw.target || a.raw, id = t.deviceAndAppManagementAssignmentFilterId;
-      if (!id || t.deviceAndAppManagementAssignmentFilterType === 'none') return;
-      if (!refs.has(id)) refs.set(id, []);
-      if (!refs.get(id).includes(x)) refs.get(id).push(x);
-    }));
-    const missingF = [...refs.keys()].filter(id => !filterById(id)).sort();
-    if (missingF.length > MAX) {
-      add({ id: 'missing-filter:many', severity: 'red', category: 'Assignments', title: `Assignments use ${missingF.length} filters that don't exist`,
-        detail: 'Intune can\'t evaluate these assignments as intended. Pick an existing filter or remove it.',
-        items: missingF.flatMap(id => refs.get(id).map(x => ({ label: `${id}: ${x.name} (${x.kind})`, link: x.link }))) });
-    } else {
-      missingF.forEach(id => add({ id: 'missing-filter:' + id, severity: 'red', category: 'Assignments', title: 'Assignment uses a filter that doesn\'t exist',
-        detail: `Filter id ${id}. Pick an existing filter or remove it.`, items: refs.get(id).map(itemRef) }));
-    }
-    const filters = [...DATA.assignmentFilters].sort((a, b) => ciCmp(a.displayName, b.displayName));
-    const unused = filters.filter(f => !refs.has(f.id));
-    if (unused.length) add({ id: 'unused-filters', severity: 'info', category: 'Assignments', title: `${plural(unused.length, 'filter')} not used by any assignment`,
-      detail: 'Not referenced by any profile, policy or app assignment.', items: unused.map(f => ({ label: f.displayName, link: null })) });
-    const blind = filters.filter(f => f.assignmentFilterManagementType !== 'apps')
-      .map(f => ({ f, u: evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).unsupported })).filter(x => x.u.length);
-    const mixed = filters.filter(f => evalFilter(f.rule, buildFilterProps(SIM_DEFAULTS)).ambiguous);
-    if (mixed.length) add({ id: 'filters-ambiguous', severity: 'info', category: 'Filters',
-      title: `${mixed.length} ${mixed.length === 1 ? 'filter mixes' : 'filters mix'} and/or without parentheses`,
-      detail: 'Intune\'s precedence isn\'t verified here. Add parentheses to make the intent explicit.',
-      items: mixed.map(f => ({ label: `${f.displayName}: ${f.rule}`, link: null })) });
-    if (blind.length) add({ id: 'filters-unevaluable', severity: 'info', category: 'Filters', title: `${plural(blind.length, 'filter')} can't be evaluated in the simulation`,
-      detail: 'Their rules use properties or operators the simulation doesn\'t have, so items behind them show as "Depends on filter".',
-      items: blind.map(x => ({ label: `${x.f.displayName}: ${x.u.map(u => u.reason === 'property' ? (u.leaf.match(/^[\w.]+/) || [u.leaf])[0] + ' (property)' : `${u.reason} in ${u.leaf}`).join(', ')}`, link: null })) });
-  }
-  const unassignedByKind = new Map();
-  assignable.forEach(x => { if (!(x.item.assignments || []).length) { if (!unassignedByKind.has(x.kind)) unassignedByKind.set(x.kind, []); unassignedByKind.get(x.kind).push(x); } });
-  unassignedByKind.forEach((list, kind) => add({ id: 'unassigned:' + kind, severity: 'info', category: 'Assignments',
-    title: `${plural(list.length, kind + ' item')} not assigned`, detail: 'Not assigned to any group, All devices or All users.',
-    items: list.sort((a, b) => ciCmp(a.name, b.name)).map(x => ({ label: x.name, link: x.link })) }));
 
-  // ── Groups + Broad scope (groupFindings, unchanged). No group list → only the broad-scope part runs ──
-  groupFindings({ groups: loaded(['Groups']) ? DATA.groups : [], usage, countOf: memberCountOf,
-    devices: loaded(['Devices', 'APDevices']) ? DATA.managedDevices : [] }).forEach(f => {
-    const broad = !!BUILTIN_TARGETS[f.groupId];
-    add({ id: (broad ? 'broad:' : 'groups:') + (f.key || f.groupId || f.title), severity: f.severity, category: broad ? 'Broad scope' : 'Groups',
-      title: f.title, detail: f.detail, link: f.groupId ? { tab: 'groups', group: f.groupId } : null,
-      items: (f.items || []).map(i => ({ label: i.label, link: i.groupId ? { tab: 'groups', group: i.groupId } : null })) });
+  // ── Groups. No group list → only the broad-scope part runs ──
+  const devices = loaded(['Devices', 'APDevices']) ? DATA.managedDevices : [];
+  const deviceTags = new Set(devices.map(d => (d.groupTag || '').toLowerCase()).filter(Boolean));
+  const deviceTagList = [...new Map(devices.filter(d => d.groupTag).map(d => [d.groupTag.toLowerCase(), d.groupTag])).values()].sort(ciCmp);
+  (loaded(['Groups']) ? DATA.groups : []).filter(g => isListedGroup(g, usage)).sort((a, b) => ciCmp(a.displayName, b.displayName)).forEach(g => {
+    const e = { key: 'Group|' + g.id, type: 'Groups', name: g.displayName || g.id, kind: isDyn(g) ? 'Dynamic group' : 'Static group', link: { tab: 'groups', group: g.id } };
+    const u = usage[g.id] || [];
+    const incl = u.filter(x => x.mode === 'include');
+    if (incl.length && memberCountOf(g.id) === 0) add(e, 'review', 'Assigned, but the group is empty', `${plural(incl.length, 'item')} assigned: ${list(incl.map(x => x.name).sort(ciCmp))}.`);
+    if (!isDyn(g)) return;   // the checks below are about rules; unassigned static groups are normal
+    if (groupState(g) === 'Paused') add(e, 'review', 'Rule processing paused', 'Membership is not updated while rule processing is paused.');
+    if (deviceTags.size) {   // without any device data every tag would look unused
+      const unused = [...new Set([...(g.membershipRule || '').matchAll(ORDER_TAG_RE)].map(m => m[1]))].filter(t => !deviceTags.has(t.toLowerCase()));
+      if (unused.length) add(e, 'review', unused.length === 1 ? `No device has group tag "${unused[0]}"` : `No device has group tags ${unused.map(t => `"${t}"`).join(', ')}`,
+        `The rule matches ${unused.map(t => `[OrderID]:${t}`).join(', ')}, but no device in Intune or Autopilot has ${unused.length === 1 ? 'that tag' : 'those tags'}.`);
+    }
+    // -contains "[OrderID]:X" is a substring match: tag X also catches X2, XLAB, …
+    const containsTags = orderContainsTags(g.membershipRule);
+    if (containsTags.length && deviceTagList.length) {
+      const own = new Set(containsTags.map(t => t.toLowerCase()));
+      const extra = deviceTagList.filter(t => !own.has(t.toLowerCase()) && evalRule(g.membershipRule, buildSimProps({ ...SIM_DEFAULTS, groupTag: t })));
+      if (extra.length) add(e, 'review', 'Rule matches more group tags than intended',
+        `Rule uses -contains, so '${containsTags.join("', '")}' also matches: ${extra.join(', ')}. Use -eq or -any (_ -eq "[OrderID]:${containsTags[0]}") for an exact match.`);
+    }
+    if (!u.length) add(e, 'review', 'Not assigned', 'No profile, policy or app targets this dynamic group.');
+    if (!ruleSupport(g.membershipRule).supported) add(e, 'review', 'Rule can\'t be fully simulated', 'The rule uses properties or operators the simulation doesn\'t evaluate.', true);
+  });
+  // All devices / All users without a filter
+  Object.values(BUILTIN_TARGETS).forEach(b => {
+    // A reference to a filter that no longer exists counts as no filter (when the filter list is available)
+    const filtered = x => x.filterId && (!DATA.assignmentFilters.length || filterById(x.filterId));
+    const names = (usage[b.id] || []).filter(x => x.mode === 'include' && !filtered(x)).map(x => x.name).sort(ciCmp);
+    if (names.length) add({ key: 'Group|' + b.id, type: 'Groups', name: b.displayName, kind: 'Built-in target', link: { tab: 'groups', group: b.id } },
+      'review', `${plural(names.length, 'item')} without a filter`, `${list(names)}.`);
   });
 
-  // ── Devices ──
-  const devs = [...DATA.managedDevices].sort((a, b) => ciCmp(a.deviceName, b.deviceName));
-  const devRef = d => ({ label: `${d.deviceName || d.serialNumber} (${d.serialNumber || 'no serial'})`, link: { tab: 'devices', device: d.id } });
+  // ── Devices (minor) ──
   if (loaded(['Devices', 'APDevices'])) {
-    const ref = devRef;
-    const noTag = devs.filter(d => d._source !== 'enrolled' && !d.groupTag);   // has an Autopilot identity, but no tag
-    if (noTag.length) add({ id: 'devices:no-tag', severity: 'info', category: 'Devices', title: `${plural(noTag.length, 'Autopilot device')} ${noTag.length === 1 ? 'has' : 'have'} no group tag`,
-      detail: 'Rules on [OrderID] won\'t match them.', link: { tab: 'devices', filters: { tag: '__none__' } }, items: noTag.map(ref) });
-    const stale = devs.filter(deviceIsStale);
-    if (stale.length) add({ id: 'devices:stale', severity: 'info', category: 'Devices', title: `${plural(stale.length, 'device')} ${stale.length === 1 ? 'hasn\'t' : 'haven\'t'} synced in 30+ days`,
-      detail: 'Last sync is more than 30 days ago.', link: { tab: 'devices', filters: { stale: true } }, items: stale.map(ref) });
+    DATA.managedDevices.filter(d => d._source !== 'enrolled' && !d.groupTag).sort((a, b) => ciCmp(a.deviceName, b.deviceName)).forEach(d => add(
+      { key: 'Device|' + d.id, type: 'Devices', name: d.serialNumber || d.deviceName || d.id, kind: 'Autopilot device', link: { tab: 'devices', device: d.id } },   // serial: Autopilot-only devices have no real name
+      'review', 'No group tag', 'Rules on [OrderID] won\'t match this device.', true));
   }
-  if (loaded(['Devices'])) {
-    const nonc = devs.filter(d => d.complianceState === 'noncompliant');
-    if (nonc.length) add({ id: 'devices:noncompliant', severity: 'amber', category: 'Devices', title: `${plural(nonc.length, 'device')} ${nonc.length === 1 ? 'is' : 'are'} noncompliant`,
-      detail: 'Intune reports these devices as not compliant.', link: { tab: 'devices', filters: { comp: ['noncompliant'] } }, items: nonc.map(devRef) });
-  }
-
-  // ── Data quality: one per failed source ──
-  [...failed].sort(ciCmp).forEach(src => add({ id: 'source:' + src, severity: 'info', category: 'Data quality',
-    title: `${errorSource(src + ':')} couldn't be loaded. Related checks were skipped.`,
-    detail: DATA.errors.filter(e => String(e).split(':')[0].trim() === src).join(' ') }));
-
-  return out.sort((a, b) => FINDING_SEVERITY[a.severity] - FINDING_SEVERITY[b.severity]
-    || FINDING_CATEGORIES.indexOf(a.category) - FINDING_CATEGORIES.indexOf(b.category)
-    || ciCmp(a.title, b.title) || ciCmp(a.id, b.id));
-}
-
-// ── Findings: compact strip (Overview, Groups) + right-side drawer ──
-const FD = { open: false, cats: new Set(), showInfo: false, expanded: new Set(), openerSel: '', pendingOpen: false, prevOverflow: '', list: [] };
-const FD_GROUP_CATS = ['Groups', 'Broad scope'];
-const FD_SEV_COLOR = { red: 'var(--red)', amber: 'var(--amber)', info: 'var(--blue)' };
-const fdPlural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
-
-// Counts and wording shared by the strips, the drawer header and the nav badge.
-// "To look at" = red + amber (the badge count); info is mentioned but never counted as an issue.
-function findingsSummary(findings, scope = 'all') {
-  const r = findings.filter(f => f.severity === 'red').length, a = findings.filter(f => f.severity === 'amber').length, i = findings.length - r - a;
-  const n = r + a;
-  const parts = [r && `${r} ${r === 1 ? 'needs' : 'need'} attention`, a && `${a} to review`, i && `${i} info`].filter(Boolean);
-  if (DATA.errors.length) parts.push('some data couldn\'t be loaded');
-  const noun = scope === 'groups' ? 'group finding' : 'finding';
-  const title = n ? `${fdPlural(n, noun)} to look at`
-    : i ? 'No issues found'
-    : scope === 'groups' ? 'No group findings' : 'No findings in your deployment';
-  return { r, a, i, n, title, sub: parts.join(' · '), worst: r ? 'red' : a ? 'amber' : i ? 'info' : 'none' };
-}
-
-// One-line strip; scope 'groups' shows only Groups + Broad scope and opens the drawer filtered to them
-function findingsStripHtml(findings, scope = 'all') {
-  const list = scope === 'groups' ? findings.filter(f => FD_GROUP_CATS.includes(f.category)) : findings;
-  const s = findingsSummary(list, scope);
-  const tone = s.worst === 'red' || s.worst === 'amber' ? s.worst : 'none';
-  const title = s.title;
-  const icon = tone !== 'none' ? '!' : list.length ? 'i'
-    : '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  return `<button type="button" class="fd-strip fd-strip-${tone}" data-fd-opener="${scope}" aria-haspopup="dialog" onclick="openFindingsDrawer('${scope}')">
-    <span class="fd-icon" aria-hidden="true">${icon}</span>
-    <span class="fd-text"><span class="fd-stitle">${esc(title)}</span>${s.sub ? `<span class="fd-ssub">${esc(s.sub)}</span>` : ''}</span>
-    <span class="fd-view">View ›</span>
-  </button>`;
-}
-
-// The finding row (title, detail, expandable items, "View →"); index i points into FD.list
-function findingRowHtml(f, i) {
-  const open = FD.expanded.has(f.id), key = htmlAttr(f.id);
-  return `<div class="ov-frow">
-      <span class="tr-sq" style="background:${FD_SEV_COLOR[f.severity]};" role="img" aria-label="${f.severity}"></span>
-      <div class="ov-fmain">
-        <div class="ov-ftitle">${esc(f.title)}</div>
-        ${f.detail ? `<div class="ov-fdetail">${esc(f.detail)}</div>` : ''}
-        ${f.items.length ? `<button type="button" class="ov-itoggle" data-fd-key="items:${key}" aria-expanded="${open}" onclick="toggleFindingItems(${i})">${fdPlural(f.items.length, 'item')} ${open ? '▾' : '▸'}</button>` : ''}
-        ${open ? `<ul class="ov-items">${f.items.map((it, j) => `<li><span>${esc(it.label)}</span>${it.link ? `<button type="button" class="ov-link" data-fd-key="item:${key}:${j}" onclick="fdOpenLink(${i}, ${j})">View →</button>` : ''}</li>`).join('')}</ul>` : ''}
-      </div>
-      ${f.link ? `<button type="button" class="ov-link" data-fd-key="view:${key}" onclick="fdOpenLink(${i})">View →</button>` : '<span></span>'}
-    </div>`;
-}
-
-// (Re)render the drawer content; keeps scroll position, expanded items and keyboard focus
-function renderFindingsDrawer(findings = buildFindings()) {
-  const d = el('findings-drawer');
-  if (!d) return;
-  const scroll = d.querySelector('.fd-body')?.scrollTop || 0;
-  const focusKey = d.contains(document.activeElement) ? document.activeElement.dataset.fdKey : null;
-  FD.list = findings;
-  const s = findingsSummary(findings);
-  const cats = FINDING_CATEGORIES.filter(c => findings.some(f => f.category === c));
-  const filtered = findings.filter(f => !FD.cats.size || FD.cats.has(f.category));
-  const group = (sev, label) => {
-    const rows = filtered.filter(f => f.severity === sev);
-    if (!rows.length) return '';
-    const head = sev === 'info'
-      ? `<button type="button" class="fd-ghead fd-ghead-btn" data-fd-key="info" aria-expanded="${FD.showInfo}" onclick="FD.showInfo=!FD.showInfo;renderFindingsDrawer()"><span class="tr-sq" style="background:${FD_SEV_COLOR[sev]};"></span>${label} · ${rows.length}<span class="fd-caret">${FD.showInfo ? '▾' : '▸'}</span></button>`
-      : `<div class="fd-ghead"><span class="tr-sq" style="background:${FD_SEV_COLOR[sev]};"></span>${label} · ${rows.length}</div>`;
-    return `<section class="fd-group">${head}${sev !== 'info' || FD.showInfo ? rows.map(f => findingRowHtml(f, findings.indexOf(f))).join('') : ''}</section>`;
-  };
-  d.innerHTML = `
-    <div class="fd-head">
-      <div class="fd-htext"><h2 id="fd-title">Findings</h2>
-        <div class="fd-sub">${esc(s.title + (s.sub ? ' · ' + s.sub : ''))}</div></div>
-      <button type="button" class="fd-close" id="fd-close" data-fd-key="close" aria-label="Close findings" onclick="closeFindingsDrawer()">×</button>
-    </div>
-    ${cats.length ? `<div class="gp-chiprow fd-chips">${filterChip(`onclick="setFindingsCats([])" data-fd-key="cat:All" aria-pressed="${!FD.cats.size}"`, 'All', !FD.cats.size)}${cats.map(c =>
-      filterChip(`onclick="toggleFindingsCat('${c}')" data-fd-key="cat:${c}" aria-pressed="${FD.cats.has(c)}"`, `${c} (${findings.filter(f => f.category === c).length})`, FD.cats.has(c))).join('')}</div>` : ''}
-    <div class="fd-body">
-      ${!findings.length ? `<div class="tr-empty empty-note">${DATA.errors.length ? 'No findings in the data that loaded.' : 'No findings.'}</div>`
-        : !filtered.length ? '<div class="tr-empty empty-note">No findings in the selected categories.</div>'
-        : group('red', 'Needs attention') + group('amber', 'To review') + group('info', 'Info')}
-    </div>`;
-  d.querySelector('.fd-body').scrollTop = scroll;
-  if (focusKey) [...d.querySelectorAll('[data-fd-key]')].find(x => x.dataset.fdKey === focusKey)?.focus();
-}
-
-function openFindingsDrawer(source = 'all') {
-  if (source === 'groups') FD.cats = new Set(FD_GROUP_CATS);
-  else if (source !== 'url') FD.cats = new Set();
-  FD.openerSel = { all: '[data-fd-opener="all"]', groups: '[data-fd-opener="groups"]', badge: '#tab-overview' }[source] || '';
-  const wasOpen = FD.open;
-  if (!wasOpen) { FD.showInfo = false; FD.expanded = new Set(); }   // each opening starts collapsed
-  FD.open = true;
-  renderFindingsDrawer();
-  el('findings-drawer').classList.add('fd-open');
-  el('fd-scrim').classList.add('fd-open');
-  if (!wasOpen) {
-    FD.prevOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';   // lock page scroll behind the drawer
-    document.addEventListener('keydown', fdKeydown);
-    track('findings-open', 'Findings drawer opened');
-  }
-  el('fd-close').focus();
-  simToUrl();
-}
-
-function closeFindingsDrawer(restoreFocus = true) {
-  if (!FD.open) return;
-  FD.open = false;
-  el('findings-drawer').classList.remove('fd-open');
-  el('fd-scrim').classList.remove('fd-open');
-  document.documentElement.style.overflow = FD.prevOverflow;
-  document.removeEventListener('keydown', fdKeydown);
-  if (restoreFocus && FD.openerSel) document.querySelector(FD.openerSel)?.focus();
-  simToUrl();
-}
-
-// Esc closes; Tab / Shift+Tab stay inside the drawer
-function fdKeydown(e) {
-  if (!FD.open) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeFindingsDrawer(); return; }
-  if (e.key !== 'Tab') return;
-  const d = el('findings-drawer');
-  const items = [...d.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.getClientRects().length);
-  if (!items.length) return;
-  const first = items[0], last = items[items.length - 1];
-  if (!d.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
-  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-}
-
-function toggleFindingItems(i) {
-  const f = FD.list[i];
-  if (!f) return;
-  if (FD.expanded.has(f.id)) FD.expanded.delete(f.id); else FD.expanded.add(f.id);
-  renderFindingsDrawer();
-}
-function setFindingsCats(list) { FD.cats = new Set(list); renderFindingsDrawer(); simToUrl(); }
-function toggleFindingsCat(c) {
-  if (FD.cats.has(c)) FD.cats.delete(c); else FD.cats.add(c);
-  renderFindingsDrawer();
-  simToUrl();
-}
-// Links inside the drawer close it first, then navigate
-function fdOpenLink(i, j) {
-  const f = FD.list[i];
-  const link = j === undefined ? f?.link : f?.items[j]?.link;
-  closeFindingsDrawer(false);
-  openFindingLink(link);
+  return out;
 }
 
 // Navigate to where a finding can be looked at
@@ -3495,10 +3321,6 @@ function openFindingLink(link) {
   } else if (link.tab) {
     switchTab(link.tab);
   }
-}
-
-function groupFindingsHtml(all = buildFindings()) {
-  return findingsStripHtml(all, 'groups');
 }
 
 function renderGroupDetailHtml() {
@@ -5170,7 +4992,7 @@ function buildReport(model, now = new Date()) {
     { id: 'apps', title: 'Apps', rows: rowsOf(model.apps) },
   ].map(sec => ({ ...sec, count: sec.rows.length }));
 
-  return { meta, device, kpis, findings, sections };
+  return { meta, device, kpis, findings, sections, tenantFindings: fxReportModel() };
 }
 
 const mdCell = s => String(s ?? '').replace(/\r\n|\r|\n/g, ' ').replace(/\|/g, '\\|').trim();
@@ -5207,6 +5029,18 @@ function toMarkdown(r) {
     }
     L.push('');
   });
+  const t = r.tenantFindings;
+  if (t) {   // only after "Run checks"
+    L.push('## Tenant findings', '', `_Last run ${localStamp(t.at)}${t.stale ? ' · data refreshed since, results may be outdated' : ''}. Findings are guidance, not a verdict._`, '');
+    if (t.notes.length) { t.notes.forEach(n => L.push(`> - ${mdCell(n)}`)); L.push(''); }
+    t.groups.forEach(g => {
+      L.push(`### ${g.icon} ${g.title} (${g.rows.length})`, '');
+      if (!g.rows.length) { L.push('_None._', ''); return; }
+      L.push('| Type | Name | Kind | Finding |', '|---|---|---|---|');
+      g.rows.forEach(x => L.push(`| ${mdCell(x.type)} | ${mdCell(x.name)} | ${mdCell(x.kind)} | ${x.minor ? '_(minor)_ ' : ''}${mdCell(x.text)} |`));
+      L.push('');
+    });
+  }
   L.push(`_Generated locally by Autopilotlens ${r.meta.appVersion}. Contains tenant configuration data._`, '');
   return L.join('\n');
 }
@@ -5430,6 +5264,14 @@ function toPrintView(r) {
   </section>
   <section class="pr-section pr-flow"><h2>Assignment flow</h2>${toReportSvg(r)}</section>
   ${r.sections.filter(sec => sec.rows.length).map(sec => `<section class="pr-section"><h2>${esc(sec.title)} (${sec.count})</h2>${table(sec)}</section>`).join('')}
+  ${r.tenantFindings ? `<section class="pr-section"><h2>Tenant findings</h2>
+    <p class="pr-empty">Last run ${esc(localStamp(r.tenantFindings.at))}${r.tenantFindings.stale ? ' · data refreshed since, results may be outdated' : ''}. Findings are guidance, not a verdict.</p>
+    ${r.tenantFindings.notes.length ? `<ul class="pr-notes">${r.tenantFindings.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
+    ${r.tenantFindings.groups.map(g => `<h3 class="pr-h3">${esc(`${g.icon} ${g.title} (${g.rows.length})`)}</h3>${g.rows.length
+      ? `<table class="pr-table"><thead><tr><th>Type</th><th>Name</th><th>Kind</th><th>Finding</th></tr></thead><tbody>${g.rows.map(x =>
+        `<tr><td>${esc(x.type)}</td><td class="pr-name">${esc(x.name)}</td><td>${esc(x.kind)}</td><td>${x.minor ? '<em>(minor)</em> ' : ''}${esc(x.text)}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="pr-empty">None.</p>'}`).join('')}
+  </section>` : ''}
   <footer class="pr-foot">Generated locally in the browser. No tenant data was sent to Autopilotlens. This document contains tenant configuration data.</footer>
 </article>`;
 }
@@ -5742,8 +5584,6 @@ applyTweaks();
   window.parent.postMessage({type:'__edit_mode_available'},'*');
 })();
 </script>
-<div id="fd-scrim" class="fd-scrim" onclick="closeFindingsDrawer()"></div>
-<aside id="findings-drawer" class="fd" role="dialog" aria-modal="true" aria-labelledby="fd-title"><h2 id="fd-title">Findings</h2></aside>
 <div id="sc-scrim" class="fd-scrim" onclick="closeScopePanel()"></div>
 <aside id="sc-panel" class="fd" role="dialog" aria-modal="true" aria-labelledby="sc-ptitle"><h2 id="sc-ptitle">Scope check</h2></aside>
 <div id="print-root" hidden></div>
