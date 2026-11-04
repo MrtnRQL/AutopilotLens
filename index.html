@@ -450,6 +450,12 @@
     .tr-pill-col .tr-pill { white-space: normal; text-align: center; }   /* "Depends on filter" wraps inside the pill column */
     .tr-filter { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; }
     .tr-stat-hint { margin-top: 2px; font-size: 11px; color: var(--text3); }
+    /* What applies?: matches hidden for other platforms */
+    details.sim-hidden { padding: 0; overflow: hidden; }
+    details.sim-hidden > summary { cursor: pointer; padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text2); background: var(--bg3); }
+    details.sim-hidden[open] > summary { border-bottom: 1px solid var(--border); }
+    details.sim-hidden > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .tr-row.sim-hidden-row { grid-template-columns: minmax(0, 1fr) 140px; }
     /* Devices */
     .tr-pill-accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-wash); }
     .dv-export { margin-left: auto; padding: 4px 10px; min-height: 28px; }
@@ -786,9 +792,17 @@ const DEMO_DATA = {
         { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } },
         { target:{ '@odata.type':'#microsoft.graph.exclusionGroupAssignmentTarget', groupId:'grp-exclusions' } }
       ]
+    },
+    {
+      id:'co-ios', displayName:'iOS compliance - Passcode', '@odata.type':'#microsoft.graph.iosCompliancePolicy',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allLicensedUsersAssignmentTarget' } }]   // demo: iOS, hidden for Windows devices
     }
   ],
   apps: [
+    {
+      id:'app-teams-android', displayName:'Microsoft Teams (Android)', '@odata.type':'#microsoft.graph.androidManagedStoreApp',
+      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allLicensedUsersAssignmentTarget' } }]   // demo: Android, hidden for Windows devices
+    },
     {
       id:'app-m365', displayName:'Microsoft 365 Apps', '@odata.type':'#microsoft.graph.win32LobApp',
       assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
@@ -800,7 +814,7 @@ const DEMO_DATA = {
   ],
   endpointSecurity: [
     {
-      id:'es-defender', displayName:'Defender AV baseline', '@odata.type':'#microsoft.graph.deviceManagementIntent',
+      id:'es-defender', displayName:'Defender AV baseline', '@odata.type':'#microsoft.graph.deviceManagementIntent', templateId:'tpl-demo-av',
       assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
     }
   ],
@@ -836,6 +850,8 @@ const DEMO_DATA = {
   ],
   loading:false, loaded:true, errors:[]
 };
+// Demo /deviceManagement/templates rows (platform of legacy Endpoint Security intents)
+const DEMO_TEMPLATES = [{ id:'tpl-demo-av', displayName:'Microsoft Defender Antivirus', platformType:'windows10AndLater' }];
 // Demo group members (Entra device objects), keyed by demo group id. Demo makes no Graph calls.
 const DEMO_MEMBERS = {
   'grp-sales-devices': [
@@ -866,7 +882,7 @@ let currentAccount = null;
 let isAuthed = false;
 const TABS = ['overview','matrix','simulate','groups','devices'];
 let currentTab = 'overview';
-let SIM = { deviceName:'', enrollmentProfileName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', upn:'', dept:'', jobTitle:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
+let SIM = { deviceName:'', enrollmentProfileName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', platform:'Windows', upn:'', dept:'', jobTitle:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
 let simView = 'trace';   // 'trace' | 'graph'
 let LAST_SIM = null;     // { traceHtml, graphHtml, model } from the last runSim()
 let TENANT_NAME = '';    // organization displayName (or 'Demo tenant'), used in exports
@@ -912,7 +928,7 @@ const isDyn = g => (g.groupTypes || []).includes('DynamicMembership') || !!g.mem
 const el = id => document.getElementById(id);
 
 // ── URL state: serialize/restore Simulate params ──
-const SIM_URL_FIELDS = ['deviceName', 'enrollmentProfileName', 'groupTag', 'serial', 'mfg', 'model', 'osVer', 'upn', 'dept', 'jobTitle', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
+const SIM_URL_FIELDS = ['deviceName', 'enrollmentProfileName', 'groupTag', 'serial', 'mfg', 'model', 'osVer', 'platform', 'upn', 'dept', 'jobTitle', 'displayName', 'deviceId', 'azureDeviceId', 'userId'];
 
 function simToUrl() {
   const params = new URLSearchParams();
@@ -937,6 +953,7 @@ function restoreFromUrl() {
   const tab = params.get('tab');
   if (tab && TABS.includes(tab)) currentTab = tab;
   SIM_URL_FIELDS.forEach(k => { if (params.has(k)) SIM[k] = params.get(k); });
+  SIM.platform = simPlatformLabel(SIM.platform);
   simView = params.get('view') === 'graph' ? 'graph' : 'trace';
   if (currentTab === 'groups' && params.get('group')) GROUPS.selected = params.get('group');
   if (currentTab === 'devices') devicesFromParams(params);
@@ -1041,13 +1058,15 @@ function startDemo() {
   currentAccount = null;
   TENANT_NAME = 'Demo tenant';
   DATA = JSON.parse(JSON.stringify(DEMO_DATA));
+  applyIntentPlatforms(DATA.endpointSecurity, DEMO_TEMPLATES);
   // Keep a ?tab=groups&group=… or ?tab=devices deep link; otherwise start on the overview as before
   const deepTab = new URLSearchParams(location.search).get('tab');
   currentTab = deepTab === 'groups' && GROUPS.selected ? 'groups' : deepTab === 'devices' ? 'devices' : 'overview';
-  SIM = { deviceName:'DEMO-SALES-001', enrollmentProfileName:'Windows Autopilot - Sales', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
+  SIM = { deviceName:'DEMO-SALES-001', enrollmentProfileName:'Windows Autopilot - Sales', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', platform:'Windows', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
   // Deep-linked simulation fields win over the demo defaults (like the groups deep link above)
   const urlParams = new URLSearchParams(location.search);
   SIM_URL_FIELDS.forEach(k => { if (urlParams.has(k)) SIM[k] = urlParams.get(k); });
+  SIM.platform = simPlatformLabel(SIM.platform);
   markActiveTab(currentTab);
   el('hdr-connect').style.display = 'inline-flex';
   el('hdr-connect').innerHTML = 'Sign in with Microsoft';
@@ -1308,7 +1327,7 @@ async function refreshData() {
     }
   };
 
-  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac, flt] = await Promise.all([
+  const [pr, esp, gr, dc, sc, co, apIos, apAndroid, apWin, es, app, dv, apDev, scr, rem, fu, qu, du, ac, flt, tpl] = await Promise.all([
     safe('AP Profiles', () => graphGet(`${B}/deviceManagement/windowsAutopilotDeploymentProfiles?$expand=assignments`)),
     safe('ESP', () => graphGet(`${B}/deviceManagement/deviceEnrollmentConfigurations?$filter=deviceEnrollmentConfigurationType eq 'windows10EnrollmentCompletionPageConfiguration'&$expand=assignments`)),
     safe('Groups', () => graphGet(`https://graph.microsoft.com/v1.0/groups?$select=id,displayName,description,groupTypes,membershipRule,membershipRuleProcessingState`)),
@@ -1330,6 +1349,10 @@ async function refreshData() {
     safe('Driver Updates', () => withAssignments('Driver Updates', '/deviceManagement/windowsDriverUpdateProfiles')),  // beta
     safe('App Configs', () => withAssignments('App Configs', '/deviceAppManagement/mobileAppConfigurations')),       // beta
     safe('Filters', () => graphGet(`${B}/deviceManagement/assignmentFilters`)),                                      // beta
+    // beta: GET /deviceManagement/templates — platformType per template, for the legacy Endpoint Security platform.
+    // Optional: a failure (403 etc.) only leaves intents as platform unknown, so it's not reported as partial data.
+    graphGet(`${B}/deviceManagement/templates?$select=id,displayName,platformType`)
+      .catch(e => { if (isAuthed) console.warn('[AAV] Templates not loaded; legacy Endpoint Security stays platform unknown:', e.message); return null; }),
   ]);
   if (fallbacks.length) console.info('[AAV] $expand=assignments not supported; loaded assignments per item for:', fallbacks.join(', '));
   DATA.assignmentFallbacks = fallbacks;
@@ -1342,6 +1365,7 @@ async function refreshData() {
   if (co) DATA.compliancePolicies = co;
   if (app) DATA.apps = app;
   if (es) DATA.endpointSecurity = es;
+  applyIntentPlatforms(DATA.endpointSecurity, Array.isArray(tpl) ? tpl : null);
   // App Protection targets users, so in simulation it can only match via user group membership (or All users)
   if (apIos || apAndroid || apWin) DATA.appProtection = [
     ...(apIos || []).map(p => ({ ...p, platforms: 'ios' })),
@@ -1419,6 +1443,7 @@ async function refreshData() {
   });
   DATA.groupTags = [...tagSet].sort();
 
+  logUnknownPlatformTypes();
   DATA.loading = false;
   DATA.loaded = isAuthed;   // a 401 during the load signed us out: don't present partial data as loaded
   el('hdr-syncing').style.display = 'none';
@@ -1538,12 +1563,12 @@ function allPolicies() {
 }
 
 function platformTag(p) {
-  const pl = ((p.platforms || p.platform || '')).toLowerCase();
-  const ot = ((p['@odata.type'] || '')).toLowerCase();
-  if (pl.includes('windows') || ot.includes('windows') || ot.includes('win32')) return `<span class="tag tag-windows">Windows</span>`;
-  if (pl.includes('ios') || ot.includes('ios')) return `<span class="tag tag-ios">iOS</span>`;
-  if (pl.includes('android') || ot.includes('android')) return `<span class="tag tag-android">Android</span>`;
-  if (pl.includes('macos') || ot.includes('macos')) return `<span class="tag tag-macos">macOS</span>`;
+  const plat = detectPlatform(p);
+  if (plat === 'Windows') return `<span class="tag tag-windows">Windows</span>`;
+  if (plat === 'iOS') return `<span class="tag tag-ios">iOS</span>`;
+  if (plat === 'Android') return `<span class="tag tag-android">Android</span>`;
+  if (plat === 'macOS') return `<span class="tag tag-macos">macOS</span>`;
+  if (plat === 'Linux') return `<span class="tag tag-gray">Linux</span>`;
   return `<span class="tag tag-gray">Cross-platform</span>`;
 }
 
@@ -1678,15 +1703,96 @@ function renderOverview(mount) {
     </div>`;
 }
 
+// ── Item platform: shared by the Assignments matrix and What applies? ──
+// Returns windows | macos | ios | android | linux | any | unknown, or a comma list ("windows,macos")
+// when a Settings Catalog policy targets several platforms.
+const PLATFORM_LABELS = { windows: 'Windows', macos: 'macOS', ios: 'iOS', android: 'Android', linux: 'Linux', any: 'Any platform', unknown: 'Unknown' };
+const PLATFORM_TYPES_EXACT = {
+  windows: ['win32lobapp', 'wingetapp', 'windowsmobilemsi', 'windowsuniversalappx', 'windowsstoreapp', 'microsoftstoreforbusinessapp',
+    'officesuiteapp', 'windowsmicrosoftedgeapp', 'windowswebapp', 'windowsmanagedappprotection',
+    'devicemanagementscript', 'devicehealthscript'],   // PowerShell scripts and remediations
+  macos: ['deviceshellscript', 'devicecustomattributeshellscript'],
+  ios: ['iosmanagedappprotection'],
+  android: ['androidmanagedappprotection'],
+  any: ['webapp'],
+};
+const PLATFORM_TYPES_PREFIX = [
+  ['windows', ['windows10', 'windows81', 'windowshealthmonitoring', 'windowsupdateforbusiness', 'windowsinformationprotection']],
+  ['macos', ['macos']],
+  ['ios', ['ios', 'managedios']],
+  ['android', ['android', 'managedandroid']],
+];
+function platformsFromValue(v) {   // configurationPolicies.platforms, e.g. "windows10" or "windows10,macOS"
+  const out = new Set();
+  String(v || '').toLowerCase().split(/[\s,]+/).forEach(p => {
+    if (p.startsWith('windows')) out.add('windows');
+    else if (p === 'macos') out.add('macos');
+    else if (p === 'ios') out.add('ios');
+    else if (p.startsWith('android') || p === 'aosp') out.add('android');
+    else if (p === 'linux') out.add('linux');
+  });
+  return [...out];
+}
+// Legacy Endpoint Security: an intent's platform comes from its template (policyPlatformType)
+function templatePlatformKey(v) {
+  const s = String(v || '').toLowerCase();
+  if (s.startsWith('windows')) return 'windows';
+  if (s === 'macos') return 'macos';
+  if (s === 'ios') return 'ios';
+  if (s.startsWith('android')) return 'android';
+  if (s === 'linux') return 'linux';
+  if (s === 'all') return 'any';
+  return '';
+}
+// templates: rows of /deviceManagement/templates, or null when they couldn't be loaded. Sets intent._templatePlatform.
+function applyIntentPlatforms(intents, templates) {
+  intents.forEach(it => { delete it._templatePlatform; });
+  if (!templates) return;
+  if (templates.length && !templates.some(t => 'platformType' in t)) {
+    console.warn('[AAV] /deviceManagement/templates: no platformType in the response; legacy Endpoint Security stays platform unknown. Fields seen:', Object.keys(templates[0]).join(', '));
+    return;
+  }
+  const byId = new Map(templates.map(t => [t.id, templatePlatformKey(t.platformType)]));
+  intents.forEach(it => { const p = byId.get(it.templateId); if (p) it._templatePlatform = p; });
+}
+function itemPlatform(item) {
+  // a) Settings Catalog / configurationPolicies (and the per-platform App Protection lists) carry .platforms
+  const fromValue = platformsFromValue(item.platforms);
+  if (fromValue.length) return fromValue.join(',');
+  if (item._templatePlatform) return item._templatePlatform;   // legacy Endpoint Security, via its template
+  // b) explicit @odata.type map
+  const t = (item['@odata.type'] || '').replace('#microsoft.graph.', '').toLowerCase();
+  for (const [plat, types] of Object.entries(PLATFORM_TYPES_EXACT)) if (types.includes(t)) return plat;
+  for (const [plat, prefixes] of PLATFORM_TYPES_PREFIX) if (t && prefixes.some(p => t.startsWith(p))) return plat;
+  // c) substring fallback (the previous detectPlatform logic)
+  const pl = String(item.platform || '').toLowerCase();
+  if (pl.includes('windows') || t.includes('windows') || t.includes('win32')) return 'windows';
+  if (pl.includes('ios') || t.includes('ios')) return 'ios';
+  if (pl.includes('android') || t.includes('android')) return 'android';
+  if (pl.includes('macos') || t.includes('macos')) return 'macos';
+  // d)
+  return 'unknown';
+}
+const platformLabel = p => p.split(',').map(x => PLATFORM_LABELS[x] || x).join(' + ');
+// Does an item with platform p apply to a device platform (windows | macos | ios | android)?
+const platformMatches = (p, devicePlat) => p === 'any' || p === 'unknown' || p.split(',').includes(devicePlat);
+
+// Diagnostics: which @odata.types end up as platform "unknown" (logged once per refresh, types only, no names)
+function logUnknownPlatformTypes() {
+  const types = new Map();
+  [...allPolicies(), ...DATA.apps.map(a => ({ ...a, _t: 'App' }))].forEach(it => {
+    if (itemPlatform(it) !== 'unknown') return;
+    const k = `${it._t}: ${(it['@odata.type'] || '(no @odata.type)').replace('#microsoft.graph.', '')}`;
+    types.set(k, (types.get(k) || 0) + 1);
+  });
+  if (types.size) console.info('[AAV] Platform unknown (not filtered by platform in What applies?):', [...types].map(([k, n]) => `${k} ×${n}`).join(', '));
+}
+
 // ── Matrix filter helpers ──
+// Matrix label for an item; several platforms, "any" and "unknown" stay under "Cross" as before
 function detectPlatform(item) {
-  const pl = ((item.platforms || item.platform || '')).toLowerCase();
-  const ot = ((item['@odata.type'] || '')).toLowerCase();
-  if (pl.includes('windows') || ot.includes('windows') || ot.includes('win32')) return 'Windows';
-  if (pl.includes('ios') || ot.includes('ios')) return 'iOS';
-  if (pl.includes('android') || ot.includes('android')) return 'Android';
-  if (pl.includes('macos') || ot.includes('macos')) return 'macOS';
-  return 'Cross';
+  const p = itemPlatform(item);
+  return { windows: 'Windows', ios: 'iOS', android: 'Android', macos: 'macOS', linux: 'Linux' }[p] || 'Cross';
 }
 
 function scopeOf(item) {
@@ -1831,7 +1937,7 @@ function renderMatrix(mount) {
   const allPolicyTypes = ['Device Config', 'Settings Cat', 'Compliance', 'EP Security', 'App Protection',
     'Script', 'Remediation', 'Feature Update', 'Quality Update', 'Driver Update', 'App Config'];
   const allAppTypes = [...new Set(allApps.map(a => (a['@odata.type'] || '').replace('#microsoft.graph.', '')))].filter(Boolean);
-  const allPlatforms = ['Windows', 'iOS', 'Android', 'macOS', 'Cross'];
+  const allPlatforms = ['Windows', 'iOS', 'Android', 'macOS', 'Linux', 'Cross'];
   const allScopes = ['Broad', 'Targeted', 'Unassigned'];
 
   const polFilterCount = matrixFilterCount('policies');
@@ -2349,7 +2455,7 @@ function groupFindings({ groups, usage, countOf, devices }) {
 // ── Tenant-wide findings: one model for the Overview card, the Groups tab and the nav badge ──
 const FINDING_CATEGORIES = ['Autopilot', 'ESP', 'Assignments', 'Groups', 'Broad scope', 'Filters', 'Devices', 'Data quality'];
 const FINDING_SEVERITY = { red: 0, amber: 1, info: 2 };
-const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', upn: '', dept: '', jobTitle: '' };
+const SIM_DEFAULTS = { deviceName: '', enrollmentProfileName: '', groupTag: '', serial: '', mfg: '', model: '', osVer: '10.0.26100', platform: 'Windows', upn: '', dept: '', jobTitle: '' };
 
 // Finding: { id, severity, category, title, detail, items: [{ label, link }], link }
 // link: { tab, group?, search?, table?, sim? }. Reads DATA, MEMBER_COUNTS (via memberCountOf) and buildGroupUsage(); no DOM.
@@ -2743,7 +2849,7 @@ function openFindingLink(link) {
     setMatrixField(link.table || 'policies', 'search', link.search);
   } else if (link.sim) {
     // A fresh device for the tag; user fields stay as they are. Not run automatically.
-    Object.assign(SIM, { deviceName: '', enrollmentProfileName: '', serial: '', mfg: '', model: '', deviceId: '', azureDeviceId: '' }, link.sim);
+    Object.assign(SIM, { deviceName: '', enrollmentProfileName: '', serial: '', mfg: '', model: '', platform: 'Windows', deviceId: '', azureDeviceId: '' }, link.sim);   // group tags are Autopilot, so Windows
     switchTab('simulate');
   } else if (link.tab === 'devices') {
     const f = link.filters || {};
@@ -2906,6 +3012,7 @@ function simulateGroupMember(memberId) {
     model: d?.model || '',
     mfg: d?.manufacturer || '',
     osVer: d?.osVersion || m.operatingSystemVersion || SIM.osVer,
+    platform: deviceSimPlatform(d || { operatingSystem: m.operatingSystem }),
     azureDeviceId: m.deviceId || '',
     deviceId: d?.id || '',
   });
@@ -2917,6 +3024,19 @@ const DEVICE_PLATFORMS = ['Windows', 'iOS', 'Android', 'macOS', 'Other'];
 const DEVICE_SOURCES = { enrolled: 'Enrolled', 'autopilot-only': 'Autopilot only', 'enrolled+autopilot': 'Enrolled + Autopilot', demo: 'Enrolled' };
 const DEVICE_COMPLIANCE = [['compliant', 'Compliant'], ['noncompliant', 'Noncompliant'], ['inGracePeriod', 'In grace period'], ['other', 'Unknown']];
 const STALE_MS = 30 * 864e5;
+
+// Simulated device platform: the Platform select's values, normalized to the keys itemPlatform() uses
+const SIM_PLATFORMS = ['Windows', 'macOS', 'iOS', 'Android'];
+function simPlatformKey(v) {
+  const s = String(v || '').toLowerCase();
+  if (s.startsWith('mac')) return 'macos';
+  if (s === 'ios' || s === 'ipados') return 'ios';
+  if (s.startsWith('android')) return 'android';
+  return 'windows';   // Windows, and the default for anything else
+}
+const simPlatformLabel = v => ({ windows: 'Windows', macos: 'macOS', ios: 'iOS', android: 'Android' })[simPlatformKey(v)];
+// Device record → simulator platform; Autopilot-only and unknown OS → Windows
+const deviceSimPlatform = d => d._source === 'autopilot-only' ? 'Windows' : simPlatformLabel(devicePlatform(d));
 
 function devicePlatform(d) {
   if (d.platform) return d.platform;
@@ -2944,7 +3064,7 @@ function fmtAgo(iso) {
 }
 // The simulator's view of a device (same fields selectDevice fills)
 const simFromDevice = d => ({ ...SIM_DEFAULTS, deviceName: d.deviceName || '', serial: d.serialNumber || '', mfg: d.manufacturer || '', model: d.model || '',
-  osVer: d.osVersion || '10.0.26100', groupTag: d.groupTag || '', upn: d.userPrincipalName || '' });
+  osVer: d.osVersion || '10.0.26100', platform: deviceSimPlatform(d), groupTag: d.groupTag || '', upn: d.userPrincipalName || '' });
 
 // URL: only non-default values
 function devicesToParams(params) {
@@ -3596,6 +3716,7 @@ function simulateDevice(id) {   // prefill like selectDevice, then switch to Wha
   SIM.mfg = d.manufacturer || '';
   SIM.model = d.model || '';
   SIM.osVer = d.osVersion || '10.0.26100';
+  SIM.platform = deviceSimPlatform(d);
   SIM.groupTag = d.groupTag || '';
   SIM.deviceId = d.id || '';
   SIM.azureDeviceId = d.azureADDeviceId || '';
@@ -3658,6 +3779,8 @@ function renderSimulate(mount) {
             <div><label class="lbl">Serial</label><input class="inp" value="${esc(SIM.serial)}" oninput="SIM.serial=this.value;simToUrl();" /></div>
             <div><label class="lbl">Manufacturer</label><input class="inp" value="${esc(SIM.mfg)}" oninput="SIM.mfg=this.value;simToUrl();" /></div>
             <div><label class="lbl">Model</label><input class="inp" value="${esc(SIM.model)}" oninput="SIM.model=this.value;simToUrl();" /></div>
+            <div><label class="lbl" for="sim-platform">Platform</label>
+              <select class="inp" id="sim-platform" onchange="SIM.platform=this.value;simToUrl();">${SIM_PLATFORMS.map(p => `<option value="${p}" ${SIM.platform === p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
             <div><label class="lbl">OS Version</label><input class="inp" value="${esc(SIM.osVer)}" oninput="SIM.osVer=this.value;simToUrl();" /></div>
             <div>
               <label class="lbl" for="sim-profile">Enrollment profile name</label>
@@ -3743,6 +3866,7 @@ function selectDevice(d) {
   SIM.mfg = d.manufacturer || '';
   SIM.model = d.model || '';
   SIM.osVer = d.osVersion || '10.0.26100';
+  SIM.platform = deviceSimPlatform(d);
   SIM.groupTag = d.groupTag || '';
   SIM.deviceId = d.id || '';
   SIM.azureDeviceId = d.azureADDeviceId || '';
@@ -3908,10 +4032,22 @@ async function runSim() {
   }
   const matchAll = list => list.map(x => matchItem(x)).filter(Boolean);
   const applies = m => m.status === 'applies';
-  const profM = matchAll(DATA.autopilotProfiles);
-  const espM  = matchAll(DATA.enrollmentStatusPages);
-  const polM  = matchAll(allPolicies());
-  const appM  = DATA.apps.map(a => matchItem(a, true)).filter(Boolean);
+  // Platform: matches for other platforms are left out of every view (lists, Trace, Graph, export) and
+  // listed under "Hidden"; an unknown platform is kept and tagged. Autopilot profiles and ESPs are Windows-only.
+  const simPlat = simPlatformKey(SIM.platform);
+  const hidden = [];   // { name, type, platform }
+  const forPlatform = (ms, typeOf, windowsOnly = false) => ms.filter(m => {
+    const p = windowsOnly ? 'windows' : itemPlatform(m.item);
+    m.platformUnknown = p === 'unknown';
+    if (platformMatches(p, simPlat)) return true;
+    hidden.push({ name: m.item.name || m.item.displayName || '', type: typeOf(m.item), platform: p });
+    return false;
+  });
+  const appTypeOf = a => (a['@odata.type'] || '').replace('#microsoft.graph.', '') || 'App';
+  const profM = forPlatform(matchAll(DATA.autopilotProfiles), () => 'Autopilot profile', true);
+  const espM  = forPlatform(matchAll(DATA.enrollmentStatusPages), () => 'Enrollment Status Page', true);
+  const polM  = forPlatform(matchAll(allPolicies()), p => p._t);
+  const appM  = forPlatform(DATA.apps.map(a => matchItem(a, true)).filter(Boolean), appTypeOf);
 
   const mP = profM.filter(applies).map(m => m.item);
   const mE = espM.filter(applies).map(m => m.item);
@@ -3923,7 +4059,7 @@ async function runSim() {
 
   // Filter + scope info per applied item, taken from its match (no index lookup)
   function describeApplied(m) {
-    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType, filterName: m.filterName, filterAllowed: m.filterAllowed };
+    return { scope: m.scope, filterId: m.filterId, filterType: m.filterType, filterName: m.filterName, filterAllowed: m.filterAllowed, platformUnknown: m.platformUnknown };
   }
 
   // Enrich matched items with their filter + scope info
@@ -4094,7 +4230,7 @@ async function runSim() {
     // Edge from source → Config/App
     svgEdges += curve(srcX, srcY, col3, py + NH / 2, stroke, 'stroke-dasharray="5 4"');
 
-    svgNodes += node(col3, py, NW, p.name || p.displayName || '', p._t || 'App', fill, stroke);
+    svgNodes += node(col3, py, NW, p.name || p.displayName || '', (p._t || 'App') + (p.platformUnknown ? ' · platform?' : ''), fill, stroke);
 
     // Filter node (if any)
     // green = filter allows the device, gray = filtered out, amber = can't evaluate (hex: the SVG appends alpha)
@@ -4126,6 +4262,7 @@ async function runSim() {
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
       ${!demoMode && SIM.azureDeviceId ? `<span class="tag tag-targeted tag-plain">Device memberships: ${deviceGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">Device: no Entra ID (using rules)</span>`}
       ${!demoMode && SIM.userId ? `<span class="tag tag-targeted tag-plain">User memberships: ${userGroupIds.size}</span>` : `<span class="tag tag-gray tag-plain">User: not selected</span>`}
+      <span class="tag tag-gray tag-plain">Platform: ${esc(SIM.platform)}</span>
       ${ruleMatched.length ? `<span class="tag tag-purple tag-plain">Rule-matched: ${ruleMatched.length}</span>` : ''}
       ${memberErrors.length ? `<span class="tag tag-unassigned tag-plain">${esc(memberErrors[0])}</span>` : ''}
     </div>`;
@@ -4149,7 +4286,7 @@ async function runSim() {
       : m.status === 'conflict' ? `<div class="tr-sub">Available + Uninstall — result depends on user vs device targeting</div>`
       : parts.length ? `<div class="tr-sub">${parts.join(' · ')}</div>` : '';
     return `<div class="tr-row${ex ? ' tr-excluded' : ''}">
-      <div class="tr-main"><div class="tr-name" title="${attr(name)}">${esc(name)}</div>${subHtml}</div>
+      <div class="tr-main"><div class="tr-name" title="${attr(name)}">${esc(name)}${m.platformUnknown ? ' <span class="tr-pill tr-pill-gray gp-tag" title="The item\'s platform couldn\'t be determined, so it isn\'t filtered by platform">Platform unknown</span>' : ''}</div>${subHtml}</div>
       <div class="tr-pill-col"><span class="tr-pill tr-pill-${pc}">${pl}</span></div>
       <div class="tr-via ${isBroad(m.via) ? 'tr-via-broad' : 'tr-via-group'}">via ${esc(viaLabel(m.via))}</div>
     </div>`;
@@ -4229,11 +4366,11 @@ async function runSim() {
       </div>
       <div class="card">
         <div class="panel-head"><div class="panel-title"><div class="eyebrow">Policies</div><div class="title">Applied Policies (${mPol.length})</div></div></div>
-        ${Object.entries(byType).length ? Object.entries(byType).map(([t, pols]) => `<div style="margin-bottom:12px;"><div class="eyebrow">${esc(t)} (${pols.length})</div><div class="meta-row" style="margin-top:8px;">${pols.map(p => `<span class="tag tag-plain">${esc(p.name || p.displayName || '')}</span>`).join('')}</div></div>`).join('') : `<div class="empty-note">No policies apply.</div>`}
+        ${Object.entries(byType).length ? Object.entries(byType).map(([t, pols]) => `<div style="margin-bottom:12px;"><div class="eyebrow">${esc(t)} (${pols.length})</div><div class="meta-row" style="margin-top:8px;">${pols.map(p => `<span class="tag tag-plain">${esc(p.name || p.displayName || '')}${polM.find(m => m.item.id === p.id && m.item._t === p._t)?.platformUnknown ? ' · platform unknown' : ''}</span>`).join('')}</div></div>`).join('') : `<div class="empty-note">No policies apply.</div>`}
       </div>
       <div class="card">
         <div class="panel-head"><div class="panel-title"><div class="eyebrow">Apps</div><div class="title">Targeted Apps (${mA.length})</div></div></div>
-        ${mA.length ? `<div class="meta-row" style="margin-top:0;">${mA.map(a => `<span class="tag tag-plain">${esc(a.displayName)}</span>`).join('')}</div>` : `<div class="empty-note">No apps targeted.</div>`}
+        ${mA.length ? `<div class="meta-row" style="margin-top:0;">${mA.map(a => `<span class="tag tag-plain">${esc(a.displayName)}${appM.find(m => m.item.id === a.id)?.platformUnknown ? ' · platform unknown' : ''}</span>`).join('')}</div>` : `<div class="empty-note">No apps targeted.</div>`}
       </div>`;
 
   // Raw results for export — reuses the match objects above, tagged with a display type
@@ -4252,6 +4389,19 @@ async function runSim() {
     membershipMode: membershipFromGraph ? 'actual' : 'rules-only',
   };
 
+  model.platform = SIM.platform;
+  model.hidden = hidden;
+
+  // Matches for other platforms, collapsed under the results (both views)
+  const hiddenCounts = {};
+  hidden.forEach(h => { const l = platformLabel(h.platform); hiddenCounts[l] = (hiddenCounts[l] || 0) + 1; });
+  const hiddenHtml = hidden.length ? `<details class="card sim-hidden">
+      <summary>Hidden: ${hidden.length} item${hidden.length === 1 ? '' : 's'} for other platforms (${esc(Object.entries(hiddenCounts).sort((a, b) => b[1] - a[1]).map(([l, n]) => `${l} ${n}`).join(', '))})</summary>
+      <div class="sim-hidden-list">${hidden.map(h => `<div class="tr-row sim-hidden-row">
+        <div class="tr-main"><div class="tr-name" title="${attr(h.name)}">${esc(h.name)}</div><div class="tr-sub">${esc(h.type)}</div></div>
+        <div class="tr-via">${esc(platformLabel(h.platform))}</div></div>`).join('')}</div>
+    </details>` : '';
+
   LAST_SIM = { traceHtml, graphHtml, model };
   el('sim-out').innerHTML = `
     <div class="fade" style="display:flex;flex-direction:column;gap:14px;">
@@ -4263,6 +4413,7 @@ async function runSim() {
         </div>
       </div>
       <div id="sim-view" style="display:flex;flex-direction:column;gap:14px;"></div>
+      ${hiddenHtml}
     </div>`;
   renderSimView();
   const exportRow = el('sim-export');
