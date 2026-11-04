@@ -456,6 +456,67 @@
     details.sim-hidden[open] > summary { border-bottom: 1px solid var(--border); }
     details.sim-hidden > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tr-row.sim-hidden-row { grid-template-columns: minmax(0, 1fr) 140px; }
+    /* Findings: scope check */
+    .sc-about-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .sc-about h3 { font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .sc-about p { font-size: 12.5px; line-height: 1.6; color: var(--text2); }
+    .sc-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--text3); }
+    details.sc-about > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); }
+    details.sc-about[open] > summary { margin-bottom: 14px; }
+    details.sc-about > summary:focus-visible, details.sc-nc > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sc-run { max-width: 540px; margin: 16px auto 0; text-align: center; }
+    .sc-run .meta-row { justify-content: center; margin: 12px 0 16px; }
+    .sc-small { margin-top: 10px; font-size: 11px; color: var(--text3); }
+    .sc-progress { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 32px; font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; }
+    .sc-head { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+    .sc-last { font-size: 13px; font-weight: 600; color: var(--text); }
+    .sc-head .sc-progress { min-height: 0; }
+    .sc-head .btn { margin-left: auto; }
+    .sc-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0 6px; }
+    .sc-n-red { color: var(--red); }
+    .sc-n-green { color: var(--green); }
+    .sc-n-muted { color: var(--text3); }
+    .sc-notes { margin-bottom: 14px; }
+    .sc-notes ul { margin: 6px 0 0 18px; list-style: disc; font-weight: 400; }
+    .sc-ghead { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin: 20px 0 8px; }
+    .sc-card { padding: 14px 16px; margin-bottom: 10px; border-left: 3px solid var(--red); }
+    .sc-chead { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .sc-icon { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: var(--bg4); font-size: 11px; font-weight: 700; }
+    .sc-name { font-size: 13.5px; font-weight: 600; color: var(--text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-chead .ov-link { margin-left: auto; }
+    .sc-grid-wrap { overflow-x: auto; }
+    .sc-grid { width: 100%; min-width: 480px; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .sc-grid th { text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); padding: 4px 10px 4px 0; border-bottom: 1px solid var(--hairline); }
+    .sc-grid td { padding: 6px 10px 6px 0; vertical-align: top; color: var(--text2); border-bottom: 1px solid var(--hairline); }
+    .sc-grid td.sc-bad { color: var(--red); font-weight: 500; }
+    .sc-path { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--text3); word-break: break-all; }
+    .sc-mono { margin-top: 8px; padding: 4px 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); background: var(--wash); border: 1px solid var(--hairline); border-radius: 4px; word-break: break-all; }
+    .sc-explain { margin-top: 8px; font-size: 12.5px; color: var(--text2); }
+    .sc-note { margin-top: 4px; font-size: 12px; color: var(--text3); }
+    .sc-more { padding-top: 6px; font-size: 12px; color: var(--text3); }
+    .sc-allok { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--accent-wash); color: var(--accent); font-size: 13px; font-weight: 500; }
+    details.sc-nc { margin-top: 20px; }
+    details.sc-nc > summary { cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); }
+    .sc-nc ul { margin-top: 8px; }
+    .sc-nc li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; color: var(--text2); }
+    .sc-nc li span:first-child { color: var(--text); font-weight: 500; }
+    .sc-cell-sub { margin-top: 3px; font-size: 11px; color: var(--text3); }
+    .sc-ovline { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 10px; padding: 8px 14px; font: inherit; font-size: 13px; text-align: left; color: var(--text); background: var(--bg2); border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: var(--radius); cursor: pointer; }
+    .sc-ovline.sc-ok { border-left-color: var(--accent); }
+    .sc-ovline:hover .fd-view { text-decoration: underline; }
+    .sc-ovline:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sc-ovline .fd-view { margin-left: auto; }
+    .sc-psec { padding: 12px 16px; border-bottom: 1px solid var(--hairline); }
+    .sc-psec h3 { margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+    .sc-prow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 4px 0; font-size: 12.5px; color: var(--text2); }
+    .sc-pmis { padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; color: var(--text2); }
+    .sc-pmis:last-child { border-bottom: 0; }
+    .sc-pmis a { color: var(--accent); }
+    .sc-ok-line { font-size: 12.5px; color: var(--green); }
+    @media (max-width: 760px) {
+      .sc-about-cols, .sc-counters { grid-template-columns: 1fr; }
+      .sc-nc li { grid-template-columns: 1fr; gap: 2px; }
+    }
     /* Devices */
     .tr-pill-accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-wash); }
     .dv-export { margin-left: auto; padding: 4px 10px; min-height: 28px; }
@@ -657,6 +718,7 @@
     </div>
     <nav class="sb-nav" aria-label="Main">
       <a class="sb-link on" id="tab-overview" href="?tab=overview" aria-current="page" onclick="navClick(event, 'overview')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg><span>Overview</span><span class="nav-badge" id="nav-badge-overview" hidden onclick="event.preventDefault(); event.stopPropagation(); openFindingsDrawer('badge')"></span></a>
+      <a class="sb-link" id="tab-findings" href="?tab=findings" onclick="navClick(event, 'findings')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2.75h5.5L12.25 5.5v7.75H4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.25 8.5l1.25 1.25 2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Findings</span><span class="nav-badge nav-badge-red" id="nav-badge-findings" hidden></span></a>
       <a class="sb-link" id="tab-simulate" href="?tab=simulate" onclick="navClick(event, 'simulate')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg><span>What applies?</span></a>
       <a class="sb-link" id="tab-matrix" href="?tab=matrix" onclick="navClick(event, 'matrix')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.75" cy="4" r="1" fill="currentColor"/><circle cx="2.75" cy="8" r="1" fill="currentColor"/><circle cx="2.75" cy="12" r="1" fill="currentColor"/></svg><span>Assignments</span></a>
       <div class="sb-label">Inventory</div>
@@ -783,6 +845,10 @@ const DEMO_DATA = {
         { target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-corp', deviceAndAppManagementAssignmentFilterType:'include' } },
         { target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-deleted-0001' } }   // demo: deleted group
       ]
+    },
+    {
+      id:'sc-defender-wsx', name:'Defender – Windows Security Experience', platforms:'windows10',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allLicensedUsersAssignmentTarget' } }]   // demo: device settings on All users (scope mismatch)
     }
   ],
   compliancePolicies: [
@@ -804,12 +870,16 @@ const DEMO_DATA = {
       assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allLicensedUsersAssignmentTarget' } }]   // demo: Android, hidden for Windows devices
     },
     {
-      id:'app-m365', displayName:'Microsoft 365 Apps', '@odata.type':'#microsoft.graph.win32LobApp',
+      id:'app-m365', displayName:'Microsoft 365 Apps', '@odata.type':'#microsoft.graph.win32LobApp', installExperience:{ runAsAccount:'system' },
       assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }]
     },
     {
-      id:'app-company', displayName:'Company Portal', '@odata.type':'#microsoft.graph.winGetApp',
+      id:'app-company', displayName:'Company Portal', '@odata.type':'#microsoft.graph.winGetApp', installExperience:{ runAsAccount:'system' },
       assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget', deviceAndAppManagementAssignmentFilterId:'flt-lenovo', deviceAndAppManagementAssignmentFilterType:'exclude' } }]
+    },
+    {
+      id:'app-hp-upd', displayName:'HP Universal Print Driver', '@odata.type':'#microsoft.graph.win32LobApp', installExperience:{ runAsAccount:'user' },
+      assignments:[{ intent:'required', target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-kiosk-devices' } }]   // demo: user context on a device group
     }
   ],
   endpointSecurity: [
@@ -820,8 +890,10 @@ const DEMO_DATA = {
   ],
   appProtection: [],
   scripts: [
-    { id:'scr-tz', displayName:'Set time zone', '@odata.type':'#microsoft.graph.deviceManagementScript', fileName:'Set-TimeZone.ps1',
-      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }] }
+    { id:'scr-tz', displayName:'Set time zone', '@odata.type':'#microsoft.graph.deviceManagementScript', fileName:'Set-TimeZone.ps1', runAsAccount:'system',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.groupAssignmentTarget', groupId:'grp-sales-devices' } }] },
+    { id:'scr-drives', displayName:'Map network drives', '@odata.type':'#microsoft.graph.deviceManagementScript', fileName:'Map-NetworkDrives.ps1', runAsAccount:'user',
+      assignments:[{ target:{ '@odata.type':'#microsoft.graph.allDevicesAssignmentTarget' } }] }   // demo: user context on All devices
   ],
   remediations: [],
   featureUpdates: [
@@ -874,13 +946,27 @@ const DEMO_MEMBERS = {
     { id:'ent-004', deviceId:'d3m0-0000-4000-8000-000000000004', displayName:'DEMO-KIOSK-001', operatingSystem:'Windows', operatingSystemVersion:'10.0.26100' },
   ],
 };
+// Demo Settings Catalog settings (shape of /configurationPolicies/{id}/settings?$expand=settingDefinitions), keyed by policy id
+const demoSetting = (id, displayName, baseUri, offsetUri) => ({ id, settingInstance:{ settingDefinitionId:id },
+  settingDefinitions:[{ id, displayName, baseUri, offsetUri, applicability:{ '@odata.type':'#microsoft.graph.deviceManagementConfigurationWindowsSettingApplicability', platform:'windows10' } }] });
+const DEMO_SETTINGS = {
+  'sc-edge': [
+    demoSetting('device_vendor_msft_policy_config_microsoft_edgev80diff~policy~microsoft_edge_smartscreenenabled', 'Configure Microsoft Defender SmartScreen', './Device/Vendor/MSFT/Policy/Config', 'microsoft_edgev80diff~Policy~microsoft_edge/SmartScreenEnabled'),
+    demoSetting('device_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge_sslerroroverrideallowed', 'Allow users to proceed from the HTTPS warning page', './Device/Vendor/MSFT/Policy/Config', 'microsoft_edge~Policy~microsoft_edge/SSLErrorOverrideAllowed'),
+    demoSetting('user_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge~startup_homepagelocation', 'Configure the home page URL', './User/Vendor/MSFT/Policy/Config', 'microsoft_edge~Policy~microsoft_edge~Startup/HomepageLocation'),   // user setting on a device target: fine
+  ],
+  'sc-defender-wsx': [
+    demoSetting('vendor_msft_defender_configuration_tamperprotection_options', 'Tamper Protection', './Vendor/MSFT/Defender', '/Configuration/TamperProtectionOptions'),   // real shape: no ./Device prefix, offsetUri starts with "/"
+    demoSetting('device_vendor_msft_policy_config_windowsdefendersecuritycenter_disablefamilyui', 'Disable Family UI', './Device/Vendor/MSFT/Policy/Config', 'WindowsDefenderSecurityCenter/DisableFamilyUI'),
+  ],
+};
 let demoMode = false;
 
-let DATA = JSON.parse(JSON.stringify(EMPTY));
+let DATA =JSON.parse(JSON.stringify(EMPTY));
 let msalInstance = null;
 let currentAccount = null;
 let isAuthed = false;
-const TABS = ['overview','matrix','simulate','groups','devices'];
+const TABS = ['overview','findings','matrix','simulate','groups','devices'];
 let currentTab = 'overview';
 let SIM = { deviceName:'', enrollmentProfileName:'', groupTag:'', serial:'', mfg:'', model:'', osVer:'10.0.26100', platform:'Windows', upn:'', dept:'', jobTitle:'', displayName:'', deviceId:'', azureDeviceId:'', userId:'' };
 let simView = 'trace';   // 'trace' | 'graph'
@@ -903,9 +989,9 @@ const DEVICE_GROUPS_CACHE = {};   // device id → { status, groups, error }: ac
 const DEVICES_DEFAULT = () => ({ q: '', plat: new Set(), src: new Set(), comp: new Set(), tag: '', stale: false, sort: 'name', dir: 'asc', page: 1, selected: '' });
 let DEVICES = DEVICES_DEFAULT();
 let MATRIX = {
-  policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
+  policies: { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'', mismatchOnly:false },
   groups:   { search:'', groupType:'' /* 'dynamic'|'static'|'' */ },
-  apps:     { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' },
+  apps:     { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'', mismatchOnly:false },
 };
 
 const AAV_CLIENT_ID = '990cc930-4457-4946-a9da-da0a281eb7b5';
@@ -1059,9 +1145,10 @@ function startDemo() {
   TENANT_NAME = 'Demo tenant';
   DATA = JSON.parse(JSON.stringify(DEMO_DATA));
   applyIntentPlatforms(DATA.endpointSecurity, DEMO_TEMPLATES);
-  // Keep a ?tab=groups&group=… or ?tab=devices deep link; otherwise start on the overview as before
+  resetScopeCheck();
+  // Keep a ?tab=groups&group=…, ?tab=devices or ?tab=findings deep link; otherwise start on the overview as before
   const deepTab = new URLSearchParams(location.search).get('tab');
-  currentTab = deepTab === 'groups' && GROUPS.selected ? 'groups' : deepTab === 'devices' ? 'devices' : 'overview';
+  currentTab = deepTab === 'groups' && GROUPS.selected ? 'groups' : deepTab === 'devices' || deepTab === 'findings' ? deepTab : 'overview';
   SIM = { deviceName:'DEMO-SALES-001', enrollmentProfileName:'Windows Autopilot - Sales', groupTag:'SALES', serial:'ABC123SALES', mfg:'Lenovo', model:'ThinkPad T14', osVer:'10.0.26100', platform:'Windows', upn:'alex@contoso.com', dept:'Sales', displayName:'Alex Demo', deviceId:'', azureDeviceId:'', userId:'' };
   // Deep-linked simulation fields win over the demo defaults (like the groups deep link above)
   const urlParams = new URLSearchParams(location.search);
@@ -1085,6 +1172,7 @@ function signOut() {
   DEVICE_SEL.clear();
   resetCountsAbort();
   resetAssignAbort();
+  resetScopeCheck();
   if (demoMode) {
     demoMode = false;
     isAuthed = false;
@@ -1291,6 +1379,7 @@ async function refreshData() {
   COUNTS_PENDING.clear();
   COUNTS_GEN++;
   resetCountsAbort();
+  markScopeCheckStale();   // Findings never run on refresh; existing results just get a banner
   el('hdr-syncing').style.display = 'inline-flex';
   el('hdr-live').style.display = 'none';
   renderCurrentTab();
@@ -1466,7 +1555,7 @@ function navClick(event, tab) {
   event.preventDefault();
   switchTab(tab);
 }
-const TAB_TITLES = { overview: 'Overview', simulate: 'What applies?', matrix: 'Assignments', groups: 'Groups', devices: 'Devices' };
+const TAB_TITLES = { overview: 'Overview', findings: 'Findings', simulate: 'What applies?', matrix: 'Assignments', groups: 'Groups', devices: 'Devices' };
 
 function switchTab(tab) {
   currentTab = tab;
@@ -1485,6 +1574,7 @@ function renderCurrentTab() {
     return;
   }
   if (currentTab === 'overview') renderOverview(mount);
+  else if (currentTab === 'findings') renderFindings(mount);
   else if (currentTab === 'matrix') renderMatrix(mount);
   else if (currentTab === 'simulate') renderSimulate(mount);
   else if (currentTab === 'groups') renderGroups(mount);
@@ -1610,6 +1700,7 @@ function renderOverview(mount) {
     <div class="fade">
       ${demoBanner()}
       <div id="ov-findings">${findingsStripHtml(buildFindings())}</div>
+      ${scopeOverviewLine()}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
         <div class="stat"><div class="stat-n">${DATA.autopilotProfiles.length}</div><div class="stat-l">Autopilot Profiles</div></div>
         <div class="stat"><div class="stat-n">${dynG.length}</div><div class="stat-l">Dynamic Groups</div></div>
@@ -1847,9 +1938,9 @@ function setMatrixField(table, field, value, focusId) {
 }
 
 function clearMatrixFilter(table) {
-  if (table === 'policies') MATRIX.policies = { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' };
+  if (table === 'policies') MATRIX.policies = { search:'', types:new Set(), platforms:new Set(), scopes:new Set(), groupId:'', mismatchOnly:false };
   else if (table === 'groups') MATRIX.groups = { search:'', groupType:'' };
-  else if (table === 'apps') MATRIX.apps = { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'' };
+  else if (table === 'apps') MATRIX.apps = { search:'', appTypes:new Set(), platforms:new Set(), scopes:new Set(), groupId:'', mismatchOnly:false };
   renderMatrix(el('content-area'));
 }
 
@@ -1863,6 +1954,7 @@ function matrixFilterCount(table) {
   if (f.appTypes?.size) n++;
   if (f.groupId) n++;
   if (f.groupType) n++;
+  if (f.mismatchOnly && SCOPE.result) n++;
   return n;
 }
 
@@ -1896,6 +1988,7 @@ function renderMatrix(mount) {
     if (pf.platforms.size && !pf.platforms.has(detectPlatform(p))) return false;
     if (pf.scopes.size && !pf.scopes.has(scopeOf(p))) return false;
     if (pf.groupId && !itemHasGroup(p, pf.groupId)) return false;
+    if (pf.mismatchOnly && scopeStatus(p) !== 'mismatch') return false;
     return true;
   });
 
@@ -1908,6 +2001,7 @@ function renderMatrix(mount) {
     if (af.platforms.size && !af.platforms.has(detectPlatform(a))) return false;
     if (af.scopes.size && !af.scopes.has(scopeOf(a))) return false;
     if (af.groupId && !itemHasGroup(a, af.groupId)) return false;
+    if (af.mismatchOnly && scopeStatus(a) !== 'mismatch') return false;
     return true;
   });
 
@@ -1943,6 +2037,11 @@ function renderMatrix(mount) {
   const polFilterCount = matrixFilterCount('policies');
   const grpFilterCount = matrixFilterCount('groups');
   const appFilterCount = matrixFilterCount('apps');
+  // Scope check column + "Mismatch only" chip: only after a Findings run
+  const scRun = !!SCOPE.result;
+  const polMismatches = scRun ? allPol.filter(p => scopeStatus(p) === 'mismatch').length : 0;
+  const appMismatches = scRun ? allApps.filter(a => scopeStatus(a) === 'mismatch').length : 0;
+  const scChip = (table, n) => scRun ? `<div><div class="lbl" style="margin-bottom:4px;">Scope check</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${filterChip(`onclick="toggleMatrixMismatch('${table}')" aria-pressed="${MATRIX[table].mismatchOnly}"`, `Mismatch only (${n})`, MATRIX[table].mismatchOnly)}</div></div>` : '';
 
   // ── Policy filter UI ──
   const policyFilterUI = `
@@ -1961,6 +2060,7 @@ function renderMatrix(mount) {
       <div><div class="lbl" style="margin-bottom:4px;">Type</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPolicyTypes.map(t => filterChip(`onclick="toggleMatrixSet('policies','types','${t}')"`, `${t}${typeCounts[t] ? ` (${typeCounts[t]})` : ''}`, pf.types.has(t))).join('')}</div></div>
       <div><div class="lbl" style="margin-bottom:4px;">Platform</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPlatforms.map(p => filterChip(`onclick="toggleMatrixSet('policies','platforms','${p}')"`, p, pf.platforms.has(p))).join('')}</div></div>
       <div><div class="lbl" style="margin-bottom:4px;">Scope</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allScopes.map(s => filterChip(`onclick="toggleMatrixSet('policies','scopes','${s}')"`, s, pf.scopes.has(s))).join('')}</div></div>
+      ${scChip('policies', polMismatches)}
     </div>`;
 
   // ── Groups filter UI ──
@@ -1998,6 +2098,7 @@ function renderMatrix(mount) {
       ${allAppTypes.length ? `<div><div class="lbl" style="margin-bottom:4px;">App type</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allAppTypes.map(t => filterChip(`onclick="toggleMatrixSet('apps','appTypes','${t}')"`, t, af.appTypes.has(t))).join('')}</div></div>` : ''}
       <div><div class="lbl" style="margin-bottom:4px;">Platform</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allPlatforms.map(p => filterChip(`onclick="toggleMatrixSet('apps','platforms','${p}')"`, p, af.platforms.has(p))).join('')}</div></div>
       <div><div class="lbl" style="margin-bottom:4px;">Scope</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${allScopes.map(s => filterChip(`onclick="toggleMatrixSet('apps','scopes','${s}')"`, s, af.scopes.has(s))).join('')}</div></div>
+      ${scChip('apps', appMismatches)}
     </div>`;
 
   mount.innerHTML = `
@@ -2023,7 +2124,7 @@ function renderMatrix(mount) {
           ${filteredPol.length ? `
             <div class="tbl-wrap">
               <table class="tbl">
-                <thead><tr><th>Policy</th><th>Type</th><th>Platform</th><th>Include</th><th>Exclude</th><th>Scope</th></tr></thead>
+                <thead><tr><th>Policy</th><th>Type</th><th>Platform</th><th>Include</th><th>Exclude</th><th>Scope</th>${scRun ? '<th>Scope check</th>' : ''}</tr></thead>
                 <tbody>
                   ${filteredPol.map(p => {
                     const a = resolveAssignments(p);
@@ -2039,6 +2140,7 @@ function renderMatrix(mount) {
                         <td>${inc.length ? `<div class="meta-row" style="margin-top:0;">${inc.map(x => `<span class="tag ${broad ? 'tag-broad' : 'tag-targeted'}">${esc(x.label)}</span>`).join('')}</div>` : '<span class="empty-note">None</span>'}</td>
                         <td>${exc.length ? `<div class="meta-row" style="margin-top:0;">${exc.map(x => `<span class="tag tag-unassigned">${esc(x.label)}</span>`).join('')}</div>` : '<span class="empty-note">—</span>'}</td>
                         <td><span class="tag ${scope==='Broad' ? 'tag-broad' : scope==='Targeted' ? 'tag-targeted' : 'tag-unassigned'} tag-plain">${scope}</span></td>
+                        ${scRun ? `<td>${scopeCellHtml(p)}</td>` : ''}
                       </tr>`;
                   }).join('')}
                 </tbody>
@@ -2087,7 +2189,7 @@ function renderMatrix(mount) {
           ${filteredApps.length ? `
             <div class="tbl-wrap">
               <table class="tbl">
-                <thead><tr><th>App</th><th>Type</th><th>Platform</th><th>Assignments</th></tr></thead>
+                <thead><tr><th>App</th><th>Type</th><th>Platform</th><th>Assignments</th>${scRun ? '<th>Scope check</th>' : ''}</tr></thead>
                 <tbody>
                   ${filteredApps.map(a => `
                     <tr>
@@ -2095,6 +2197,7 @@ function renderMatrix(mount) {
                       <td><span class="tag tag-gray tag-plain">${esc((a['@odata.type'] || '').replace('#microsoft.graph.',''))}</span></td>
                       <td>${platformTag(a)}</td>
                       <td><div class="meta-row" style="margin-top:0;">${asnTags(a)}</div></td>
+                      ${scRun ? `<td>${scopeCellHtml(a)}</td>` : ''}
                     </tr>`).join('')}
                 </tbody>
               </table>
@@ -2102,6 +2205,540 @@ function renderMatrix(mount) {
         </div>
       </section>
     </div>`;
+}
+
+// ── Findings: scope check ──
+// Compares each assignment's target kind (users or devices) with the scope the item is built for.
+// Runs only on "Run checks" (never on Refresh). Results live in memory only; refreshData marks them stale.
+const STRICT_USER_ON_DEVICE = false;   // true: a user-scoped setting on a device target counts as a mismatch
+const SCOPE_DEFAULT = () => ({ result: null, running: false, step: '', stale: false, panelKey: '', panelOpener: null, prevOverflow: '' });
+let SCOPE = SCOPE_DEFAULT();
+let SCOPE_GEN = 0;          // bumped on reset/refresh so a run still in flight drops its result
+let SCOPE_ABORT = new AbortController();
+const SC_TEXT = {
+  setting: 'Applies only after user sign-in. Skipped during ESP device phase and on devices without a user.',
+  settingStrict: 'User-scoped setting on a device target. Applies only to users who sign in on those devices.',
+  app: 'User-context install on a device target. Installs only when a user is signed in.',
+  script: 'User-context script on a device target. Runs only when a user is signed in.',
+  mix: 'Intune doesn\'t support mixing user and device groups across include and exclude.',
+  mam: 'App protection policies target users. A device target doesn\'t deliver the policy.',
+  autopilot: 'Autopilot deployment profiles target devices. A user target doesn\'t assign the profile.',
+  filter: 'The assignment filter narrows which devices, but does not change the scope.',
+};
+// refreshData labels per source, so a failed load shows up as a note on the Findings page
+const SC_SOURCE_LABELS = { 'Settings Catalog': ['SettingsCat'], 'Device configuration': ['DeviceConfig'], 'Compliance': ['Compliance'], 'Endpoint Security (legacy)': ['EPSecurity'],
+  'App protection': ['AppProtect iOS', 'AppProtect Android', 'AppProtect Windows'], 'Autopilot profiles': ['AP Profiles'], 'Apps': ['Apps'], 'Scripts': ['Scripts'], 'Remediations': ['Remediations'], 'Groups': ['Groups'] };
+const scPl = (n, noun, plural = noun + 's') => `${n} ${n === 1 ? noun : plural}`;
+const scCap = k => ({ device: 'Device', user: 'User', mixed: 'Users + devices', empty: 'Empty', unresolved: 'Unknown' })[k] || k;
+const scHHMM = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+function resetScopeCheck() {
+  SCOPE_ABORT.abort(); SCOPE_ABORT = new AbortController(); SCOPE_GEN++;
+  closeScopePanel(false);
+  SCOPE = SCOPE_DEFAULT();
+  updateScopeBadge();
+}
+// refreshData: stop a run in flight and flag existing results as outdated
+function markScopeCheckStale() {
+  if (SCOPE.running) { SCOPE_ABORT.abort(); SCOPE_ABORT = new AbortController(); SCOPE_GEN++; SCOPE.running = false; SCOPE.step = ''; }
+  if (SCOPE.result) SCOPE.stale = true;
+}
+function setScopeStep(text) {
+  SCOPE.step = text;
+  const p = el('sc-progress-text');
+  if (p) p.textContent = text;
+}
+
+// Key shared by the Findings results and the Assignments matrix rows (allPolicies()._t, or 'App')
+const scopeKey = item => `${item._t}|${item.id}`;
+const scopeStatus = item => SCOPE.result?.byKey.get(scopeKey(item))?.status || '';
+
+const scIsEndpointSecurity = p => /^endpointSecurity/i.test(p.templateReference?.templateFamily || '');
+function scAppModel(a) {
+  const t = (a['@odata.type'] || '').replace('#microsoft.graph.', '');
+  if (!['win32LobApp', 'winGetApp', 'win32CatalogApp'].includes(t)) return null;   // no install context to compare
+  return { type: 'runAs', field: 'installExperience.runAsAccount', value: a.installExperience?.runAsAccount, what: 'app' };
+}
+// Every item the check covers: { key, item, group, typeLabel, model }
+function scCollectItems() {
+  const out = [];
+  const add = (src, arr, group, typeLabel, model) => (arr || []).forEach(it => {
+    const m = model(it);
+    if (m) out.push({ key: `${src}|${it.id}`, item: it, group, typeLabel: typeof typeLabel === 'function' ? typeLabel(it) : typeLabel, model: m });
+  });
+  const legacy = why => () => ({ type: 'legacy', why });
+  const runAs = s => ({ type: 'runAs', field: 'runAsAccount', value: s.runAsAccount, what: 'script' });
+  add('Settings Cat', DATA.settingsCatalog, 'Policies', p => scIsEndpointSecurity(p) ? 'Endpoint Security' : 'Settings Catalog', () => ({ type: 'settings' }));
+  add('EP Security', DATA.endpointSecurity, 'Policies', 'Endpoint Security (legacy)', legacy('Legacy Endpoint Security policy: setting scope isn\'t exposed via Graph'));
+  add('Device Config', DATA.deviceConfigs, 'Policies', 'Device configuration', legacy('Legacy configuration profile: setting scope isn\'t exposed via Graph'));
+  add('Compliance', DATA.compliancePolicies, 'Policies', 'Compliance', legacy('Compliance policy: scope isn\'t exposed via Graph'));
+  add('App Protection', DATA.appProtection, 'Policies', 'App protection', () => ({ type: 'user' }));
+  add('AP Profile', DATA.autopilotProfiles, 'Policies', 'Autopilot profile', () => ({ type: 'device' }));
+  add('App', DATA.apps, 'Apps', a => (a['@odata.type'] || '').includes('winGet') ? 'WinGet app' : 'Win32 app', scAppModel);
+  add('Script', DATA.scripts, 'Scripts', 'Platform script', runAs);       // beta: /deviceManagement/deviceManagementScripts?$expand=assignments (loaded by refreshData)
+  add('Remediation', DATA.remediations, 'Scripts', 'Remediation', runAs);  // beta: /deviceManagement/deviceHealthScripts?$expand=assignments (loaded by refreshData)
+  return out;
+}
+
+// Per setting, from the root definition. Only Windows definitions are evaluated.
+// baseUri "./User…" → user, any other "./…" → device (the OMA-URI default scope, e.g. "./Vendor/MSFT/Defender").
+// Without a baseUri the id prefix decides: user_ → user, device_ / vendor_ → device.
+// noScope: neither a baseUri nor a recognised id prefix (reported as a note).
+// No applicability in the response: an OMA-URI baseUri ("./…") is taken as Windows, anything else isn't checkable
+const scIsWindowsDef = d => !d.applicability ? /^\.\//.test(d.baseUri || '')
+  : /WindowsSettingApplicability$/i.test(d.applicability['@odata.type'] || '') || /windows10/i.test(d.applicability.platform || '');
+function scSettingScopes(settings) {
+  return settings.map(s => {
+    const defs = s.settingDefinitions || [];
+    const rootId = s.settingInstance?.settingDefinitionId || '';
+    const d = defs.find(x => x.id === rootId) || defs[0] || { id: rootId };
+    const base = d.baseUri || '';
+    const id = String(d.id || rootId).toLowerCase();
+    const windows = scIsWindowsDef(d);
+    let scope = '', noScope = false;
+    if (windows) {
+      if (base) scope = /^\.\/user(\/|$)/i.test(base) ? 'user' : base.startsWith('./') ? 'device' : '';
+      else scope = id.startsWith('user_') ? 'user' : /^(device|vendor)_/.test(id) ? 'device' : '';
+      noScope = !base && !scope;
+    }
+    // offsetUri may start with "/": join without doubling it
+    const path = base ? base.replace(/\/+$/, '') + (d.offsetUri ? '/' + d.offsetUri.replace(/^\/+/, '') : '') : '';
+    return { name: d.displayName || d.name || d.id || rootId, path, scope, windows, noScope };
+  });
+}
+const scStatusMsg = r => r?.status ? `HTTP ${r.status}${r.body?.error?.code ? ' ' + r.body.error.code : ''}` : 'no response';
+const scCountNote = counts => Object.entries(counts).map(([m, n]) => `${m} ×${n}`).join(', ');
+
+// Settings Catalog + new Endpoint Security: settings with definitions, per policy
+async function scLoadSettings(pols, notes, signal) {
+  const out = new Map();   // policy id → { settings } | { error }
+  if (!pols.length) return out;
+  if (demoMode) {   // demo: local sample data, no Graph calls
+    pols.forEach(p => out.set(p.id, DEMO_SETTINGS[p.id] ? { settings: DEMO_SETTINGS[p.id] } : { error: 'no setting data in the demo' }));
+    setScopeStep(`Loading setting definitions… ${pols.length}/${pols.length}`);
+    return out;
+  }
+  let done = 0;
+  setScopeStep(`Loading setting definitions… 0/${pols.length}`);
+  let res;
+  try {
+    // beta: GET /deviceManagement/configurationPolicies/{id}/settings?$expand=settingDefinitions (no v1.0 equivalent)
+    res = await graphBatch(pols.map((p, i) => ({ id: String(i), url: `/deviceManagement/configurationPolicies/${encodeURIComponent(p.id)}/settings?$expand=settingDefinitions` })),
+      () => setScopeStep(`Loading setting definitions… ${++done}/${pols.length}`), signal, 'beta');
+  } catch (e) {
+    if (!isAuthed || e.name === 'AbortError') throw e;
+    notes.push(`Settings Catalog and Endpoint Security: setting definitions couldn't be loaded (${e.message.replace(/\.$/, '')}). These policies are listed as not checkable.`);
+    pols.forEach(p => out.set(p.id, { error: e.message }));
+    return out;
+  }
+  const failed = {};
+  await Promise.all(pols.map(async (p, i) => {
+    const r = res.get(String(i));
+    if (r?.status !== 200) { const m = scStatusMsg(r); failed[m] = (failed[m] || 0) + 1; out.set(p.id, { error: m }); return; }
+    let settings = r.body?.value || [];
+    const next = r.body?.['@odata.nextLink'];
+    if (next) {   // more pages for this policy: graphGet follows the rest
+      try { settings = settings.concat(await graphGet(next, { signal })); }
+      catch (e) { if (!isAuthed || e.name === 'AbortError') throw e; failed[e.message] = (failed[e.message] || 0) + 1; out.set(p.id, { error: e.message }); return; }
+    }
+    out.set(p.id, { settings });
+  }));
+  const nFailed = Object.values(failed).reduce((a, b) => a + b, 0);
+  if (nFailed) notes.push(`Setting definitions couldn't be loaded for ${nFailed} of ${scPl(pols.length, 'policy', 'policies')} (${scCountNote(failed)}). Those are listed as not checkable.`);
+  return out;
+}
+
+const scKindFromCounts = (d, u) => d && u ? { kind: 'mixed', why: 'Group contains both users and devices' }
+  : d ? { kind: 'device' } : u ? { kind: 'user' } : { kind: 'empty', why: 'Group has no user or device members' };
+
+// Static groups: does the group (transitively) hold devices, users, both or neither?
+async function scResolveGroups(ids, notes, signal) {
+  const kinds = new Map();   // group id → { kind, why }
+  if (!ids.length) return kinds;
+  if (demoMode) {   // demo: derive from DEMO_MEMBERS, no Graph calls
+    const isUser = x => /\.user$/.test(x['@odata.type'] || '');
+    ids.forEach(id => { const m = DEMO_MEMBERS[id] || []; kinds.set(id, scKindFromCounts(m.some(x => !isUser(x)), m.some(isUser))); });
+    setScopeStep(`Resolving group types… ${ids.length}/${ids.length}`);
+    return kinds;
+  }
+  let done = 0;
+  setScopeStep(`Resolving group types… 0/${ids.length}`);
+  const h = { ConsistencyLevel: 'eventual' };   // required for $count on directory objects
+  const reqs = [];
+  ids.forEach((id, i) => {
+    const g = encodeURIComponent(id);
+    reqs.push({ id: `${i}d`, url: `/groups/${g}/transitiveMembers/microsoft.graph.device?$count=true&$top=1&$select=id`, headers: h });
+    reqs.push({ id: `${i}u`, url: `/groups/${g}/transitiveMembers/microsoft.graph.user?$count=true&$top=1&$select=id`, headers: h });
+  });
+  const halves = new Map();
+  let res;
+  try {
+    res = await graphBatch(reqs, rid => {   // v1.0; per-response 429s are retried inside graphBatch
+      const i = rid.slice(0, -1);
+      halves.set(i, (halves.get(i) || 0) + 1);
+      if (halves.get(i) === 2) setScopeStep(`Resolving group types… ${++done}/${ids.length}`);
+    }, signal);
+  } catch (e) {
+    if (!isAuthed || e.name === 'AbortError') throw e;
+    notes.push(`Group types couldn't be resolved (${e.message.replace(/\.$/, '')}). Assignments to static groups are listed as not checkable.`);
+    ids.forEach(id => kinds.set(id, { kind: 'unresolved', why: `Group type couldn't be resolved (${e.message})` }));
+    return kinds;
+  }
+  const failed = {};
+  const count = r => { const n = r.body?.['@odata.count']; return typeof n === 'number' ? n : (r.body?.value || []).length; };
+  ids.forEach((id, i) => {
+    const d = res.get(`${i}d`), u = res.get(`${i}u`);
+    if (d?.status !== 200 || u?.status !== 200) {
+      const m = scStatusMsg(d?.status !== 200 ? d : u);
+      failed[m] = (failed[m] || 0) + 1;
+      kinds.set(id, { kind: 'unresolved', why: `Group type couldn't be resolved (${m})` });
+      return;
+    }
+    kinds.set(id, scKindFromCounts(count(d) > 0, count(u) > 0));
+  });
+  const nFailed = Object.values(failed).reduce((a, b) => a + b, 0);
+  if (nFailed) notes.push(`Group type couldn't be resolved for ${nFailed} of ${scPl(ids.length, 'static group')} (${scCountNote(failed)}). Assignments to those groups are not checkable.`);
+  return kinds;
+}
+
+function scTargetKind(a, groupKinds) {
+  if (a.kind === 'allDevices') return { kind: 'device' };
+  if (a.kind === 'allUsers') return { kind: 'user' };
+  const t = a.raw.target || a.raw;
+  const g = a.group;
+  if (!g) return { kind: 'unresolved', why: `Group ${t.groupId || ''} not found (deleted?)` };
+  if (isDyn(g)) {
+    const rule = g.membershipRule || '';
+    const d = /\bdevice\./i.test(rule), u = /\buser\./i.test(rule);
+    return d && u ? { kind: 'mixed', why: 'Dynamic rule uses both user. and device. properties' }
+      : d ? { kind: 'device' } : u ? { kind: 'user' } : { kind: 'unresolved', why: 'Dynamic rule has no user. or device. property' };
+  }
+  return groupKinds.get(g.id) || { kind: 'unresolved', why: 'Group type not resolved' };
+}
+
+// One result per assigned item. status: 'mismatch' if any assignment mismatches, else 'correct' if any
+// assignment could be checked, else 'nc' (not checkable).
+function scEvalItem(x, ctx) {
+  const { item, model } = x;
+  const asg = resolveAssignmentsRaw(item).map(a => {
+    const t = a.raw.target || a.raw;
+    const k = scTargetKind(a, ctx.groupKinds);
+    const fid = t.deviceAndAppManagementAssignmentFilterId;
+    return { mode: a.kind === 'exclude' ? 'exclude' : 'include', label: a.kind === 'allDevices' ? 'All devices' : a.kind === 'allUsers' ? 'All users' : a.label,
+      viaGroup: !!t.groupId, kind: k.kind, why: k.why || '',
+      filter: fid ? (DATA.assignmentFilters.find(f => f.id === fid)?.displayName || fid) : '', filterType: fid ? (t.deviceAndAppManagementAssignmentFilterType || 'include') : '' };
+  });
+  const inc = asg.filter(a => a.mode === 'include');
+  if (!inc.length) return null;   // unassigned or exclude-only: nothing is delivered, nothing to check
+  const r = { key: x.key, id: item.id, name: item.name || item.displayName || item.id, typeLabel: x.typeLabel, group: x.group,
+    assignments: asg, reasons: [], ncReasons: [], scopeLabel: '', settings: null, okSettings: 0, status: 'nc', ncReason: '' };
+  let itemNc = model.type === 'legacy' ? model.why : '';
+  let known = [];
+  if (model.type === 'settings') {
+    const sc = ctx.settings.get(item.id);
+    if (!sc || sc.error) itemNc = `Setting definitions couldn't be loaded${sc?.error ? ` (${sc.error})` : ''}`;
+    else {
+      r.settings = scSettingScopes(sc.settings);
+      known = r.settings.filter(s => s.scope);
+      ctx.missingBaseUri += r.settings.filter(s => s.noScope).length;
+      if (!known.length) itemNc = !r.settings.length ? 'Policy has no settings'
+        : !r.settings.some(s => s.windows) ? 'Not a Windows policy: setting scope is only evaluated for Windows definitions'
+        : 'No setting scope in the definitions (no baseUri or recognised id prefix)';
+      const scopes = new Set(known.map(s => s.scope));
+      r.scopeLabel = scopes.size === 2 ? 'Device + User' : scCap([...scopes][0] || '');
+    }
+  } else if (model.type === 'runAs') {
+    if (model.value !== 'user' && model.value !== 'system') {
+      itemNc = `${model.field} ${model.value ? `has an unexpected value (${model.value})` : 'is missing in the Graph response'}`;
+      ctx.missingRunAs[model.what] = (ctx.missingRunAs[model.what] || 0) + 1;
+    }
+    r.scopeLabel = model.value === 'system' ? 'System' : 'User';
+  } else if (model.type === 'user') r.scopeLabel = 'User';
+  else if (model.type === 'device') r.scopeLabel = 'Device';
+
+  let checked = 0;
+  const badSettings = new Map();   // setting path/name → row
+  const rows = { runAs: [], user: [], device: [] };
+  inc.forEach(a => {
+    if (itemNc) return;
+    if (a.kind !== 'device' && a.kind !== 'user') { r.ncReasons.push(`${a.label}: ${a.why}`); return; }
+    checked++;
+    const row = { assigned: scCap(a.kind), via: a.label, viaGroup: a.viaGroup, filter: a.filter };
+    if (model.type === 'settings') {
+      known.filter(s => a.kind === 'user' ? s.scope === 'device' : STRICT_USER_ON_DEVICE && s.scope === 'user').forEach(s => {
+        const k = s.path || s.name;
+        const prev = badSettings.get(k);
+        if (prev) { if (!prev.vias.includes(a.label)) prev.vias.push(a.label); prev.filter = prev.filter || a.filter; }
+        else badSettings.set(k, { ...row, setting: s.name, path: s.path, expected: scCap(s.scope), vias: [a.label], strict: a.kind === 'device' });
+      });
+    } else if (model.type === 'runAs' && model.value === 'user' && a.kind === 'device') rows.runAs.push({ ...row, setting: model.what === 'app' ? 'Install context' : 'Run as account', expected: 'User' });
+    else if (model.type === 'user' && a.kind === 'device') rows.user.push({ ...row, setting: 'Policy target', expected: 'User' });
+    else if (model.type === 'device' && a.kind === 'user') rows.device.push({ ...row, setting: 'Profile target', expected: 'Device' });
+  });
+
+  if (badSettings.size) {
+    const list = [...badSettings.values()].map(b => ({ ...b, via: b.vias.join(', ') }));
+    const strictOnly = list.every(b => b.strict);
+    r.reasons.push({ rows: list, explain: strictOnly ? SC_TEXT.settingStrict : SC_TEXT.setting,
+      short: strictOnly ? 'Needs user' : 'Needs device', shortSub: `assigned: ${strictOnly ? 'device' : 'user'} · ${scPl(list.length, 'setting')}` });
+  }
+  r.okSettings = known.length - badSettings.size;
+  if (rows.runAs.length) r.reasons.push({ rows: rows.runAs, mono: `${model.field} = user`, explain: model.what === 'app' ? SC_TEXT.app : SC_TEXT.script, short: 'Needs user', shortSub: 'assigned: device' });
+  if (rows.user.length) r.reasons.push({ rows: rows.user, explain: SC_TEXT.mam, short: 'Needs user', shortSub: 'assigned: device' });
+  if (rows.device.length) r.reasons.push({ rows: rows.device, explain: SC_TEXT.autopilot, short: 'Needs device', shortSub: 'assigned: user' });
+
+  // Include and exclude must target the same kind (every item type, legacy included)
+  const kindsOf = mode => [...new Set(asg.filter(a => a.mode === mode && (a.kind === 'device' || a.kind === 'user')).map(a => a.kind))];
+  const incK = kindsOf('include'), excK = kindsOf('exclude');
+  if (incK.some(k => excK.some(e => e !== k))) {
+    r.reasons.push({ rows: [{ setting: 'Include / exclude', expected: 'One kind', assigned: `${incK.map(scCap).join(' + ')} / ${excK.map(scCap).join(' + ')}`,
+        via: asg.filter(a => a.kind === 'device' || a.kind === 'user').map(a => `${a.mode === 'exclude' ? 'excl' : 'incl'}: ${a.label}`).join(' · '), viaGroup: true, filter: '' }],
+      mono: `include: ${incK.join(' + ')} · exclude: ${excK.join(' + ')}`, explain: SC_TEXT.mix, short: 'Mixed groups', shortSub: 'user + device across include/exclude' });
+  }
+
+  if (r.reasons.length) r.status = 'mismatch';
+  else if (checked) r.status = 'correct';
+  else r.ncReason = itemNc || r.ncReasons[0] || 'Nothing to check';
+  return r;
+}
+
+async function runScopeCheck() {
+  if (SCOPE.running || !isAuthed || DATA.loading || !DATA.loaded) return;
+  track('findings-run', 'Findings checks executed');
+  SCOPE_ABORT.abort(); SCOPE_ABORT = new AbortController();
+  const gen = ++SCOPE_GEN, signal = SCOPE_ABORT.signal;
+  SCOPE.running = true;
+  SCOPE.step = 'Preparing…';
+  if (currentTab === 'findings') renderCurrentTab();
+  const notes = [];
+  try {
+    // Sources that failed to load in refreshData can't be checked
+    Object.entries(SC_SOURCE_LABELS).forEach(([src, labels]) => {
+      const errs = DATA.errors.filter(e => labels.includes(String(e).split(':')[0].trim()));
+      if (errs.length) notes.push(`${src} couldn't be loaded, so ${src === 'Groups' ? 'group assignments are' : 'these items are'} not checked (${errs.map(e => String(e).split(':').slice(1).join(':').trim().replace(/\.$/, '')).join('; ')}).`);
+    });
+    const items = scCollectItems();
+    const hasInclude = it => resolveAssignments(it).some(a => a.kind !== 'exclude');
+    const settings = await scLoadSettings(items.filter(x => x.model.type === 'settings' && hasInclude(x.item)).map(x => x.item), notes, signal);
+    if (gen !== SCOPE_GEN) return;
+    const staticIds = [...new Set(items.flatMap(x => resolveAssignments(x.item).filter(a => a.group && !isDyn(a.group)).map(a => a.group.id)))];
+    const groupKinds = await scResolveGroups(staticIds, notes, signal);
+    if (gen !== SCOPE_GEN) return;
+    const ctx = { settings, groupKinds, missingBaseUri: 0, missingRunAs: {} };
+    const results = items.map(x => scEvalItem(x, ctx)).filter(Boolean);
+    // Report fields that were missing in the responses instead of guessing
+    if (ctx.missingRunAs.app) notes.push(`installExperience.runAsAccount was missing on ${scPl(ctx.missingRunAs.app, 'Win32/WinGet app')} in the Graph response. Those apps are listed as not checkable.`);
+    if (ctx.missingRunAs.script) notes.push(`runAsAccount was missing on ${scPl(ctx.missingRunAs.script, 'script')} in the Graph response. Those scripts are listed as not checkable.`);
+    if (ctx.missingBaseUri) notes.push(`${scPl(ctx.missingBaseUri, 'Windows setting definition')} had neither a baseUri nor a recognised id prefix (user_, device_, vendor_). Those settings are not checked.`);
+    SCOPE.result = { at: new Date(), items: results, notes, byKey: new Map(results.map(r => [r.key, r])) };
+    SCOPE.stale = false;
+  } catch (e) {
+    if (gen !== SCOPE_GEN || e.name === 'AbortError') return;
+    console.warn('[AAV] Scope check failed:', e.message);
+    showToast(`Checks failed: ${e.message}`, 'error');
+  } finally {
+    if (gen === SCOPE_GEN) {
+      SCOPE.running = false;
+      SCOPE.step = '';
+      updateScopeBadge();
+      if (['findings', 'overview', 'matrix'].includes(currentTab)) renderCurrentTab();
+    }
+  }
+}
+
+function updateScopeBadge() {
+  const b = el('nav-badge-findings');
+  if (!b) return;
+  const n = SCOPE.result ? SCOPE.result.items.filter(r => r.status === 'mismatch').length : 0;
+  b.hidden = !n;
+  b.textContent = n;
+  b.title = n ? scPl(n, 'scope mismatch', 'scope mismatches') : '';
+  el('tab-findings')?.setAttribute('aria-label', n ? `Findings, ${scPl(n, 'scope mismatch', 'scope mismatches')}` : 'Findings');
+}
+
+function scopeOverviewLine() {
+  const r = SCOPE.result;
+  if (!r) return '';
+  const n = r.items.filter(x => x.status === 'mismatch').length;
+  return `<button type="button" class="sc-ovline${n ? '' : ' sc-ok'}" onclick="switchTab('findings')">
+    <strong>Findings</strong><span class="${n ? 'sc-n-red' : 'sc-n-green'}">${n ? '✕' : '✓'} ${scPl(n, 'mismatch', 'mismatches')}</span>
+    <span class="gp-muted">· Last run ${scHHMM(r.at)}${SCOPE.stale ? ' (outdated)' : ''}</span><span class="fd-view">→ View findings</span></button>`;
+}
+
+function scopeCellHtml(item) {
+  const r = SCOPE.result?.byKey.get(scopeKey(item));
+  if (!r) return '<span class="empty-note">—</span>';
+  if (r.status === 'mismatch') {
+    const m = r.reasons[0];
+    return `<span class="tr-pill tr-pill-red">✕ ${esc(m.short)}</span><div class="sc-cell-sub">${esc(m.shortSub)}</div>`;
+  }
+  if (r.status === 'correct') return `<span class="tr-pill tr-pill-green">✓ ${esc(r.scopeLabel)}</span>`;
+  return `<span class="tr-pill tr-pill-gray" title="${htmlAttr(r.ncReason)}">– Not checkable</span>`;
+}
+function toggleMatrixMismatch(table) {
+  MATRIX[table].mismatchOnly = !MATRIX[table].mismatchOnly;
+  renderMatrix(el('content-area'));
+}
+
+const SC_CHECKED_TYPES = ['Settings Catalog', 'Endpoint Security', 'Win32 apps', 'WinGet apps', 'Platform scripts', 'Remediations', 'App protection', 'Autopilot profiles'];
+function scAboutHtml(collapsed) {
+  const body = `<div class="sc-about-cols">
+      <div><h3>What is checked</h3><p>Each assignment target (users or devices) against the scope the item is built for: CSP scope for Settings Catalog and Endpoint Security, install context for Win32 and WinGet apps, run-as account for scripts and remediations.</p></div>
+      <div><h3>What a mismatch means</h3><p>The assignment works against how the setting or app is designed. Intune may accept it, but it applies late or not at all, for example not during the ESP device phase.</p></div>
+      <div><h3>What it doesn't do</h3><p>Legacy policy types can't be verified via Graph and are listed as not checkable. Nothing is changed or stored: results are computed in your browser and cleared on refresh.</p></div>
+    </div>
+    <div class="sc-foot">Findings are guidance, not a verdict. Verify against Microsoft documentation before changing production assignments.</div>`;
+  return collapsed
+    ? `<details class="card sc-about" style="margin-top:20px;"><summary>About findings</summary>${body}</details>`
+    : `<section class="card sc-about"><div class="eyebrow" style="margin-bottom:12px;">About findings</div>${body}</section>`;
+}
+const scProgressHtml = () => `<div class="sc-progress" role="status"><div class="spin"></div><span id="sc-progress-text">${esc(SCOPE.step || 'Preparing…')}</span></div>`;
+
+function scRowsHtml(rows) {
+  return `<div class="sc-grid-wrap"><table class="sc-grid">
+      <thead><tr><th>Setting</th><th>Expected</th><th>Assigned</th><th>Via</th></tr></thead>
+      <tbody>${rows.slice(0, 3).map(x => `<tr>
+        <td>${esc(x.setting)}${x.path ? `<span class="sc-path">${esc(x.path)}</span>` : ''}</td>
+        <td>${esc(x.expected)}</td>
+        <td class="sc-bad">${esc(x.assigned)}</td>
+        <td class="${x.viaGroup ? 'tr-via-group' : 'tr-via-broad'}">${esc(x.via)}</td></tr>`).join('')}</tbody>
+    </table></div>${rows.length > 3 ? `<div class="sc-more">+${rows.length - 3} more</div>` : ''}`;
+}
+function scCardHtml(r) {
+  const filtered = r.reasons.some(m => m.rows.some(x => x.filter));
+  return `<article class="card sc-card">
+    <div class="sc-chead"><span class="sc-icon" aria-hidden="true">✕</span><span class="sc-name" title="${htmlAttr(r.name)}">${esc(r.name)}</span>
+      <span class="tag tag-gray tag-plain">${esc(r.typeLabel)}</span>
+      <button type="button" class="ov-link" onclick="openScopePanel('${jsArg(r.key)}')">View details →</button></div>
+    ${r.reasons.map(m => `${scRowsHtml(m.rows)}${m.mono ? `<div class="sc-mono">${esc(m.mono)}</div>` : ''}<div class="sc-explain">${esc(m.explain)}</div>`).join('')}
+    ${filtered ? `<div class="sc-note">${esc(SC_TEXT.filter)}</div>` : ''}
+  </article>`;
+}
+
+function renderFindings(mount) {
+  const r = SCOPE.result;
+  if (!r) {
+    mount.innerHTML = `<div class="fade">
+      ${demoBanner()}
+      ${scAboutHtml(false)}
+      <section class="card sc-run">
+        <div class="title" style="font-size:15px;margin-bottom:6px;">Scope check</div>
+        <div class="desc">Finds assignments that target users where the item is built for devices, or the other way round.</div>
+        <div class="meta-row">${SC_CHECKED_TYPES.map(t => `<span class="tag tag-gray tag-plain">${t}</span>`).join('')}</div>
+        ${SCOPE.running ? scProgressHtml() : `<button class="btn btn-accent" onclick="runScopeCheck()" ${DATA.loaded ? '' : 'disabled'}>Run checks</button>`}
+        <div class="sc-small">Read-only · Uses your existing permissions</div>
+      </section>
+    </div>`;
+    return;
+  }
+  const mis = r.items.filter(x => x.status === 'mismatch'), ok = r.items.filter(x => x.status === 'correct'), nc = r.items.filter(x => x.status === 'nc');
+  const groups = ['Policies', 'Apps', 'Scripts'].map(g => [g, mis.filter(x => x.group === g)]).filter(([, l]) => l.length);
+  mount.innerHTML = `<div class="fade">
+    ${demoBanner()}
+    <div class="sc-head">
+      <span class="sc-last">Last run ${scHHMM(r.at)}</span>
+      ${SCOPE.running ? scProgressHtml() : ''}
+      <button class="btn btn-ghost" onclick="runScopeCheck()" ${SCOPE.running ? 'disabled' : ''}>Re-run checks</button>
+    </div>
+    ${SCOPE.stale ? `<div class="demo-banner"><span>Data refreshed since last check. Results may be outdated.</span><button class="btn btn-ghost" style="margin-left:auto;" onclick="runScopeCheck()" ${SCOPE.running ? 'disabled' : ''}>Re-run</button></div>` : ''}
+    ${r.notes.length ? `<div class="demo-banner sc-notes" style="display:block;" role="note"><strong>Some checks were limited</strong><ul>${r.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : ''}
+    <div class="sc-counters">
+      <div class="tr-stat"><div class="tr-stat-n sc-n-red">✕ ${mis.length}</div><div class="tr-stat-l">${mis.length === 1 ? 'mismatch' : 'mismatches'}</div></div>
+      <div class="tr-stat"><div class="tr-stat-n sc-n-green">✓ ${ok.length}</div><div class="tr-stat-l">correct</div></div>
+      <div class="tr-stat"><div class="tr-stat-n sc-n-muted">– ${nc.length}</div><div class="tr-stat-l">not checkable</div></div>
+    </div>
+    ${mis.length ? groups.map(([g, l]) => `<div class="sc-ghead">${g} (${l.length})</div>${l.map(scCardHtml).join('')}`).join('')
+      : `<div class="sc-allok"><span aria-hidden="true">✓</span>All checked assignments match their scope · ${ok.length} checked · ${nc.length} not checkable</div>`}
+    ${nc.length ? `<details class="sc-nc"><summary>Not checkable (${nc.length})</summary><ul>${nc.map(x => `<li><span>${esc(x.name)} <span class="gp-muted">· ${esc(x.typeLabel)}</span></span><span>${esc(x.ncReason)}</span></li>`).join('')}</ul></details>` : ''}
+    ${scAboutHtml(true)}
+  </div>`;
+}
+
+// CSP documentation link for a path, where the page is known
+function scCspDocUrl(path) {
+  const m = /^\.\/(?:(?:Device|User)\/)?Vendor\/MSFT\/([^/]+)\/(.+)$/i.exec(path || '');
+  if (!m) return '';
+  if (/^policy$/i.test(m[1])) {
+    const p = /^Config\/([^/~]+)\/([^/~]+)$/i.exec(m[2]);   // ADMX-backed paths (with ~) have no per-policy page
+    return p ? `https://learn.microsoft.com/windows/client-management/mdm/policy-csp-${p[1].toLowerCase()}#${p[2].toLowerCase()}` : '';
+  }
+  const slug = { defender: 'defender-csp', bitlocker: 'bitlocker-csp', firewall: 'firewall-csp', laps: 'laps-csp', passportforwork: 'passportforwork-csp', applocker: 'applocker-csp', personalization: 'personalization-csp' }[m[1].toLowerCase()];
+  return slug ? `https://learn.microsoft.com/windows/client-management/mdm/${slug}` : '';
+}
+
+function scPanelHtml(r) {
+  const statusPill = r.status === 'mismatch' ? '<span class="tr-pill tr-pill-red">✕ Mismatch</span>'
+    : r.status === 'correct' ? `<span class="tr-pill tr-pill-green">✓ ${esc(r.scopeLabel)}</span>` : '<span class="tr-pill tr-pill-gray">– Not checkable</span>';
+  const asg = r.assignments.map(a => `<div class="sc-prow">
+      <span class="tr-pill ${a.mode === 'exclude' ? 'tr-pill-red' : 'tr-pill-gray'}">${a.mode === 'exclude' ? 'Exclude' : 'Include'}</span>
+      <span class="${a.viaGroup ? 'tr-via-group' : 'tr-via-broad'}">${esc(a.label)}</span>
+      <span class="gp-muted">· ${esc(scCap(a.kind))}</span>
+      ${a.filter ? `<span class="gp-muted">· Filter: ${esc(a.filter)} (${esc(a.filterType)})</span>` : ''}
+      ${a.why ? `<div class="sc-note" style="flex-basis:100%;">${esc(a.why)}</div>` : ''}
+    </div>`).join('');
+  const mis = r.reasons.map(m => `${m.rows.map(x => {
+      const doc = scCspDocUrl(x.path);
+      return `<div class="sc-pmis"><div style="color:var(--text);font-weight:500;">${esc(x.setting)}</div>
+        ${x.path ? `<span class="sc-path">${esc(x.path)}</span>` : ''}
+        <div class="sc-note">Expected ${esc(x.expected)} · Assigned <span class="sc-n-red">${esc(x.assigned)}</span> · via ${esc(x.via)}</div>
+        ${doc ? `<div class="sc-note"><a href="${htmlAttr(doc)}" target="_blank" rel="noopener noreferrer">CSP documentation ↗</a></div>` : ''}
+      </div>`; }).join('')}
+      ${m.mono ? `<div class="sc-mono">${esc(m.mono)}</div>` : ''}<div class="sc-explain">${esc(m.explain)}</div>`).join('');
+  const filtered = r.reasons.some(m => m.rows.some(x => x.filter));
+  const unknown = r.settings ? r.settings.filter(s => !s.scope).length : 0;
+  return `
+    <div class="fd-head">
+      <div class="fd-htext"><h2 id="sc-ptitle">${esc(r.name)}</h2><div class="fd-sub">${esc(r.typeLabel)}${SCOPE.stale ? ' · results may be outdated' : ''}</div></div>
+      <button type="button" class="fd-close" id="sc-close" aria-label="Close details" onclick="closeScopePanel()">×</button>
+    </div>
+    <div class="fd-body">
+      <div class="sc-psec"><h3>Status</h3>${statusPill}${r.status === 'nc' ? `<div class="sc-note">${esc(r.ncReason)}</div>` : ''}</div>
+      <div class="sc-psec"><h3>Assignments</h3>${asg}</div>
+      ${r.reasons.length ? `<div class="sc-psec"><h3>Mismatches</h3>${mis}${filtered ? `<div class="sc-note">${esc(SC_TEXT.filter)}</div>` : ''}</div>` : ''}
+      ${r.settings ? `<div class="sc-psec"><div class="sc-ok-line">✓ ${scPl(r.okSettings, 'setting')} ${r.okSettings === 1 ? 'matches its' : 'match their'} scope</div>
+        ${unknown ? `<div class="sc-note">${scPl(unknown, 'setting')} without a known scope</div>` : ''}</div>` : ''}
+    </div>`;
+}
+
+function openScopePanel(key) {
+  const r = SCOPE.result?.byKey.get(key);
+  const p = el('sc-panel');
+  if (!r || !p) return;
+  const wasOpen = !!SCOPE.panelKey;
+  SCOPE.panelKey = key;
+  if (!wasOpen) SCOPE.panelOpener = document.activeElement;
+  p.innerHTML = scPanelHtml(r);
+  p.classList.add('fd-open');
+  el('sc-scrim').classList.add('fd-open');
+  if (!wasOpen) {
+    SCOPE.prevOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';   // lock page scroll behind the panel
+    document.addEventListener('keydown', scKeydown);
+  }
+  el('sc-close').focus();
+}
+function closeScopePanel(restoreFocus = true) {
+  if (!SCOPE.panelKey) return;
+  SCOPE.panelKey = '';
+  el('sc-panel')?.classList.remove('fd-open');
+  el('sc-scrim')?.classList.remove('fd-open');
+  document.documentElement.style.overflow = SCOPE.prevOverflow;
+  document.removeEventListener('keydown', scKeydown);
+  if (restoreFocus && SCOPE.panelOpener?.isConnected) SCOPE.panelOpener.focus();
+  SCOPE.panelOpener = null;
+}
+// Esc closes; Tab / Shift+Tab stay inside the panel
+function scKeydown(e) {
+  if (!SCOPE.panelKey) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeScopePanel(); return; }
+  if (e.key !== 'Tab') return;
+  const d = el('sc-panel');
+  const items = [...d.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.getClientRects().length);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (!d.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 // ── Groups tab: dynamic groups with rule, assignments and members ──
@@ -5107,6 +5744,8 @@ applyTweaks();
 </script>
 <div id="fd-scrim" class="fd-scrim" onclick="closeFindingsDrawer()"></div>
 <aside id="findings-drawer" class="fd" role="dialog" aria-modal="true" aria-labelledby="fd-title"><h2 id="fd-title">Findings</h2></aside>
+<div id="sc-scrim" class="fd-scrim" onclick="closeScopePanel()"></div>
+<aside id="sc-panel" class="fd" role="dialog" aria-modal="true" aria-labelledby="sc-ptitle"><h2 id="sc-ptitle">Scope check</h2></aside>
 <div id="print-root" hidden></div>
 </body>
 </html>
